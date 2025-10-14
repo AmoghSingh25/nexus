@@ -28,7 +28,7 @@ jobs:
         run: pip install ruff
 
       - name: Run Ruff checks
-        run: ruff check --fix --exclude "*.ipynb" --output-format=github
+        run: ruff check --fix --exclude "*.ipynb"
         
       - name: Run Ruff format
         run: ruff format --check --output-format=github --exclude "*.ipynb"
