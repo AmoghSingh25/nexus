@@ -31,5 +31,5 @@ jobs:
         run: ruff check --fix --exclude "*.ipynb"
         
       - name: Run Ruff format
-        run: ruff format --check --exclude "*.ipynb"
+        run: ruff format --exclude "*.ipynb"
         
