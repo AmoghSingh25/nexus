@@ -1,0 +1,21 @@
+[project]
+name = "dynamicsim"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "matplotlib>=3.10.7",
+    "networkx>=3.4.2",
+    "numpy>=2.2.6",
+    "pandas>=2.3.3",
+    "pre-commit>=4.3.0",
+    "ruff>=0.14.0",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
