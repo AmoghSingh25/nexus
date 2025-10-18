@@ -6,9 +6,10 @@ app = marimo.App(width="medium")
 
 @app.cell
 def _():
+    import numpy as np
     import matplotlib.pyplot as plt
 
-    return (plt,)
+    return np, plt
 
 
 @app.cell
@@ -67,22 +68,39 @@ def _():
 
 @app.cell
 def _(edges_set, gpsim, node_set_old):
-    sim = gpsim.simulator(node_set_old, edges_set, n_cells=1)
-    a, b = sim.run_sim(10)
-    return
+    sim2 = gpsim.simulator(node_set_old, edges_set, n_cells=1)
+    a2, b2 = sim2.run_sim(10)
+    return (a2,)
 
 
 @app.cell
 def _(edges_set, gpsim, node_set):
     sim = gpsim.simulator(node_set, edges_set, n_cells=2)
     a, b = sim.run_sim(10)
+    return (a,)
+
+
+@app.cell
+def _(a2, np, plt):
+    _a = np.array(a2)
+    _cell_no = 0
+    for _i in range(_a[:, :, _cell_no].shape[1]):
+        plt.plot(_a[:, _i, _cell_no], label=f"Node {[_i]}")
+    plt.title("Expression values of a single cell")
+    plt.xlabel("Steps")
+    plt.ylabel("Expression value")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
     return
 
 
 @app.cell
-def _(p_vals_, plt):
-    for _i in range(p_vals_.shape[1]):
-        plt.plot(p_vals_[:, _i], label=f"Node {[_i]}")
+def _(a, np, plt):
+    _a = np.array(a)
+    _cell_no = 0
+    for _i in range(_a[:, :, _cell_no].shape[1]):
+        plt.plot(_a[:, _i, _cell_no], label=f"Node {[_i]}")
     plt.title("Expression values of a single cell")
     plt.xlabel("Steps")
     plt.ylabel("Expression value")
