@@ -116,7 +116,7 @@ class simulator:
     def calc_steady_state_g(
         self, is_mr, idx, basal_rates, decay, steady_state, gene_conc, k_i, p_kt, p_kd
     ):
-        """Steady state calculation for genes"""
+        """Steady state calculation for genes and proteins"""
         e_x = (
             self.calc_pij(is_mr, idx, basal_rates, steady_state, gene_conc, k_i) / decay
         )
@@ -127,6 +127,8 @@ class simulator:
         """Calculates the steady state concentrations for the MR and Gene nodes.
         The steady state concentrations are calculated using the method mentioned in Equation 8 and Equation 10 in
         Dibaeinia, P., & Sinha, S. (2020). SERGIO: A Single-Cell Expression Simulator Guided by Gene Regulatory Networks.
+
+        A similar method is used for estimating the steady state concentration of the proteins and is mentioned in `docs/simulator.md`
         """
         print("Steady state calculations")
 
