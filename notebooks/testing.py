@@ -68,15 +68,15 @@ def _():
 
 @app.cell
 def _(edges_set, gpsim, node_set_old):
-    sim2 = gpsim.simulator(node_set_old, edges_set, n_cells=1)
-    a2, b2 = sim2.run_sim(10)
+    sim = gpsim.simulator(node_set_old, edges_set, n_cells=1)
+    a2, b2 = sim.run_sim(10)
     return (a2,)
 
 
 @app.cell
 def _(edges_set, gpsim, node_set):
-    sim = gpsim.simulator(node_set, edges_set, n_cells=2)
-    a, b = sim.run_sim(10)
+    sim2 = gpsim.simulator(node_set, edges_set, n_cells=2)
+    a, b = sim2.run_sim(10)
     return a, b
 
 

@@ -7,6 +7,8 @@
 import networkx as nx
 import jax.numpy as jnp
 from jax import vmap, random, lax
+from .utils.verify_network import _verify_network
+from tqdm import tqdm
 
 
 class simulator:
@@ -24,7 +26,9 @@ class simulator:
         prot_kt -       (n_cells, n_genes)
         prot_kd -       (n_cells, n_genes)
         """
-
+        print("Running network checks...", end="")
+        if _verify_network(node_set, edges_set, n_cells):
+            print("Network checks passed")
         self.key, self.sub_key = random.split(random.key(42))
         self.n_cells = n_cells
         self.basal_rates = []
@@ -130,7 +134,7 @@ class simulator:
 
         A similar method is used for estimating the steady state concentration of the proteins and is mentioned in `docs/simulator.md`
         """
-        print("Steady state calculations")
+        print("Calculating steady states...", end="")
 
         def _single_cell_steady_state(
             n_genes,
@@ -279,10 +283,10 @@ class simulator:
         self.prot_conc = p_t
 
     def run_sim(self, n_steps):
-        print("Starting simulator...")
+        print("Running simulator...")
         gene_conc_history = []
         prot_conc_history = []
-        for _ in range(n_steps):
+        for _ in tqdm(range(n_steps)):
             self.calc_x_t()
             gene_conc_history.append(self.gene_conc)
             prot_conc_history.append(self.prot_conc)
