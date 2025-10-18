@@ -67,10 +67,20 @@ def _():
 
 
 @app.cell
-def _(edges_set, gpsim, node_set_old):
-    sim = gpsim.simulator(node_set_old, edges_set, n_cells=1)
-    a2, b2 = sim.run_sim(10)
-    return (a2,)
+def _(gpsim):
+    sim = gpsim.simulator(
+        "configs/sample_data/Interaction_cID_4.txt",
+        "configs/sample_data/Regs_cID_4.txt",
+    )
+    # a2, b2 = sim.run_sim(10)
+    return (sim,)
+
+
+@app.cell
+def _(node_set_old, sim):
+    node_set_old
+    sim.run_sim(10)
+    return
 
 
 @app.cell

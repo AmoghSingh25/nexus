@@ -24,7 +24,7 @@ def test_calc_steady_states():
         },
     ]
     edges_set = [[0, 2], [1, 2], [2, 3]]
-    sim = gpsim.simulator(node_set, edges_set, n_cells=2)
+    sim = gpsim.simulator(node_set=node_set, edges_set=edges_set, n_cells=2)
     gene_conc, prot_conc = sim.run_sim(10)
     gene_conc, prot_conc = np.array(gene_conc), np.array(prot_conc)
     print(gene_conc.shape, prot_conc.shape)
