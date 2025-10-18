@@ -2,3 +2,5 @@
 .ipynb_checkpoints/
 
 __pycache__/
+__marimo__/
+src/simulator/gpsim_old.py
