@@ -66,6 +66,7 @@ $E[Pr_i(t)] = \frac{k_{trans,i} * E[G_i(t)]}{k_{d,i}}$
 $\frac{d[Pr_i(t)]}{dt} = k_{trans,i} [G_i(t)] - k_{d,i}[Pr_i(t)]$
 
 The Euler-Maruyama method is used in the current simulator to solve this differential and for computing the concentrations.
+Protein concentration at time $t$ is computed using the gene concentration at time $t-1$.
 
 $(Pr_i)_{t+1} = (Pr_i)_t + (P_i(t)- \lambda_ix_t(t))\Delta t$
 

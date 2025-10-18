@@ -27,13 +27,13 @@ def _():
         {
             "ki": [1.73104, 2.64137],
             "prot_half_life": [3],
-            "transcription_rate": [10],
+            "prot_transcription_rate": [10],
             "type": "g",
         },
         {
             "ki": [2.34309],
             "prot_half_life": [2],
-            "transcription_rate": [10],
+            "prot_transcription_rate": [12],
             "type": "g",
         },
     ]
@@ -50,14 +50,14 @@ def _():
                 [1, 2],  # Cell 1
                 [3, 4],
             ],  # Cell 2
-            "prot_half_life": [3],
-            "transcription_rate": [10],
+            "prot_half_life": [3, 4],
+            "prot_transcription_rate": [10, 11],
             "type": "g",
         },
         {
             "ki": [[2.34309], [1.64324]],
-            "prot_half_life": [2],
-            "transcription_rate": [10],
+            "prot_half_life": [2, 1],
+            "prot_transcription_rate": [12, 13],
             "type": "g",
         },
     ]
@@ -77,7 +77,22 @@ def _(edges_set, gpsim, node_set_old):
 def _(edges_set, gpsim, node_set):
     sim = gpsim.simulator(node_set, edges_set, n_cells=2)
     a, b = sim.run_sim(10)
-    return (a,)
+    return a, b
+
+
+@app.cell
+def _(b, np, plt):
+    _a = np.array(b)
+    _cell_no = 0
+    for _i in range(_a[:, :, _cell_no].shape[1]):
+        plt.plot(_a[:, _i, _cell_no], label=f"Node {[_i]}")
+    plt.title("Concentrations of proteins of a single cell")
+    plt.xlabel("Steps")
+    plt.ylabel("Expression value")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+    return
 
 
 @app.cell
