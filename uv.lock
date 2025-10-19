@@ -260,6 +260,7 @@ dependencies = [
     { name = "polars" },
     { name = "pre-commit" },
     { name = "pytest" },
+    { name = "pyyaml" },
     { name = "ruff" },
     { name = "tqdm" },
 ]
@@ -275,6 +276,7 @@ requires-dist = [
     { name = "polars", specifier = ">=1.34.0" },
     { name = "pre-commit", specifier = ">=4.3.0" },
     { name = "pytest", specifier = ">=8.4.2" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "ruff", specifier = ">=0.14.0" },
     { name = "tqdm", specifier = ">=4.67.1" },
 ]

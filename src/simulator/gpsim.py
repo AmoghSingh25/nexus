@@ -17,8 +17,6 @@ class simulator:
         self,
         gene_data=None,
         mr_data=None,
-        node_set=None,
-        edges_set=None,
         config_file="",
         n_cells=1,
     ):
@@ -35,8 +33,8 @@ class simulator:
         prot_kt -       (n_cells, n_genes)
         prot_kd -       (n_cells, n_genes)
         """
-        if node_set is None and edges_set is None:
-            node_set, edges_set = _read_data(gene_data, mr_data, config_file, n_cells)
+
+        node_set, edges_set = _read_data(gene_data, mr_data, config_file, n_cells)
 
         print("Running network checks...", end="")
         if _verify_network(node_set, edges_set, n_cells):

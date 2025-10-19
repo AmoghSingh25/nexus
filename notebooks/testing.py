@@ -7,8 +7,10 @@ app = marimo.App(width="medium")
 @app.cell
 def _():
     import numpy as np
+    import matplotlib
     import matplotlib.pyplot as plt
 
+    matplotlib.style.use("default")
     return np, plt
 
 
@@ -17,6 +19,22 @@ def _():
     from simulator import gpsim
 
     return (gpsim,)
+
+
+@app.cell
+def _(np, plt):
+    def plot_conc(vals, cell_no):
+        vals = np.array(vals)
+        for _i in range(vals[:, :, cell_no].shape[1]):
+            plt.plot(vals[:, _i, cell_no], label=f"Node {[_i]}")
+        plt.title("Expression values of a single cell")
+        plt.xlabel("Steps")
+        plt.ylabel("Expression value")
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+    return (plot_conc,)
 
 
 @app.cell
@@ -67,6 +85,18 @@ def _():
 
 
 @app.cell
+def _(gpsim, plot_conc):
+    _sim = gpsim.simulator(
+        config_file="configs/sample_data/sample_network_2cell.yaml", n_cells=2
+    )
+    _a, _b = _sim.run_sim(10)
+
+    plot_conc(_a, 0)
+    plot_conc(_b, 0)
+    return
+
+
+@app.cell
 def _(gpsim):
     sim = gpsim.simulator(
         "configs/sample_data/Interaction_cID_4.txt",
@@ -87,51 +117,6 @@ def _(node_set_old, sim):
 def _(edges_set, gpsim, node_set):
     sim2 = gpsim.simulator(node_set, edges_set, n_cells=2)
     a, b = sim2.run_sim(10)
-    return a, b
-
-
-@app.cell
-def _(b, np, plt):
-    _a = np.array(b)
-    _cell_no = 0
-    for _i in range(_a[:, :, _cell_no].shape[1]):
-        plt.plot(_a[:, _i, _cell_no], label=f"Node {[_i]}")
-    plt.title("Concentrations of proteins of a single cell")
-    plt.xlabel("Steps")
-    plt.ylabel("Expression value")
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-    return
-
-
-@app.cell
-def _(a2, np, plt):
-    _a = np.array(a2)
-    _cell_no = 0
-    for _i in range(_a[:, :, _cell_no].shape[1]):
-        plt.plot(_a[:, _i, _cell_no], label=f"Node {[_i]}")
-    plt.title("Expression values of a single cell")
-    plt.xlabel("Steps")
-    plt.ylabel("Expression value")
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-    return
-
-
-@app.cell
-def _(a, np, plt):
-    _a = np.array(a)
-    _cell_no = 0
-    for _i in range(_a[:, :, _cell_no].shape[1]):
-        plt.plot(_a[:, _i, _cell_no], label=f"Node {[_i]}")
-    plt.title("Expression values of a single cell")
-    plt.xlabel("Steps")
-    plt.ylabel("Expression value")
-    plt.legend()
-    plt.grid(True)
-    plt.show()
     return
 
 
