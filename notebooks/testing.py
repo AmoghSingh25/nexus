@@ -87,7 +87,9 @@ def _():
 @app.cell
 def _(gpsim, plot_conc):
     _sim = gpsim.simulator(
-        config_file="configs/sample_data/sample_network_2cell.yaml", n_cells=2
+        config_file="configs/sample_data/sample_network_2cell.yaml",
+        n_cells=2,
+        protein_sim=False,
     )
     _a, _b = _sim.run_sim(10)
 

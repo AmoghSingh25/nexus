@@ -14,11 +14,7 @@ from tqdm import tqdm
 
 class simulator:
     def __init__(
-        self,
-        gene_data=None,
-        mr_data=None,
-        config_file="",
-        n_cells=1,
+        self, gene_data=None, mr_data=None, config_file="", n_cells=1, protein_sim=True
     ):
         """
         Shapes of variables :
@@ -40,10 +36,13 @@ class simulator:
         if _verify_network(node_set, edges_set, n_cells):
             print("Network checks passed")
         self.key, self.sub_key = random.split(random.key(42))
+
+        self.n_genes = len(node_set)
         self.n_cells = n_cells
+        self.protein_sim = protein_sim
+
         self.basal_rates = []
         self.ki_values = []
-        self.n_genes = len(node_set)
         self.is_mr = []
         self.gene_conc = jnp.zeros((self.n_genes, self.n_cells, 1))
         self.steady_states = jnp.zeros_like(self.gene_conc)
@@ -76,22 +75,29 @@ class simulator:
                 self.basal_rates.append(basal_rate_i)
                 self.ki_values.append(jnp.array(node["ki"]))
 
-                self.prot_half_lives = self.prot_half_lives.at[i].set(
-                    jnp.array(node["prot_half_life"]).reshape(-1, 1)
-                )
-                self.prot_tran_rates = self.prot_tran_rates.at[i].set(
-                    jnp.array(node["prot_transcription_rate"]).reshape(-1, 1)
-                )
+                if self.protein_sim:
+                    self.prot_half_lives = self.prot_half_lives.at[i].set(
+                        jnp.array(node["prot_half_life"]).reshape(-1, 1)
+                    )
+                    self.prot_tran_rates = self.prot_tran_rates.at[i].set(
+                        jnp.array(node["prot_transcription_rate"]).reshape(-1, 1)
+                    )
 
-        self.prot_half_lives = self.prot_half_lives.reshape(
-            self.n_genes, self.n_cells
-        ).T.reshape(self.n_cells, self.n_genes, 1)
-        self.prot_tran_rates = self.prot_tran_rates.reshape(
-            self.n_genes, self.n_cells
-        ).T.reshape(self.n_cells, self.n_genes, 1)
-        self.prot_decay = jnp.nan_to_num(
-            jnp.log(2) / self.prot_half_lives, nan=0.0, neginf=0.0, posinf=0.0
-        )
+        if self.protein_sim:
+            self.prot_half_lives = self.prot_half_lives.reshape(
+                self.n_genes, self.n_cells
+            ).T.reshape(self.n_cells, self.n_genes, 1)
+            self.prot_tran_rates = self.prot_tran_rates.reshape(
+                self.n_genes, self.n_cells
+            ).T.reshape(self.n_cells, self.n_genes, 1)
+            self.prot_decay = jnp.nan_to_num(
+                jnp.log(2) / self.prot_half_lives, nan=0.0, neginf=0.0, posinf=0.0
+            )
+        else:
+            self.prot_half_lives = jnp.zeros((self.n_cells, self.n_genes, 1))
+            self.prot_tran_rates = jnp.zeros((self.n_cells, self.n_genes, 1))
+            self.prot_decay = jnp.zeros_like(self.prot_half_lives)
+
         self.g.add_edges_from(edges_set)
 
         for i in self.g.nodes(data=True):
@@ -134,7 +140,11 @@ class simulator:
         e_x = (
             self.calc_pij(is_mr, idx, basal_rates, steady_state, gene_conc, k_i) / decay
         )
-        p_c = p_kt * e_x / p_kd
+        if self.protein_sim:
+            p_c = p_kt * e_x / p_kd
+        else:
+            p_c = jnp.zeros_like(e_x)
+
         return e_x, p_c
 
     def calc_steady_states(self):
@@ -177,7 +187,11 @@ class simulator:
                     operand=None,
                 )
                 gene_conc = gene_conc.at[i].set(steady_val[0])
-                prot_conc = prot_conc.at[i].set(steady_val[1])
+                if self.protein_sim:
+                    prot_conc = prot_conc.at[i].set(steady_val[1])
+
+                else:
+                    prot_conc = jnp.zeros_like(gene_conc)
 
                 steady_states = gene_conc
             return gene_conc, prot_conc
