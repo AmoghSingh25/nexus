@@ -6,10 +6,11 @@
 
 import networkx as nx
 import jax.numpy as jnp
-from jax import vmap, random, lax
+from jax import vmap, random, lax, jit
 from .utils.verify_network import _verify_network
 from .utils.read_network import _read_data
 from tqdm import tqdm
+import logging
 
 
 class simulator:
@@ -32,9 +33,9 @@ class simulator:
 
         node_set, edges_set = _read_data(gene_data, mr_data, config_file, n_cells)
 
-        print("Running network checks...", end="")
+        logging.info("Running network checks...")
         if _verify_network(node_set, edges_set, n_cells):
-            print("Network checks passed")
+            logging.info("Network checks passed")
         self.key, self.sub_key = random.split(random.key(42))
 
         self.n_genes = len(node_set)
@@ -123,11 +124,15 @@ class simulator:
         self.is_mr = jnp.array(self.is_mr)
         self.decay = jnp.array([0.8])
 
+        ## Create JIT functions
+        self.jit_pij = jit(self.calc_pij)
+        self.jit_x_t = jit(self.calc_x_t)
+
         self.gene_conc, self.prot_conc = self.calc_steady_states()
         self.steady_states = self.gene_conc
         self.prot_steady_state = self.prot_conc
 
-        print("Steady state concentrations calculated.")
+        logging.info("Steady state concentrations calculated.")
 
     def calc_steady_state_mr(self, b, decay):
         """Steady state calculation for MRs"""
@@ -138,7 +143,7 @@ class simulator:
     ):
         """Steady state calculation for genes and proteins"""
         e_x = (
-            self.calc_pij(is_mr, idx, basal_rates, steady_state, gene_conc, k_i) / decay
+            self.jit_pij(is_mr, idx, basal_rates, steady_state, gene_conc, k_i) / decay
         )
         if self.protein_sim:
             p_c = p_kt * e_x / p_kd
@@ -154,7 +159,7 @@ class simulator:
 
         A similar method is used for estimating the steady state concentration of the proteins and is mentioned in `docs/simulator.md`
         """
-        print("Calculating steady states...", end="")
+        logging.info("Calculating steady states...")
 
         def _single_cell_steady_state(
             n_genes,
@@ -268,7 +273,7 @@ class simulator:
         ):
             # gene_conc, delta, decay, steady_state, is_mr - Entire arrays passed for all genes in a cell
             p_i = (
-                self.calc_pij(is_mr, idx, basal_rates, steady_state, gene_conc, k_i)
+                self.jit_pij(is_mr, idx, basal_rates, steady_state, gene_conc, k_i)
                 + basal_rates
             )
             x_t_gene = gene_conc[idx] + (p_i - decay * gene_conc[idx]) * delta
@@ -287,6 +292,7 @@ class simulator:
         auto_vec_cells = vmap(
             auto_vec_genes, in_axes=(None, 1, None, None, 1, 0, None, 1, 1, 0, 0)
         )
+
         x_t, p_t = auto_vec_cells(
             jnp.arange(self.n_genes),
             self.gene_conc,
@@ -303,16 +309,16 @@ class simulator:
         x_t = x_t.reshape((self.n_cells, self.n_genes)).T
         p_t = p_t.reshape((self.n_cells, self.n_genes)).T
 
-        self.gene_conc = x_t
-        self.prot_conc = p_t
+        return x_t, p_t
 
     def run_sim(self, n_steps):
-        print("Running simulator...")
+        logging.info("Running simulator...")
         gene_conc_history = []
         prot_conc_history = []
         for _ in tqdm(range(n_steps)):
-            self.calc_x_t()
+            # self.calc_x_t()
+            self.gene_conc, self.prot_conc = self.jit_x_t()
             gene_conc_history.append(self.gene_conc)
             prot_conc_history.append(self.prot_conc)
-        print("Simulation ended...")
+        logging.info("Simulation ended...")
         return gene_conc_history, prot_conc_history

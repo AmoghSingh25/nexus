@@ -3,6 +3,7 @@
 
 import jax.numpy as jnp
 import networkx as nx
+import logging
 
 
 class MissingRequiredParams(Exception):
@@ -33,7 +34,7 @@ def _check_dims(idx, var_name, var, req_dim, n_cells, cell_dim=0):
     if var.shape != req_dim and var.shape[cell_dim] != 1:
         raise IncorrectDimensions(f"Incorrect dimensions for {var_name} for node {idx}")
     elif n_cells > 1 and var.shape[cell_dim] == 1:
-        print(
+        logging.warn(
             f"\t {var_name} values for node {idx} is given for a single cell, copying for all cells..."
         )
 

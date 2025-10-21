@@ -4,6 +4,7 @@ import networkx as nx
 from jax import random
 import polars as pl
 import yaml
+import logging
 
 
 def _read_txt(mr_file, gene_file, n_cells):
@@ -98,10 +99,10 @@ def _read_data(gene_data, mr_data, config_file, n_cells):
         )
 
     if config_file != "" and os.path.exists(config_file):
-        print(f"Using the configuration file - {config_file}")
+        logging.info(f"Using the configuration file - {config_file}")
         return _read_config(config_file)
     else:
         if not (os.path.exists(gene_data) and os.path.exists(mr_data)):
             raise Exception("One of the data paths does not exist")
-        print("Using gene and mr data files")
+        logging.info("Using gene and mr data files")
         return _read_txt(mr_file=mr_data, gene_file=gene_data, n_cells=n_cells)
