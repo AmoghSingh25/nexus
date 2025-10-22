@@ -34,7 +34,7 @@ class simulator:
         node_set, edges_set = _read_data(gene_data, mr_data, config_file, n_cells)
 
         logging.info("Running network checks...")
-        if _verify_network(node_set, edges_set, n_cells):
+        if _verify_network(node_set, edges_set, n_cells, protein_sim):
             logging.info("Network checks passed")
         self.key, self.sub_key = random.split(random.key(42))
 

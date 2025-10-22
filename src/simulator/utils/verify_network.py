@@ -39,7 +39,7 @@ def _check_dims(idx, var_name, var, req_dim, n_cells, cell_dim=0):
         )
 
 
-def _verify_network(node_set, edges_set, n_cells):
+def _verify_network(node_set, edges_set, n_cells, protein_sim):
     """
     Checks performed:
     - Shapes of the arrays are as expected ((n_genes, n_cells), etc.)
@@ -54,8 +54,9 @@ def _verify_network(node_set, edges_set, n_cells):
         raise InvalidEdges("Invalid edge values.")
 
     req_keys = {
-        "mr": ["basal_rate", "type"],
-        "g": {"ki", "prot_half_life", "prot_transcription_rate", "type"},
+        "mr": set(["basal_rate", "type"]),
+        "g": set(["ki", "type"]),
+        "g_opt": set(["prot_half_life", "prot_transcription_rate"]),
     }
     for idx in range(len(node_set)):
         node = node_set[idx]
@@ -63,11 +64,18 @@ def _verify_network(node_set, edges_set, n_cells):
             raise MissingRequiredParams(
                 f"'type' parameter missing for node {idx}. Must be either a Master Regulator(mr) or gene(g)"
             )
-        if sorted(req_keys[node["type"]]) != sorted(node.keys()):
+        if not req_keys[node["type"]] <= set(list(node.keys())):
             raise MissingRequiredParams(
                 _missing_keys(req_keys[node["type"]], node.keys(), idx)
             )
-
+        if (
+            protein_sim
+            and node["type"] == "g"
+            and not req_keys[node["type"] + "_opt"] <= set(list(node.keys()))
+        ):
+            raise MissingRequiredParams(
+                _missing_keys(req_keys[node["type"] + "_opt"], node.keys(), idx)
+            )
         if node["type"] == "mr":
             try:
                 basal_i = jnp.array(node["basal_rate"]).reshape(-1, 1)

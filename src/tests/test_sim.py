@@ -18,7 +18,6 @@ class TestFile:
             )
             gene_conc, prot_conc = sim.run_sim(10)
             gene_conc, prot_conc = np.array(gene_conc), np.array(prot_conc)
-            print(gene_conc.shape, prot_conc.shape)
             assert gene_conc.shape == (10, 4, self.cell_no[i])
             assert prot_conc.shape == (10, 4, self.cell_no[i])
 
@@ -31,6 +30,5 @@ class TestFile:
             )
             gene_conc, prot_conc = sim.run_sim(10)
             gene_conc, prot_conc = jnp.array(gene_conc), jnp.array(prot_conc)
-            print(gene_conc.shape, prot_conc.shape)
             assert gene_conc.shape == (10, 4, self.cell_no[i])
             assert prot_conc.shape == (10, 4, self.cell_no[i])

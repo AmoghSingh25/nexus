@@ -40,17 +40,17 @@ def _(np, plt):
         plt.grid(True)
         plt.show()
 
-    return
+    return (plot_conc,)
 
 
 @app.cell
 def _(gpsim, time):
-    ## Without JIT
+    ## With JIT
     _start = time.time()
-    for i in range(10):
+    for _ in range(10):
         _sim = gpsim.simulator(
-            config_file="configs/sample_data/sample_network_2cell.yaml",
-            n_cells=2,
+            config_file="configs/sample_data/sample_network_1cell.yaml",
+            n_cells=1,
             protein_sim=False,
         )
         _a, _b = _sim.run_sim(10)
@@ -64,53 +64,17 @@ def _(gpsim, time):
 
 
 @app.cell
-def _(gpsim, time):
-    ## With JIT
-    _start = time.time()
-    for _ in range(10):
-        _sim = gpsim.simulator(
-            config_file="configs/sample_data/sample_network_1cell.yaml",
-            n_cells=1,
-            protein_sim=True,
-        )
-        _a, _b = _sim.run_sim(10)
-    _end = time.time()
-
-    print("Running time for simulator = ", (_end - _start) / 10)
-
-    # plot_conc(_a, 0)
-    # plot_conc(_b, 0)
-    return
-
-
-@app.cell
-def _(a):
-    a
-    return
-
-
-@app.cell
-def _(gpsim):
+def _(gpsim, plot_conc):
     sim = gpsim.simulator(
-        "configs/sample_data/Interaction_cID_4.txt",
-        "configs/sample_data/Regs_cID_4.txt",
+        config_file="configs/sample_data/sample_network_1cell.yaml",
+        n_cells=1,
+        protein_sim=False,
     )
-    # a2, b2 = sim.run_sim(10)
-    return (sim,)
+    _a, _b = sim.run_sim(10)
 
-
-@app.cell
-def _(node_set_old, sim):
-    node_set_old
-    sim.run_sim(10)
+    plot_conc(_a, 0)
+    plot_conc(_b, 0)
     return
-
-
-@app.cell
-def _(edges_set, gpsim, node_set):
-    sim2 = gpsim.simulator(node_set, edges_set, n_cells=2)
-    a, b = sim2.run_sim(10)
-    return (a,)
 
 
 @app.cell
