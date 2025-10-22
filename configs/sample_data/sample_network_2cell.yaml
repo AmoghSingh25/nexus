@@ -1,0 +1,36 @@
+- - basal_rate:
+    - 0.20165
+    - 0.19165
+    type: mr
+  - basal_rate:
+    - 0.25316
+    - 0.21132
+    type: mr
+  - ki:
+    - - 1
+      - 2
+    - - 3
+      - 4
+    prot_half_life:
+    - 3
+    - 4
+    prot_transcription_rate:
+    - 10
+    - 11
+    type: g
+  - ki:
+    - - 2.34309
+    - - 1.64324
+    prot_half_life:
+    - 2
+    - 1
+    prot_transcription_rate:
+    - 12
+    - 13
+    type: g
+- - - 0
+    - 2
+  - - 1
+    - 2
+  - - 2
+    - 3

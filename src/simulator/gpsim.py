@@ -6,11 +6,17 @@
 
 import networkx as nx
 import jax.numpy as jnp
-from jax import vmap, random, lax
+from jax import vmap, random, lax, jit
+from .utils.verify_network import _verify_network
+from .utils.read_network import _read_data
+from tqdm import tqdm
+import logging
 
 
 class simulator:
-    def __init__(self, node_set, edges_set, n_cells=1):
+    def __init__(
+        self, gene_data=None, mr_data=None, config_file="", n_cells=1, protein_sim=True
+    ):
         """
         Shapes of variables :
 
@@ -25,11 +31,19 @@ class simulator:
         prot_kd -       (n_cells, n_genes)
         """
 
+        node_set, edges_set = _read_data(gene_data, mr_data, config_file, n_cells)
+
+        logging.info("Running network checks...")
+        if _verify_network(node_set, edges_set, n_cells, protein_sim):
+            logging.info("Network checks passed")
         self.key, self.sub_key = random.split(random.key(42))
+
+        self.n_genes = len(node_set)
         self.n_cells = n_cells
+        self.protein_sim = protein_sim
+
         self.basal_rates = []
         self.ki_values = []
-        self.n_genes = len(node_set)
         self.is_mr = []
         self.gene_conc = jnp.zeros((self.n_genes, self.n_cells, 1))
         self.steady_states = jnp.zeros_like(self.gene_conc)
@@ -62,22 +76,29 @@ class simulator:
                 self.basal_rates.append(basal_rate_i)
                 self.ki_values.append(jnp.array(node["ki"]))
 
-                self.prot_half_lives = self.prot_half_lives.at[i].set(
-                    jnp.array(node["prot_half_life"]).reshape(-1, 1)
-                )
-                self.prot_tran_rates = self.prot_tran_rates.at[i].set(
-                    jnp.array(node["prot_transcription_rate"]).reshape(-1, 1)
-                )
+                if self.protein_sim:
+                    self.prot_half_lives = self.prot_half_lives.at[i].set(
+                        jnp.array(node["prot_half_life"]).reshape(-1, 1)
+                    )
+                    self.prot_tran_rates = self.prot_tran_rates.at[i].set(
+                        jnp.array(node["prot_transcription_rate"]).reshape(-1, 1)
+                    )
 
-        self.prot_half_lives = self.prot_half_lives.reshape(
-            self.n_genes, self.n_cells
-        ).T.reshape(self.n_cells, self.n_genes, 1)
-        self.prot_tran_rates = self.prot_tran_rates.reshape(
-            self.n_genes, self.n_cells
-        ).T.reshape(self.n_cells, self.n_genes, 1)
-        self.prot_decay = jnp.nan_to_num(
-            jnp.log(2) / self.prot_half_lives, nan=0.0, neginf=0.0, posinf=0.0
-        )
+        if self.protein_sim:
+            self.prot_half_lives = self.prot_half_lives.reshape(
+                self.n_genes, self.n_cells
+            ).T.reshape(self.n_cells, self.n_genes, 1)
+            self.prot_tran_rates = self.prot_tran_rates.reshape(
+                self.n_genes, self.n_cells
+            ).T.reshape(self.n_cells, self.n_genes, 1)
+            self.prot_decay = jnp.nan_to_num(
+                jnp.log(2) / self.prot_half_lives, nan=0.0, neginf=0.0, posinf=0.0
+            )
+        else:
+            self.prot_half_lives = jnp.zeros((self.n_cells, self.n_genes, 1))
+            self.prot_tran_rates = jnp.zeros((self.n_cells, self.n_genes, 1))
+            self.prot_decay = jnp.zeros_like(self.prot_half_lives)
+
         self.g.add_edges_from(edges_set)
 
         for i in self.g.nodes(data=True):
@@ -103,11 +124,15 @@ class simulator:
         self.is_mr = jnp.array(self.is_mr)
         self.decay = jnp.array([0.8])
 
+        ## Create JIT functions
+        self.jit_pij = jit(self.calc_pij)
+        self.jit_x_t = jit(self.calc_x_t)
+
         self.gene_conc, self.prot_conc = self.calc_steady_states()
         self.steady_states = self.gene_conc
         self.prot_steady_state = self.prot_conc
 
-        print("Steady state concentrations calculated.")
+        logging.info("Steady state concentrations calculated.")
 
     def calc_steady_state_mr(self, b, decay):
         """Steady state calculation for MRs"""
@@ -118,9 +143,13 @@ class simulator:
     ):
         """Steady state calculation for genes and proteins"""
         e_x = (
-            self.calc_pij(is_mr, idx, basal_rates, steady_state, gene_conc, k_i) / decay
+            self.jit_pij(is_mr, idx, basal_rates, steady_state, gene_conc, k_i) / decay
         )
-        p_c = p_kt * e_x / p_kd
+        if self.protein_sim:
+            p_c = p_kt * e_x / p_kd
+        else:
+            p_c = jnp.zeros_like(e_x)
+
         return e_x, p_c
 
     def calc_steady_states(self):
@@ -130,7 +159,7 @@ class simulator:
 
         A similar method is used for estimating the steady state concentration of the proteins and is mentioned in `docs/simulator.md`
         """
-        print("Steady state calculations")
+        logging.info("Calculating steady states...")
 
         def _single_cell_steady_state(
             n_genes,
@@ -163,7 +192,11 @@ class simulator:
                     operand=None,
                 )
                 gene_conc = gene_conc.at[i].set(steady_val[0])
-                prot_conc = prot_conc.at[i].set(steady_val[1])
+                if self.protein_sim:
+                    prot_conc = prot_conc.at[i].set(steady_val[1])
+
+                else:
+                    prot_conc = jnp.zeros_like(gene_conc)
 
                 steady_states = gene_conc
             return gene_conc, prot_conc
@@ -240,7 +273,7 @@ class simulator:
         ):
             # gene_conc, delta, decay, steady_state, is_mr - Entire arrays passed for all genes in a cell
             p_i = (
-                self.calc_pij(is_mr, idx, basal_rates, steady_state, gene_conc, k_i)
+                self.jit_pij(is_mr, idx, basal_rates, steady_state, gene_conc, k_i)
                 + basal_rates
             )
             x_t_gene = gene_conc[idx] + (p_i - decay * gene_conc[idx]) * delta
@@ -259,6 +292,7 @@ class simulator:
         auto_vec_cells = vmap(
             auto_vec_genes, in_axes=(None, 1, None, None, 1, 0, None, 1, 1, 0, 0)
         )
+
         x_t, p_t = auto_vec_cells(
             jnp.arange(self.n_genes),
             self.gene_conc,
@@ -275,16 +309,16 @@ class simulator:
         x_t = x_t.reshape((self.n_cells, self.n_genes)).T
         p_t = p_t.reshape((self.n_cells, self.n_genes)).T
 
-        self.gene_conc = x_t
-        self.prot_conc = p_t
+        return x_t, p_t
 
     def run_sim(self, n_steps):
-        print("Starting simulator...")
+        logging.info("Running simulator...")
         gene_conc_history = []
         prot_conc_history = []
-        for _ in range(n_steps):
-            self.calc_x_t()
+        for _ in tqdm(range(n_steps)):
+            # self.calc_x_t()
+            self.gene_conc, self.prot_conc = self.jit_x_t()
             gene_conc_history.append(self.gene_conc)
             prot_conc_history.append(self.prot_conc)
-        print("Simulation ended...")
+        logging.info("Simulation ended...")
         return gene_conc_history, prot_conc_history

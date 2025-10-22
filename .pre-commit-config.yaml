@@ -7,3 +7,14 @@ repos:
         args: [--fix]
       - id: ruff-format
         types_or: [python, pyi]
+
+  - repo: local
+    hooks:
+      - id: pytest-check
+        name: pytest-check
+        entry: uv run pytest
+        language: system
+        pass_filenames: false
+        always_run: true
+        types: [python]
+        working_dir: .
