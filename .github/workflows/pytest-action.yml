@@ -1,0 +1,26 @@
+name: Pytest-check
+
+on: push
+
+jobs:
+  run-test:
+    name: Run code test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.10.16
+
+      - name: Install Python dependencies
+        run: pip install uv
+
+      - name: Download packages using uv
+        run: uv sync
+
+      - name: Run Pytest
+        run: uv run pytest
