@@ -10,11 +10,20 @@ from jax import vmap, random, lax, jit
 from .utils.read_network import _read_data
 from tqdm import tqdm
 import logging
+from .noise_models.wiener_noise import WienerNoise
 
 
 class simulator:
     def __init__(
-        self, gene_data=None, mr_data=None, config_file="", n_cells=1, protein_sim=True
+        self,
+        gene_data=None,
+        mr_data=None,
+        config_file="",
+        n_cells=1,
+        protein_sim=True,
+        delta=0.01,
+        noise=True,
+        noise_amplitude=0.1,
     ):
         """
         Shapes of variables :
@@ -30,6 +39,12 @@ class simulator:
         prot_kd -       (n_cells, n_genes)
         """
 
+        self.delta = delta
+        self.n_cells = n_cells
+        self.protein_sim = protein_sim
+        self.noise = noise
+        self.noise_amp = noise_amplitude
+
         node_set, edges_set = _read_data(
             gene_data=gene_data,
             mr_data=mr_data,
@@ -37,12 +52,12 @@ class simulator:
             n_cells=n_cells,
             protein_sim=protein_sim,
         )
+        self.n_genes = len(node_set)
 
         self.key, self.sub_key = random.split(random.key(42))
 
-        self.n_genes = len(node_set)
-        self.n_cells = n_cells
-        self.protein_sim = protein_sim
+        self.noise_a = WienerNoise(delta=self.delta)
+        self.noise_b = WienerNoise(delta=self.delta, random_key=43)
 
         self.basal_rates = []
         self.ki_values = []
@@ -319,7 +334,7 @@ class simulator:
             operand=None,
         )
 
-    def calc_x_t(self, delta=0.01):
+    def calc_x_t(self):
         """Estimate the concentration of each gene and protein at the next time step.
 
         For gene concentration, the simulator uses Equation 3 given in
@@ -340,6 +355,7 @@ class simulator:
             k_i,
             is_mr,
             gene_cell_mean,
+            noise_amp,
             prot_conc,
             prot_kt,
             prot_kd,
@@ -358,6 +374,13 @@ class simulator:
             )
             x_t_gene = gene_conc[idx] + (p_i - decay * gene_conc[idx]) * delta
 
+            if self.noise:
+                noise_add = noise_amp * (
+                    jnp.sqrt(p_i) * self.noise_a.generate_noise()
+                    + jnp.sqrt(decay * gene_conc[idx])
+                )
+                x_t_gene += noise_add
+
             x_t_prot = (
                 prot_conc + (prot_kt * gene_conc[idx] - prot_kd * prot_conc) * delta
             )
@@ -365,23 +388,25 @@ class simulator:
 
         # Auto vectorization over all the genes
         auto_vec_genes = vmap(
-            _single_gene_x_t, in_axes=(0, None, None, None, 0, 0, 0, 0, 0, 0, 0)
+            _single_gene_x_t, in_axes=(0, None, None, None, 0, 0, 0, 0, None, 0, 0, 0)
         )
 
         # Auto vectorization over auto_vec_genes for all cells
         auto_vec_cells = vmap(
-            auto_vec_genes, in_axes=(None, 1, None, None, 1, 0, None, None, 1, 0, 0)
+            auto_vec_genes,
+            in_axes=(None, 1, None, None, 1, 0, None, None, None, 1, 0, 0),
         )
 
         x_t, p_t = auto_vec_cells(
             jnp.arange(self.n_genes),
             self.gene_conc,
-            delta,
+            self.delta,
             self.decay,
             self.basal_rates,
             self.ki_matrix,
             self.is_mr,
             jnp.mean(self.gene_conc, axis=1),
+            self.noise_amp,
             self.prot_conc,
             self.prot_tran_rates,
             self.prot_decay,
