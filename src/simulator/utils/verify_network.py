@@ -34,12 +34,12 @@ def _check_dims(idx, var_name, var, req_dim, n_cells, cell_dim=0):
     if var.shape != req_dim and var.shape[cell_dim] != 1:
         raise IncorrectDimensions(f"Incorrect dimensions for {var_name} for node {idx}")
     elif n_cells > 1 and var.shape[cell_dim] == 1:
-        logging.warn(
+        logging.warning(
             f"\t {var_name} values for node {idx} is given for a single cell, copying for all cells..."
         )
 
 
-def _verify_network(node_set, edges_set, n_cells, protein_sim):
+def _verify_network(node_set, edges_set, n_cells, protein_sim, copy_data=False):
     """
     Checks performed:
     - Shapes of the arrays are as expected ((n_genes, n_cells), etc.)
@@ -49,6 +49,7 @@ def _verify_network(node_set, edges_set, n_cells, protein_sim):
 
     g = nx.DiGraph()
     g.add_edges_from(edges_set)
+
     flattened_e_set = jnp.array(edges_set).reshape(-1)
     if max(flattened_e_set) >= len(node_set) or min(flattened_e_set) < 0:
         raise InvalidEdges("Invalid edge values.")
@@ -87,20 +88,27 @@ def _verify_network(node_set, edges_set, n_cells, protein_sim):
         else:
             n_regs = len(list(g.predecessors(idx)))
             try:
-                ki = jnp.array(node["ki"]).reshape(n_cells, n_regs, -1)
-                p_half_life_i = jnp.array(node["prot_half_life"]).reshape(-1, 1)
-                prot_trans_rate_i = jnp.array(node["prot_transcription_rate"]).reshape(
-                    -1, 1
-                )
+                ki = jnp.array(node["ki"]).reshape(-1, n_regs, 1)
+
+                _check_dims(idx, "ki", ki, (n_cells, n_regs, 1), n_cells)
+
+                if protein_sim:
+                    p_half_life_i = jnp.array(node["prot_half_life"]).reshape(-1, 1)
+                    prot_trans_rate_i = jnp.array(
+                        node["prot_transcription_rate"]
+                    ).reshape(-1, 1)
+                    _check_dims(
+                        idx, "Prot half life", p_half_life_i, (n_cells, 1), n_cells
+                    )
+                    _check_dims(
+                        idx,
+                        "Prot transcription rate",
+                        prot_trans_rate_i,
+                        (n_cells, 1),
+                        n_cells,
+                    )
             except ValueError as e:
                 raise IncorrectDimensions(
                     "Likely incorrect dimensions. Recheck the dimensions. \n" + str(e)
                 )
-
-            _check_dims(idx, "ki", ki, (n_cells, n_regs, 1), n_cells)
-            _check_dims(idx, "Prot half life", p_half_life_i, (n_cells, 1), n_cells)
-            _check_dims(
-                idx, "Prot transcription rate", prot_trans_rate_i, (n_cells, 1), n_cells
-            )
-
     return True

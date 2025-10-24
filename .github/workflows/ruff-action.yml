@@ -28,8 +28,7 @@ jobs:
         run: pip install ruff
 
       - name: Run Ruff checks
-        run: ruff check --fix --exclude "*.ipynb"
-        
+        run: ruff check --exclude "*.ipynb"
+
       - name: Run Ruff format
         run: ruff format --exclude "*.ipynb"
-        

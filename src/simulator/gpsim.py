@@ -7,7 +7,6 @@
 import networkx as nx
 import jax.numpy as jnp
 from jax import vmap, random, lax, jit
-from .utils.verify_network import _verify_network
 from .utils.read_network import _read_data
 from tqdm import tqdm
 import logging
@@ -31,11 +30,14 @@ class simulator:
         prot_kd -       (n_cells, n_genes)
         """
 
-        node_set, edges_set = _read_data(gene_data, mr_data, config_file, n_cells)
+        node_set, edges_set = _read_data(
+            gene_data=gene_data,
+            mr_data=mr_data,
+            config_file=config_file,
+            n_cells=n_cells,
+            protein_sim=protein_sim,
+        )
 
-        logging.info("Running network checks...")
-        if _verify_network(node_set, edges_set, n_cells, protein_sim):
-            logging.info("Network checks passed")
         self.key, self.sub_key = random.split(random.key(42))
 
         self.n_genes = len(node_set)
@@ -48,15 +50,16 @@ class simulator:
         self.gene_conc = jnp.zeros((self.n_genes, self.n_cells, 1))
         self.steady_states = jnp.zeros_like(self.gene_conc)
         self.ki_matrix = jnp.zeros((self.n_cells, self.n_genes, self.n_genes))
+        self.conn_matrix = jnp.zeros((self.n_genes, self.n_genes))
 
         self.prot_conc = jnp.zeros_like(self.gene_conc)
         self.prot_steady_state = jnp.zeros_like(self.gene_conc)
         self.prot_tran_rates = jnp.zeros_like(self.gene_conc)
         self.prot_decay = jnp.zeros_like(self.gene_conc)
         self.prot_half_lives = jnp.zeros_like(self.gene_conc)
+        self.copy_cells = False
 
         self.g = nx.DiGraph()
-
         for i in range(len(node_set)):
             node = node_set[i]
             self.is_mr.append(True if node["type"] == "mr" else False)
@@ -68,13 +71,18 @@ class simulator:
                 self.ki_values.append(jnp.array([0]))
 
             else:
-                basal_rate_i = random.uniform(
-                    self.sub_key, (n_cells, 1), minval=0.1, maxval=1.0
-                )
+                basal_rate_i = jnp.zeros((n_cells, 1))
                 self.key, self.sub_key = random.split(self.key)
                 self.g.add_node(i)
                 self.basal_rates.append(basal_rate_i)
-                self.ki_values.append(jnp.array(node["ki"]))
+                if jnp.array(node["ki"]).ndim == 1 and n_cells > 1:
+                    ki_vals = jnp.repeat(
+                        jnp.array(node["ki"]).reshape(1, -1), n_cells, axis=0
+                    )
+                    self.copy_cells = True
+                else:
+                    ki_vals = jnp.array(node["ki"])
+                self.ki_values.append(ki_vals)
 
                 if self.protein_sim:
                     self.prot_half_lives = self.prot_half_lives.at[i].set(
@@ -100,21 +108,36 @@ class simulator:
             self.prot_decay = jnp.zeros_like(self.prot_half_lives)
 
         self.g.add_edges_from(edges_set)
-
-        for i in self.g.nodes(data=True):
-            regs = sorted(self.g.predecessors(i[0]))
-            if self.n_cells > 1:
-                for cell in range(self.n_cells):
-                    for idx in range(len(regs)):
-                        self.ki_matrix = self.ki_matrix.at[cell, i[0], regs[idx]].set(
-                            self.ki_values[i[0]][cell][idx]
-                        )
-            else:
+        if self.copy_cells:
+            for i in self.g.nodes(data=True):
+                regs = sorted(self.g.predecessors(i[0]))
                 cell = 0
                 for idx in range(len(regs)):
                     self.ki_matrix = self.ki_matrix.at[cell, i[0], regs[idx]].set(
-                        self.ki_values[i[0]][idx]
+                        self.ki_values[i[0]][cell][idx]
                     )
+            self.ki_matrix = jnp.repeat(
+                self.ki_matrix[0].reshape(1, self.n_genes, self.n_genes),
+                self.n_cells,
+                axis=0,
+            )
+        else:
+            for i in self.g.nodes(data=True):
+                regs = sorted(self.g.predecessors(i[0]))
+                if self.n_cells > 1:
+                    for cell in range(self.n_cells):
+                        for idx in range(len(regs)):
+                            self.ki_matrix = self.ki_matrix.at[
+                                cell, i[0], regs[idx]
+                            ].set(self.ki_values[i[0]][cell][idx])
+                else:
+                    cell = 0
+                    for idx in range(len(regs)):
+                        self.ki_matrix = self.ki_matrix.at[cell, i[0], regs[idx]].set(
+                            self.ki_values[i[0]][idx]
+                        )
+
+        self.conn_matrix = jnp.array(nx.adjacency_matrix(self.g).toarray()).T
 
         del self.ki_values, self.g
 
@@ -128,6 +151,7 @@ class simulator:
         self.jit_pij = jit(self.calc_pij)
         self.jit_x_t = jit(self.calc_x_t)
 
+        print("Calculating steady states...")
         self.gene_conc, self.prot_conc = self.calc_steady_states()
         self.steady_states = self.gene_conc
         self.prot_steady_state = self.prot_conc
@@ -136,14 +160,22 @@ class simulator:
 
     def calc_steady_state_mr(self, b, decay):
         """Steady state calculation for MRs"""
-        return b / decay, jnp.array([0.0])
+        return (b / decay).reshape(-1, 1), jnp.zeros_like(b).reshape(-1, 1)
 
     def calc_steady_state_g(
-        self, is_mr, idx, basal_rates, decay, steady_state, gene_conc, k_i, p_kt, p_kd
+        self, is_mr, idx, basal_rates, decay, gene_conc, gene_cell_mean, k_i, p_kt, p_kd
     ):
         """Steady state calculation for genes and proteins"""
         e_x = (
-            self.jit_pij(is_mr, idx, basal_rates, steady_state, gene_conc, k_i) / decay
+            self.jit_pij(
+                is_mr=is_mr,
+                idx=idx,
+                basal_rates=basal_rates,
+                gene_conc=gene_conc,
+                gene_cell_mean=gene_cell_mean,
+                k_i=k_i,
+            )
+            / decay
         )
         if self.protein_sim:
             p_c = p_kt * e_x / p_kd
@@ -161,68 +193,97 @@ class simulator:
         """
         logging.info("Calculating steady states...")
 
-        def _single_cell_steady_state(
-            n_genes,
+        def _single_gene_steady_state(
+            n_cells,
+            idx,
             is_mr,
-            basal_rates,
+            basal_rate,
             decay,
             ki_matrix,
             gene_conc,
-            steady_states,
+            all_cell_conc,
             prot_trans,
             prot_decay,
             prot_conc,
             prot_ss,
         ):
-            for i in range(n_genes):
-                steady_val = lax.cond(
-                    is_mr[i],
-                    lambda _: self.calc_steady_state_mr(basal_rates[i], decay),
-                    lambda _: self.calc_steady_state_g(
-                        is_mr[i],
-                        i,
-                        basal_rates[i],
-                        decay,
-                        steady_states,
-                        gene_conc,
-                        ki_matrix[i],
-                        prot_trans[i],
-                        prot_decay[i],
-                    ),
-                    operand=None,
+            def _single_cell_steady_state(
+                gene_idx,
+                cell_idx,
+                is_mr,
+                basal_rate,
+                decay,
+                ki_matrix,
+                gene_conc,
+                all_cell_conc,
+                prot_trans,
+                prot_decay,
+                prot_conc,
+                prot_ss,
+            ):
+                return self.calc_steady_state_g(
+                    is_mr=is_mr,
+                    idx=gene_idx,
+                    basal_rates=basal_rate,
+                    decay=decay,
+                    gene_conc=gene_conc[:, cell_idx],
+                    gene_cell_mean=all_cell_conc,
+                    k_i=ki_matrix,
+                    p_kt=prot_trans,
+                    p_kd=prot_decay,
                 )
-                gene_conc = gene_conc.at[i].set(steady_val[0])
-                if self.protein_sim:
-                    prot_conc = prot_conc.at[i].set(steady_val[1])
 
-                else:
-                    prot_conc = jnp.zeros_like(gene_conc)
+            vmap_single_cell = vmap(
+                _single_cell_steady_state,
+                in_axes=(None, 0, None, 0, None, 0, None, None, 0, 0, None, None),
+            )
+            steady_vals = lax.cond(
+                is_mr,
+                lambda _: self.calc_steady_state_mr(basal_rate, decay),
+                lambda _: vmap_single_cell(
+                    idx,
+                    jnp.arange(n_cells),
+                    is_mr,
+                    basal_rate,
+                    decay,
+                    ki_matrix,
+                    gene_conc,
+                    all_cell_conc,
+                    prot_trans,
+                    prot_decay,
+                    prot_conc,
+                    prot_ss,
+                ),
+                operand=None,
+            )
 
-                steady_states = gene_conc
-            return gene_conc, prot_conc
+            return steady_vals[0], steady_vals[1]
 
-        auto_vec_single_cell = vmap(
-            _single_cell_steady_state,
-            in_axes=(None, None, 1, None, 0, 1, 1, 0, 0, 1, 1),
-        )
-        gene_cells_conc, prot_cells_conc = auto_vec_single_cell(
-            self.n_genes,
-            self.is_mr,
-            self.basal_rates,
-            self.decay,
-            self.ki_matrix,
-            self.gene_conc,
-            self.steady_states,
-            self.prot_tran_rates,
-            self.prot_decay,
-            self.prot_conc,
-            self.prot_steady_state,
-        )
-        gene_cells_conc = gene_cells_conc.reshape((self.n_cells, self.n_genes)).T
-        prot_cells_conc = prot_cells_conc.reshape((self.n_cells, self.n_genes)).T
-        return gene_cells_conc, prot_cells_conc
+        gene_conc, prot_conc = self.gene_conc, self.prot_conc
+        for i in range(self.n_genes):
+            g_conc, p_conc = _single_gene_steady_state(
+                n_cells=self.n_cells,
+                idx=i,
+                is_mr=self.is_mr[i],
+                basal_rate=self.basal_rates[i],
+                decay=self.decay,
+                ki_matrix=self.ki_matrix[:, i, :],
+                gene_conc=gene_conc,
+                all_cell_conc=jnp.mean(
+                    gene_conc, axis=1
+                ),  # To calculate half response as mean conc across all cells
+                prot_trans=self.prot_tran_rates[:, i],
+                prot_decay=self.prot_decay[:, i],
+                prot_conc=self.prot_conc,
+                prot_ss=self.prot_steady_state,
+            )
+            gene_conc = gene_conc.at[i].set(g_conc)
+            prot_conc = prot_conc.at[i].set(p_conc)
+        return gene_conc, prot_conc
 
-    def calc_pij(self, is_mr, idx, basal_rates, steady_state, gene_conc, k_i, _hill=1):
+    def calc_pij(
+        self, is_mr, idx, basal_rates, gene_conc, gene_cell_mean, k_i, _hill=1
+    ):
         """Calculates the production rate of each gene as a function of its regulator genes as given in Equation 5, Equation 6 and Equation 7 in
         Dibaeinia, P., & Sinha, S. (2020). SERGIO: A Single-Cell Expression Simulator Guided by Gene Regulatory Networks.
 
@@ -231,22 +292,34 @@ class simulator:
 
         """
 
-        def _calc_pij_g(steady_state, gene_conc, k_i, _hill=1):
-            steady_state = steady_state.reshape(-1)
-            gene_conc = gene_conc.reshape(-1)
-            frac = gene_conc**_hill / (steady_state**_hill + gene_conc**_hill)
+        def _calc_pij_g(gene_conc, gene_cell_mean, k_i, _hill=1):
+            # half_resp = jnp.mean(all_cell_conc, axis=1)
+            frac = jnp.pow(gene_conc, _hill) / (
+                jnp.pow(gene_cell_mean, _hill) + jnp.pow(gene_conc, _hill)
+            )
+
+            def _calc_hill(f_i, k_ij):
+                return lax.cond(
+                    k_ij < 0, lambda _: 1 - f_i, lambda _: f_i, operand=None
+                )
+
+            vmap_hill_func = vmap(_calc_hill, in_axes=(0, 0))
+
+            frac = vmap_hill_func(frac, k_i)
+            frac = frac * jnp.abs(k_i).reshape(-1, 1)
             frac = jnp.nan_to_num(frac, nan=0.0, neginf=0.0, posinf=0.0).reshape(-1)
-            frac = frac * k_i
             return frac.sum(axis=0)
 
         return lax.cond(
             is_mr,
-            lambda x: basal_rates,
-            lambda x: _calc_pij_g(steady_state, gene_conc, k_i),
+            lambda x: jnp.zeros_like(basal_rates),
+            lambda x: _calc_pij_g(
+                gene_conc=gene_conc, gene_cell_mean=gene_cell_mean, k_i=k_i, _hill=_hill
+            ),
             operand=None,
         )
 
-    def calc_x_t(self, delta=0.1):
+    def calc_x_t(self, delta=0.01):
         """Estimate the concentration of each gene and protein at the next time step.
 
         For gene concentration, the simulator uses Equation 3 given in
@@ -266,14 +339,21 @@ class simulator:
             basal_rates,
             k_i,
             is_mr,
-            steady_state,
+            gene_cell_mean,
             prot_conc,
             prot_kt,
             prot_kd,
         ):
             # gene_conc, delta, decay, steady_state, is_mr - Entire arrays passed for all genes in a cell
             p_i = (
-                self.jit_pij(is_mr, idx, basal_rates, steady_state, gene_conc, k_i)
+                self.jit_pij(
+                    is_mr=is_mr,
+                    idx=idx,
+                    basal_rates=basal_rates,
+                    gene_conc=gene_conc,
+                    gene_cell_mean=gene_cell_mean,
+                    k_i=k_i,
+                )
                 + basal_rates
             )
             x_t_gene = gene_conc[idx] + (p_i - decay * gene_conc[idx]) * delta
@@ -290,7 +370,7 @@ class simulator:
 
         # Auto vectorization over auto_vec_genes for all cells
         auto_vec_cells = vmap(
-            auto_vec_genes, in_axes=(None, 1, None, None, 1, 0, None, 1, 1, 0, 0)
+            auto_vec_genes, in_axes=(None, 1, None, None, 1, 0, None, None, 1, 0, 0)
         )
 
         x_t, p_t = auto_vec_cells(
@@ -301,7 +381,7 @@ class simulator:
             self.basal_rates,
             self.ki_matrix,
             self.is_mr,
-            self.steady_states,
+            jnp.mean(self.gene_conc, axis=1),
             self.prot_conc,
             self.prot_tran_rates,
             self.prot_decay,
@@ -316,7 +396,6 @@ class simulator:
         gene_conc_history = []
         prot_conc_history = []
         for _ in tqdm(range(n_steps)):
-            # self.calc_x_t()
             self.gene_conc, self.prot_conc = self.jit_x_t()
             gene_conc_history.append(self.gene_conc)
             prot_conc_history.append(self.prot_conc)
