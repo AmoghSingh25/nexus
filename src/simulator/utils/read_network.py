@@ -5,25 +5,34 @@ from jax import random
 import polars as pl
 import yaml
 import logging
+from .verify_network import _verify_network
+
+
+def _create_bins(bin_vals, n_bins, n_cells):
+    frmt_bins = []
+    cells_per_bin = n_cells // n_bins
+    for i in range(n_bins):
+        frmt_bins.extend([bin_vals[i]] * cells_per_bin)
+    return jnp.array(frmt_bins)
+
+
+def _frmt_network(node_set, edges_set, n_cells):
+    ## Format data so it is copied for multiple cells if a single value given for n_cells = 1
+    print()
 
 
 def _read_txt(mr_file, gene_file, n_cells):
     key, sub_key = random.split(random.key(42))
     mr_data = pl.read_csv(mr_file, separator=",", has_header=False).to_jax()
     mr_nodes = []
+    n_bins = len(mr_data[0]) - 1
     for i in mr_data:
+        _create_bins(i[1:], n_bins=9, n_cells=n_cells)
         mr_nodes.append(
             {
                 "id": i[0].astype(int).item(),
                 "type": "mr",
-                "b_low": jnp.min(i[1:]).item(),
-                "b_high": jnp.max(i[1:]).item(),
-                "basal_rate": random.uniform(
-                    sub_key,
-                    (n_cells, 1),
-                    minval=jnp.min(i[1:]).item(),
-                    maxval=jnp.max(i[1:]).item(),
-                ),
+                "basal_rate": _create_bins(i[1:], n_bins, n_cells),
             }
         )
         key, sub_key = random.split(key)
@@ -37,23 +46,28 @@ def _read_txt(mr_file, gene_file, n_cells):
             {
                 "id": i[0].astype(int).item(),
                 "regs": i[2 : 2 + num_reg],
-                "ki": i[2 + num_reg : 2 + 2 * num_reg],
+                "ki": jnp.array(i[2 + num_reg : 2 + 2 * num_reg]),
                 "coop": i[2 + 2 * num_reg : 2 + 3 * num_reg],
                 "type": "g",
             }
         )
         for reg_i in gene_nodes[-1]["regs"].astype(int):
             edges.append((reg_i.item(), gene_nodes[-1]["id"]))
-    # edges = jnp.array(edges)
+
     g = nx.DiGraph()
     g.add_edges_from(edges)
 
     new_node_ids = {}
     ct = 0
-    for i in jnp.array(list(nx.topological_sort(nx.line_graph(g)))).flatten():
-        if i.item() in new_node_ids:
+    for i in jnp.array(list(nx.topological_sort(nx.line_graph(g)))):
+        if i[0].item() in new_node_ids:
             continue
-        new_node_ids[i.item()] = ct
+        new_node_ids[i[0].item()] = ct
+        ct += 1
+    for i in range(len(g.nodes())):
+        if i in new_node_ids:
+            continue
+        new_node_ids[i] = ct
         ct += 1
 
     new_mr_nodes = []
@@ -80,6 +94,7 @@ def _read_txt(mr_file, gene_file, n_cells):
         new_gene_nodes.append(g_node_i)
 
     complete_node_data = new_gene_nodes + new_mr_nodes
+    complete_node_data.sort(key=lambda x: x["id"])
     renamed_edges = []
     for i in edges:
         renamed_edges.append((new_node_ids[i[0]], new_node_ids[i[1]]))
@@ -92,7 +107,7 @@ def _read_config(file_path):
     return node_data, edge_data
 
 
-def _read_data(gene_data, mr_data, config_file, n_cells):
+def _read_data(gene_data, mr_data, config_file, n_cells, protein_sim=False):
     if config_file != "" and (gene_data is not None or mr_data is not None):
         raise Exception(
             "Only config file or gene data and mr data can be used in a single simulation"
@@ -100,9 +115,17 @@ def _read_data(gene_data, mr_data, config_file, n_cells):
 
     if config_file != "" and os.path.exists(config_file):
         logging.info(f"Using the configuration file - {config_file}")
-        return _read_config(config_file)
+        node_data, edge_data = _read_config(config_file)
+        if _verify_network(node_data, edge_data, n_cells, protein_sim):
+            logging.info("Network checks passed")
+        return node_data, edge_data
     else:
         if not (os.path.exists(gene_data) and os.path.exists(mr_data)):
             raise Exception("One of the data paths does not exist")
         logging.info("Using gene and mr data files")
-        return _read_txt(mr_file=mr_data, gene_file=gene_data, n_cells=n_cells)
+        node_data, edge_data = _read_txt(
+            mr_file=mr_data, gene_file=gene_data, n_cells=n_cells
+        )
+        if _verify_network(node_data, edge_data, n_cells, protein_sim):
+            logging.info("Network checks passed")
+        return node_data, edge_data
