@@ -53,10 +53,14 @@ def _(gpsim, time):
         mr_data="configs/sample_data/Regs_cID_4.txt",
         n_cells=n_cells_1,
         protein_sim=False,
+        decay=[0.8],
     )
+    _start2 = time.time()
     a, b = sim1.run_sim(1)
     _end = time.time()
     print("Time taken = ", _end - _start)
+    print("Steady state calculation time = ", _start2 - _start)
+    print("Simulation time = ", _end - _start2)
     return n_cells_1, n_genes_1, sim1
 
 
@@ -69,10 +73,14 @@ def _(gpsim, n_cells_1, time):
         n_cells=n_cells_1,
         protein_sim=False,
         noise=False,
+        decay=[0.8],
     )
+    _start2 = time.time()
     _a, _b = sim2.run_sim(1)
     _end = time.time()
-    print("Time taken = ", _end - _start)
+    print("Total time taken = ", _end - _start)
+    print("Steady state calculation time = ", _start2 - _start)
+    print("Simulation time = ", _end - _start2)
     return (sim2,)
 
 
@@ -228,9 +236,12 @@ def _(gpsim, time):
         n_cells=n_cells_2,
         protein_sim=False,
     )
+    _start2 = time.time()
     _a, _b = sim3.run_sim(1)
     _end = time.time()
-    print("Time taken = ", _end - _start)
+    print("Total time taken = ", _end - _start)
+    print("Steady state calculation time = ", _start2 - _start)
+    print("Simulation time = ", _end - _start2)
     return n_cells_2, n_genes_2, sim3
 
 

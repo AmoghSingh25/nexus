@@ -11,6 +11,7 @@ from .utils.read_network import _read_data
 from tqdm import tqdm
 import logging
 from .noise_models.wiener_noise import WienerNoise
+from .utils.verify_network import _copy_param_vals
 
 
 class simulator:
@@ -23,7 +24,9 @@ class simulator:
         protein_sim=True,
         delta=0.01,
         noise=True,
-        noise_amplitude=0.1,
+        noise_amplitude=[0.1],
+        decay=[0.8],
+        hill_coeffs=[1.0],
     ):
         """
         Shapes of variables :
@@ -43,8 +46,7 @@ class simulator:
         self.n_cells = n_cells
         self.protein_sim = protein_sim
         self.noise = noise
-        self.noise_amp = noise_amplitude
-
+        self.noise_amp = jnp.array(noise_amplitude)
         node_set, edges_set = _read_data(
             gene_data=gene_data,
             mr_data=mr_data,
@@ -53,6 +55,25 @@ class simulator:
             protein_sim=protein_sim,
         )
         self.n_genes = len(node_set)
+
+        self.decay = jnp.array(decay)
+        self.hill_coeffs = jnp.array(hill_coeffs)
+
+        self.decay = _copy_param_vals(
+            var=self.decay, var_name="Decay", n_cells=self.n_cells, n_genes=self.n_genes
+        )
+        self.hill_coeffs = _copy_param_vals(
+            var=self.hill_coeffs,
+            var_name="hill coefficients",
+            n_cells=self.n_cells,
+            n_genes=self.n_genes,
+        )
+        self.noise_amp = _copy_param_vals(
+            var=self.noise_amp,
+            var_name="noise amplitude",
+            n_cells=self.n_cells,
+            n_genes=self.n_genes,
+        )
 
         self.key, self.sub_key = random.split(random.key(42))
 
@@ -160,7 +181,6 @@ class simulator:
             self.n_genes, self.n_cells
         )
         self.is_mr = jnp.array(self.is_mr)
-        self.decay = jnp.array([0.8])
 
         ## Create JIT functions
         self.jit_pij = jit(self.calc_pij)
@@ -178,7 +198,17 @@ class simulator:
         return (b / decay).reshape(-1, 1), jnp.zeros_like(b).reshape(-1, 1)
 
     def calc_steady_state_g(
-        self, is_mr, idx, basal_rates, decay, gene_conc, gene_cell_mean, k_i, p_kt, p_kd
+        self,
+        is_mr,
+        idx,
+        basal_rates,
+        decay,
+        gene_conc,
+        gene_cell_mean,
+        k_i,
+        hill_coeff,
+        p_kt,
+        p_kd,
     ):
         """Steady state calculation for genes and proteins"""
         e_x = (
@@ -189,6 +219,7 @@ class simulator:
                 gene_conc=gene_conc,
                 gene_cell_mean=gene_cell_mean,
                 k_i=k_i,
+                _hill=hill_coeff,
             )
             / decay
         )
@@ -217,6 +248,7 @@ class simulator:
             ki_matrix,
             gene_conc,
             all_cell_conc,
+            hill_coeff,
             prot_trans,
             prot_decay,
             prot_conc,
@@ -231,6 +263,7 @@ class simulator:
                 ki_matrix,
                 gene_conc,
                 all_cell_conc,
+                hill_coeff,
                 prot_trans,
                 prot_decay,
                 prot_conc,
@@ -244,17 +277,18 @@ class simulator:
                     gene_conc=gene_conc[:, cell_idx],
                     gene_cell_mean=all_cell_conc,
                     k_i=ki_matrix,
+                    hill_coeff=hill_coeff,
                     p_kt=prot_trans,
                     p_kd=prot_decay,
                 )
 
             vmap_single_cell = vmap(
                 _single_cell_steady_state,
-                in_axes=(None, 0, None, 0, None, 0, None, None, 0, 0, None, None),
+                in_axes=(None, 0, None, 0, 0, 0, None, None, 0, 0, 0, None, None),
             )
             steady_vals = lax.cond(
                 is_mr,
-                lambda _: self.calc_steady_state_mr(basal_rate, decay),
+                lambda _: self.calc_steady_state_mr(basal_rate, decay[:, idx]),
                 lambda _: vmap_single_cell(
                     idx,
                     jnp.arange(n_cells),
@@ -264,6 +298,7 @@ class simulator:
                     ki_matrix,
                     gene_conc,
                     all_cell_conc,
+                    hill_coeff,
                     prot_trans,
                     prot_decay,
                     prot_conc,
@@ -281,12 +316,13 @@ class simulator:
                 idx=i,
                 is_mr=self.is_mr[i],
                 basal_rate=self.basal_rates[i],
-                decay=self.decay,
+                decay=self.decay[:, i],
                 ki_matrix=self.ki_matrix[:, i, :],
                 gene_conc=gene_conc,
                 all_cell_conc=jnp.mean(
                     gene_conc, axis=1
                 ),  # To calculate half response as mean conc across all cells
+                hill_coeff=self.hill_coeffs[:, i],
                 prot_trans=self.prot_tran_rates[:, i],
                 prot_decay=self.prot_decay[:, i],
                 prot_conc=self.prot_conc,
@@ -356,6 +392,7 @@ class simulator:
             is_mr,
             gene_cell_mean,
             noise_amp,
+            hill_coeff,
             prot_conc,
             prot_kt,
             prot_kd,
@@ -369,6 +406,7 @@ class simulator:
                     gene_conc=gene_conc,
                     gene_cell_mean=gene_cell_mean,
                     k_i=k_i,
+                    _hill=hill_coeff,
                 )
                 + basal_rates
             )
@@ -388,13 +426,13 @@ class simulator:
 
         # Auto vectorization over all the genes
         auto_vec_genes = vmap(
-            _single_gene_x_t, in_axes=(0, None, None, None, 0, 0, 0, 0, None, 0, 0, 0)
+            _single_gene_x_t, in_axes=(0, None, None, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         )
 
         # Auto vectorization over auto_vec_genes for all cells
         auto_vec_cells = vmap(
             auto_vec_genes,
-            in_axes=(None, 1, None, None, 1, 0, None, None, None, 1, 0, 0),
+            in_axes=(None, 1, None, 0, 1, 0, None, None, 0, 0, 1, 0, 0),
         )
 
         x_t, p_t = auto_vec_cells(
@@ -407,6 +445,7 @@ class simulator:
             self.is_mr,
             jnp.mean(self.gene_conc, axis=1),
             self.noise_amp,
+            self.hill_coeffs,
             self.prot_conc,
             self.prot_tran_rates,
             self.prot_decay,
