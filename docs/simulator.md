@@ -40,7 +40,9 @@ $p_{ij} = K_{ij} (1-\frac{x_j^{n_{ij}}}{h_{ij}^{n_{ij}} + x_{j}^{n_{ij}}})$ - If
 
 Current simulator does not factor in noise and uses the following equation to compute the concentration of gene $i$ at time $t$. Equation proposed in [SERGIO](https://doi.org/10.1016/j.cels.2020.08.003).
 
-$(x_i)_{t+1} = (x_i)_t + (P_i(t)- \lambda_ix_t(t))\Delta t$
+$(x_i)_{t+1} = (x_i)_t + (P_i(t)- \lambda_ix_t(t))\Delta t + q_i (\sqrt{P_i(t)}\Delta W_{\alpha} + \sqrt{\lambda_ix_i(t)}\Delta W_\beta)$
+
+$\Delta W_\alpha$ and $\Delta W\_\beta $ are independent Wiener processes sampled as $ \Delta W = \sqrt{\Delta t} N(0,1) $. The Wiener processes are defined in `src/noise_models/wiener_process.py`.
 
 ### Calculation of concentration of Protein
 

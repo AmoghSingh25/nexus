@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.17.0"
+__generated_with = "0.17.2"
 app = marimo.App(width="full")
 
 
@@ -53,11 +53,43 @@ def _(gpsim, time):
         mr_data="configs/sample_data/Regs_cID_4.txt",
         n_cells=n_cells_1,
         protein_sim=False,
+        decay=[0.8],
     )
-    # a, b = sim1.run_sim(1)
+    _start2 = time.time()
+    a, b = sim1.run_sim(1)
     _end = time.time()
     print("Time taken = ", _end - _start)
+    print("Steady state calculation time = ", _start2 - _start)
+    print("Simulation time = ", _end - _start2)
     return n_cells_1, n_genes_1, sim1
+
+
+@app.cell
+def _(gpsim, n_cells_1, time):
+    _start = time.time()
+    sim2 = gpsim.simulator(
+        gene_data="configs/sample_data/Interaction_cID_4.txt",
+        mr_data="configs/sample_data/Regs_cID_4.txt",
+        n_cells=n_cells_1,
+        protein_sim=False,
+        noise=False,
+        decay=[0.8],
+    )
+    _start2 = time.time()
+    _a, _b = sim2.run_sim(1)
+    _end = time.time()
+    print("Total time taken = ", _end - _start)
+    print("Steady state calculation time = ", _start2 - _start)
+    print("Simulation time = ", _end - _start2)
+    return (sim2,)
+
+
+@app.cell
+def _(plt, sim1, sim2):
+    plt.plot(sim1.gene_conc[:, 0], label="With q=0.1 noise")
+    plt.plot(sim2.gene_conc[:, 0], label="Without noise")
+    plt.legend()
+    return
 
 
 @app.cell
@@ -179,8 +211,8 @@ def _():
 
 
 @app.cell
-def _(jnp, n_cells_1, n_genes_1, node_mapping, sim1):
-    sim_output_1 = sim1.gene_conc.reshape((n_genes_1, n_cells_1))
+def _(jnp, n_cells_1, n_genes_1, node_mapping, sim2):
+    sim_output_1 = sim2.steady_states.reshape((n_genes_1, n_cells_1))
     reordered_output_1 = jnp.zeros_like(sim_output_1)
     for i in node_mapping:
         reordered_output_1 = reordered_output_1.at[i].set(sim_output_1[node_mapping[i]])
@@ -198,21 +230,24 @@ def _(gpsim, time):
     n_cells_2 = 9
     n_genes_2 = 100
     _start = time.time()
-    sim2 = gpsim.simulator(
+    sim3 = gpsim.simulator(
         gene_data="configs/sample_data/Interaction_cID_4.txt",
         mr_data="configs/sample_data/Regs_cID_4.txt",
         n_cells=n_cells_2,
         protein_sim=False,
     )
-    # _a, _b = sim2.run_sim(1)
+    _start2 = time.time()
+    _a, _b = sim3.run_sim(1)
     _end = time.time()
-    print("Time taken = ", _end - _start)
-    return n_cells_2, n_genes_2, sim2
+    print("Total time taken = ", _end - _start)
+    print("Steady state calculation time = ", _start2 - _start)
+    print("Simulation time = ", _end - _start2)
+    return n_cells_2, n_genes_2, sim3
 
 
 @app.cell
-def _(jnp, n_cells_2, n_genes_2, node_mapping, sim2):
-    sim_output_2 = sim2.gene_conc.reshape((n_genes_2, n_cells_2))
+def _(jnp, n_cells_2, n_genes_2, node_mapping, sim3):
+    sim_output_2 = sim3.steady_states.reshape((n_genes_2, n_cells_2))
     reordered_output_2 = jnp.zeros_like(sim_output_2)
     for _i in node_mapping:
         reordered_output_2 = reordered_output_2.at[_i].set(
@@ -224,11 +259,6 @@ def _(jnp, n_cells_2, n_genes_2, node_mapping, sim2):
 @app.cell
 def _(jnp, reordered_output_2, sergio_output_2):
     print(jnp.allclose(reordered_output_2, sergio_output_2, rtol=1e-6, atol=1e-32))
-    return
-
-
-@app.cell
-def _():
     return
 
 

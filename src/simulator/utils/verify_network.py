@@ -39,6 +39,29 @@ def _check_dims(idx, var_name, var, req_dim, n_cells, cell_dim=0):
         )
 
 
+def _copy_param_vals(var, var_name, n_cells, n_genes, cell_dim=0, gene_dim=1):
+    req_dim = [0, 0, 1]
+    req_dim[cell_dim] = n_cells
+    req_dim[gene_dim] = n_genes
+    req_dim = tuple(req_dim)
+
+    if (
+        var.ndim > 3
+        or (var.ndim == 3 and var.shape != req_dim)
+        or (var.ndim == 2 and var.shape != req_dim[1:])
+        or (var.ndim == 1 and var.shape != (1,))
+    ):
+        raise IncorrectDimensions(f"Wrong dimension for {var_name} vector")
+    if var.ndim == 2:
+        var = var.reshape(1, req_dim[1], 1)
+        var = jnp.repeat(var, req_dim[0], axis=0)
+    elif var.ndim == 1:
+        var = var.reshape(1, 1, 1)
+        var = jnp.repeat(var, req_dim[1], axis=1)
+        var = jnp.repeat(var, req_dim[0], axis=0)
+    return var
+
+
 def _verify_network(node_set, edges_set, n_cells, protein_sim, copy_data=False):
     """
     Checks performed:
