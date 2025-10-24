@@ -1,7 +1,6 @@
 import os
 import jax.numpy as jnp
 import networkx as nx
-from jax import random
 import polars as pl
 import yaml
 import logging
@@ -16,13 +15,7 @@ def _create_bins(bin_vals, n_bins, n_cells):
     return jnp.array(frmt_bins)
 
 
-def _frmt_network(node_set, edges_set, n_cells):
-    ## Format data so it is copied for multiple cells if a single value given for n_cells = 1
-    print()
-
-
 def _read_txt(mr_file, gene_file, n_cells):
-    key, sub_key = random.split(random.key(42))
     mr_data = pl.read_csv(mr_file, separator=",", has_header=False).to_jax()
     mr_nodes = []
     n_bins = len(mr_data[0]) - 1
@@ -35,7 +28,6 @@ def _read_txt(mr_file, gene_file, n_cells):
                 "basal_rate": _create_bins(i[1:], n_bins, n_cells),
             }
         )
-        key, sub_key = random.split(key)
 
     gene_data = pl.read_csv(gene_file, separator=",", has_header=False).to_jax()
     gene_nodes = []
@@ -116,9 +108,6 @@ def _read_data(gene_data, mr_data, config_file, n_cells, protein_sim=False):
     if config_file != "" and os.path.exists(config_file):
         logging.info(f"Using the configuration file - {config_file}")
         node_data, edge_data = _read_config(config_file)
-        if _verify_network(node_data, edge_data, n_cells, protein_sim):
-            logging.info("Network checks passed")
-        return node_data, edge_data
     else:
         if not (os.path.exists(gene_data) and os.path.exists(mr_data)):
             raise Exception("One of the data paths does not exist")
@@ -126,6 +115,7 @@ def _read_data(gene_data, mr_data, config_file, n_cells, protein_sim=False):
         node_data, edge_data = _read_txt(
             mr_file=mr_data, gene_file=gene_data, n_cells=n_cells
         )
-        if _verify_network(node_data, edge_data, n_cells, protein_sim):
-            logging.info("Network checks passed")
-        return node_data, edge_data
+
+    _verify_network(node_data, edge_data, n_cells, protein_sim)
+    logging.info("Network checks passed")
+    return node_data, edge_data

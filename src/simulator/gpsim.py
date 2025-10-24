@@ -151,6 +151,7 @@ class simulator:
         self.jit_pij = jit(self.calc_pij)
         self.jit_x_t = jit(self.calc_x_t)
 
+        print("Calculating steady states...")
         self.gene_conc, self.prot_conc = self.calc_steady_states()
         self.steady_states = self.gene_conc
         self.prot_steady_state = self.prot_conc
