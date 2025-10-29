@@ -4,3 +4,5 @@
 __pycache__/
 __marimo__/
 src/simulator/gpsim_old.py
+.DS_Store
+notebooks/protein_rna_test_data/

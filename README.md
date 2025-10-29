@@ -37,7 +37,7 @@ uv sync
   - `tests/` - Unit & integration tests
 - `configs/` - Config files for runs
 - `notebooks/` - Exploratory analyses and demos
-  - `testing.ipynb` - Notebook to check working of GeneProtSim
+  - `testing.py` - Notebook to check working of GeneProtSim
 - `pyproject.toml` - For package/dependency management
 - `README.md`
 

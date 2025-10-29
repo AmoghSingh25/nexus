@@ -3,6 +3,8 @@
 # - Uniform decay for all genes
 # - Simulation starts from steady state calculation
 # - hill coefficient is 1 for all interactions
+# - Basal rates of non-MR is 0 (from SERGIO)
+
 
 import networkx as nx
 import jax.numpy as jnp
@@ -19,6 +21,8 @@ class simulator:
         self,
         gene_data=None,
         mr_data=None,
+        node_set=None,
+        edges_set=None,
         config_file="",
         n_cells=1,
         protein_sim=True,
@@ -40,6 +44,7 @@ class simulator:
         prot_conc -     (n_genes, n_cells, 1)
         prot_kt -       (n_cells, n_genes)
         prot_kd -       (n_cells, n_genes)
+        decay -         (n_cells, n_genes, 1)
         """
 
         self.delta = delta
@@ -47,13 +52,14 @@ class simulator:
         self.protein_sim = protein_sim
         self.noise = noise
         self.noise_amp = jnp.array(noise_amplitude)
-        node_set, edges_set = _read_data(
-            gene_data=gene_data,
-            mr_data=mr_data,
-            config_file=config_file,
-            n_cells=n_cells,
-            protein_sim=protein_sim,
-        )
+        if node_set is None and edges_set is None:
+            node_set, edges_set = _read_data(
+                gene_data=gene_data,
+                mr_data=mr_data,
+                config_file=config_file,
+                n_cells=n_cells,
+                protein_sim=protein_sim,
+            )
         self.n_genes = len(node_set)
 
         self.decay = jnp.array(decay)
@@ -107,7 +113,7 @@ class simulator:
                 self.ki_values.append(jnp.array([0]))
 
             else:
-                basal_rate_i = jnp.zeros((n_cells, 1))
+                basal_rate_i = jnp.zeros((n_cells, 1))  # 0 basal rate for non-MRs
                 self.key, self.sub_key = random.split(self.key)
                 self.g.add_node(i)
                 self.basal_rates.append(basal_rate_i)
@@ -142,6 +148,8 @@ class simulator:
             self.prot_half_lives = jnp.zeros((self.n_cells, self.n_genes, 1))
             self.prot_tran_rates = jnp.zeros((self.n_cells, self.n_genes, 1))
             self.prot_decay = jnp.zeros_like(self.prot_half_lives)
+
+        logging.info("Setting KI Matrix")
 
         self.g.add_edges_from(edges_set)
         if self.copy_cells:
@@ -185,8 +193,7 @@ class simulator:
         ## Create JIT functions
         self.jit_pij = jit(self.calc_pij)
         self.jit_x_t = jit(self.calc_x_t)
-
-        print("Calculating steady states...")
+        logging.info("Calculating steady states...")
         self.gene_conc, self.prot_conc = self.calc_steady_states()
         self.steady_states = self.gene_conc
         self.prot_steady_state = self.prot_conc
