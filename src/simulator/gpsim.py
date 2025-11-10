@@ -1,18 +1,15 @@
 # Assumptions
-# - The nodes are topologically sorted while being passed as input, i.e., parents of a node should have a lower idx than the child node
-# - Uniform decay for all genes
 # - Simulation starts from steady state calculation
-# - hill coefficient is 1 for all interactions
 # - Basal rates of non-MR is 0 (from SERGIO)
-
 
 import networkx as nx
 import jax.numpy as jnp
-from jax import vmap, random, lax, jit
+from jax import vmap, random, lax, jit, clear_caches
 from .utils.read_network import _read_data
 from tqdm import tqdm
 import logging
 from .noise_models.wiener_noise import WienerNoise
+import numpy as np
 from .utils.verify_network import _copy_param_vals
 
 
@@ -26,6 +23,7 @@ class simulator:
         config_file="",
         n_cells=1,
         protein_sim=True,
+        non_mr_basal=False,
         delta=0.01,
         noise=True,
         noise_amplitude=[0.1],
@@ -52,8 +50,10 @@ class simulator:
         self.protein_sim = protein_sim
         self.noise = noise
         self.noise_amp = jnp.array(noise_amplitude)
+        self.copy_cells = False
+        self.non_mr_basal = non_mr_basal
         if node_set is None and edges_set is None:
-            node_set, edges_set = _read_data(
+            node_set, edges_set, self.copy_cells = _read_data(
                 gene_data=gene_data,
                 mr_data=mr_data,
                 config_file=config_file,
@@ -91,40 +91,46 @@ class simulator:
         self.is_mr = []
         self.gene_conc = jnp.zeros((self.n_genes, self.n_cells, 1))
         self.steady_states = jnp.zeros_like(self.gene_conc)
-        self.ki_matrix = jnp.zeros((self.n_cells, self.n_genes, self.n_genes))
-        self.conn_matrix = jnp.zeros((self.n_genes, self.n_genes))
 
         self.prot_conc = jnp.zeros_like(self.gene_conc)
         self.prot_steady_state = jnp.zeros_like(self.gene_conc)
         self.prot_tran_rates = jnp.zeros_like(self.gene_conc)
         self.prot_decay = jnp.zeros_like(self.gene_conc)
         self.prot_half_lives = jnp.zeros_like(self.gene_conc)
-        self.copy_cells = False
+        self.ki_matrix = np.zeros((self.n_cells, self.n_genes, self.n_genes))
 
         self.g = nx.DiGraph()
+        self.g.add_edges_from(edges_set)
         for i in range(len(node_set)):
             node = node_set[i]
             self.is_mr.append(True if node["type"] == "mr" else False)
             if node["type"] == "mr":
-                self.g.add_node(i)
                 self.basal_rates.append(
                     jnp.array(node["basal_rate"]).reshape((n_cells, 1))
                 )
                 self.ki_values.append(jnp.array([0]))
-
             else:
+                regulators = list(sorted(self.g.predecessors(i)))
                 basal_rate_i = jnp.zeros((n_cells, 1))  # 0 basal rate for non-MRs
                 self.key, self.sub_key = random.split(self.key)
                 self.g.add_node(i)
-                self.basal_rates.append(basal_rate_i)
-                if jnp.array(node["ki"]).ndim == 1 and n_cells > 1:
-                    ki_vals = jnp.repeat(
-                        jnp.array(node["ki"]).reshape(1, -1), n_cells, axis=0
+                ki_vals = jnp.array(node["ki"])
+                if self.non_mr_basal:
+                    self.basal_rates.append(
+                        jnp.array(node["basal_rate"]).reshape((n_cells, 1))
                     )
-                    self.copy_cells = True
                 else:
-                    ki_vals = jnp.array(node["ki"])
-                self.ki_values.append(ki_vals)
+                    self.basal_rates.append(basal_rate_i)
+
+                if ki_vals.ndim == 2:
+                    # ki_vals = ki_vals.reshape(self.n_cells, len(regulators), 1)
+                    print(self.n_cells)
+                    print(ki_vals.shape)
+                    print(self.ki_matrix[:, i, regulators].shape)
+                    # ki_vals = jnp.repeat(ki_vals, repeats=self.n_cells, axis=0)
+                    self.ki_matrix[:, i, regulators] = ki_vals
+
+                # self.ki_matrix = self.ki_matrix.at[:, i, regulators].set(ki_vals)
 
                 if self.protein_sim:
                     self.prot_half_lives = self.prot_half_lives.at[i].set(
@@ -150,40 +156,9 @@ class simulator:
             self.prot_decay = jnp.zeros_like(self.prot_half_lives)
 
         logging.info("Setting KI Matrix")
-
-        self.g.add_edges_from(edges_set)
-        if self.copy_cells:
-            for i in self.g.nodes(data=True):
-                regs = sorted(self.g.predecessors(i[0]))
-                cell = 0
-                for idx in range(len(regs)):
-                    self.ki_matrix = self.ki_matrix.at[cell, i[0], regs[idx]].set(
-                        self.ki_values[i[0]][cell][idx]
-                    )
-            self.ki_matrix = jnp.repeat(
-                self.ki_matrix[0].reshape(1, self.n_genes, self.n_genes),
-                self.n_cells,
-                axis=0,
-            )
-        else:
-            for i in self.g.nodes(data=True):
-                regs = sorted(self.g.predecessors(i[0]))
-                if self.n_cells > 1:
-                    for cell in range(self.n_cells):
-                        for idx in range(len(regs)):
-                            self.ki_matrix = self.ki_matrix.at[
-                                cell, i[0], regs[idx]
-                            ].set(self.ki_values[i[0]][cell][idx])
-                else:
-                    cell = 0
-                    for idx in range(len(regs)):
-                        self.ki_matrix = self.ki_matrix.at[cell, i[0], regs[idx]].set(
-                            self.ki_values[i[0]][idx]
-                        )
-
-        self.conn_matrix = jnp.array(nx.adjacency_matrix(self.g).toarray()).T
-
-        del self.ki_values, self.g
+        self.ki_matrix = jnp.array(self.ki_matrix)
+        del self.ki_values, self.g, node_set, edges_set
+        clear_caches()
 
         self.basal_rates = jnp.array(self.basal_rates).reshape(
             self.n_genes, self.n_cells
@@ -231,7 +206,7 @@ class simulator:
             / decay
         )
         if self.protein_sim:
-            p_c = p_kt * e_x / p_kd
+            p_c = (p_kt * e_x) / p_kd
         else:
             p_c = jnp.zeros_like(e_x)
 
@@ -351,7 +326,6 @@ class simulator:
         """
 
         def _calc_pij_g(gene_conc, gene_cell_mean, k_i, _hill=1):
-            # half_resp = jnp.mean(all_cell_conc, axis=1)
             frac = jnp.pow(gene_conc, _hill) / (
                 jnp.pow(gene_cell_mean, _hill) + jnp.pow(gene_conc, _hill)
             )
@@ -373,7 +347,8 @@ class simulator:
             lambda x: jnp.zeros_like(basal_rates),
             lambda x: _calc_pij_g(
                 gene_conc=gene_conc, gene_cell_mean=gene_cell_mean, k_i=k_i, _hill=_hill
-            ),
+            )
+            + basal_rates,
             operand=None,
         )
 

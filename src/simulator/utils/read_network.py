@@ -116,6 +116,6 @@ def _read_data(gene_data, mr_data, config_file, n_cells, protein_sim=False):
             mr_file=mr_data, gene_file=gene_data, n_cells=n_cells
         )
 
-    _verify_network(node_data, edge_data, n_cells, protein_sim)
+    copy_cells = _verify_network(node_data, edge_data, n_cells, protein_sim)
     logging.info("Network checks passed")
-    return node_data, edge_data
+    return node_data, edge_data, copy_cells

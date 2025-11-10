@@ -37,6 +37,8 @@ def _check_dims(idx, var_name, var, req_dim, n_cells, cell_dim=0):
         logging.warning(
             f"\t {var_name} values for node {idx} is given for a single cell, copying for all cells..."
         )
+        return True
+    return False
 
 
 def _copy_param_vals(var, var_name, n_cells, n_genes, cell_dim=0, gene_dim=1):
@@ -82,6 +84,7 @@ def _verify_network(node_set, edges_set, n_cells, protein_sim, copy_data=False):
         "g": set(["ki", "type"]),
         "g_opt": set(["prot_half_life", "prot_transcription_rate"]),
     }
+    copy_cells = False
     for idx in range(len(node_set)):
         node = node_set[idx]
         if "type" not in node.keys():
@@ -103,7 +106,9 @@ def _verify_network(node_set, edges_set, n_cells, protein_sim, copy_data=False):
         if node["type"] == "mr":
             try:
                 basal_i = jnp.array(node["basal_rate"]).reshape(-1, 1)
-                _check_dims(idx, "Basal rates", basal_i, (n_cells, 1), n_cells)
+                copy_cells = copy_cells or _check_dims(
+                    idx, "Basal rates", basal_i, (n_cells, 1), n_cells
+                )
             except ValueError as e:
                 raise IncorrectDimensions(
                     "Likely incorrect dimensions. Recheck the dimensions. \n" + str(e)
@@ -113,17 +118,19 @@ def _verify_network(node_set, edges_set, n_cells, protein_sim, copy_data=False):
             try:
                 ki = jnp.array(node["ki"]).reshape(-1, n_regs, 1)
 
-                _check_dims(idx, "ki", ki, (n_cells, n_regs, 1), n_cells)
+                copy_cells = copy_cells or _check_dims(
+                    idx, "ki", ki, (n_cells, n_regs, 1), n_cells
+                )
 
                 if protein_sim:
                     p_half_life_i = jnp.array(node["prot_half_life"]).reshape(-1, 1)
                     prot_trans_rate_i = jnp.array(
                         node["prot_transcription_rate"]
                     ).reshape(-1, 1)
-                    _check_dims(
+                    copy_cells = copy_cells or _check_dims(
                         idx, "Prot half life", p_half_life_i, (n_cells, 1), n_cells
                     )
-                    _check_dims(
+                    copy_cells = copy_cells or _check_dims(
                         idx,
                         "Prot transcription rate",
                         prot_trans_rate_i,
@@ -134,4 +141,4 @@ def _verify_network(node_set, edges_set, n_cells, protein_sim, copy_data=False):
                 raise IncorrectDimensions(
                     "Likely incorrect dimensions. Recheck the dimensions. \n" + str(e)
                 )
-    return True
+    return True, copy_cells

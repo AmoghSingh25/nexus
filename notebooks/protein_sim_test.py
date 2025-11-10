@@ -1,21 +1,25 @@
 import marimo
 
-__generated_with = "0.17.2"
+__generated_with = "0.17.7"
 app = marimo.App(width="medium")
 
 
 @app.cell
 def _():
     import marimo as mo
-    from jax import random
+    from jax import random, nn
     import polars as pl
     import networkx as nx
     import matplotlib
     from tqdm import tqdm
-    from simulator import gpsim
+    from pympler.classtracker import asizeof
+    import jax.numpy as jnp
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import time
 
     matplotlib.style.use("default")
-    return gpsim, mo, nx, pl, random, tqdm
+    return asizeof, jnp, mo, nn, np, nx, pl, plt, random, time, tqdm
 
 
 @app.cell
@@ -35,7 +39,15 @@ def _(pl):
 
 @app.cell
 def _(mo):
-    mo.md(r"""## Creating the GRN network""")
+    mo.md(r"""
+    ## Creating the GRN network
+    """)
+    return
+
+
+@app.cell
+def _(rna_prot_conc):
+    rna_prot_conc.head()
     return
 
 
@@ -70,7 +82,9 @@ def _(g):
 
 @app.cell
 def _(mo):
-    mo.md(r"""## Creating the concentration data for RNA and proteins""")
+    mo.md(r"""
+    ## Creating the concentration data for RNA and proteins
+    """)
     return
 
 
@@ -162,7 +176,7 @@ def _(conc_dict, prot_half_lives, shortlisted_prots):
 @app.cell
 def _(conc_dict, g, random, tqdm):
     simulator_config = []
-    n_cells = 1000
+    n_cells = 100
     key, sub_key = random.split(random.key(42))
     nodes_names = []
     for _i in tqdm(conc_dict):
@@ -199,52 +213,319 @@ def _(conc_dict, g, random, tqdm):
             _gene_entry["type"] = "g"
             _gene_entry["name"] = _i
 
-            if conc_dict[_i].get("prot_half_life") is not None:
-                _gene_entry["prot_half_life"] = [conc_dict[_i]["prot_half_life"]]
-                _gene_entry["prot_transcription_rate"] = [
-                    conc_dict[_i]["prot_translation_rate"]
-                ]
+            _gene_entry["prot_half_life"] = [conc_dict[_i]["prot_half_life"]]
+            _gene_entry["prot_transcription_rate"] = [
+                conc_dict[_i]["prot_translation_rate"]
+            ]
 
             simulator_config.append(_gene_entry)
             nodes_names.append(_i)
-    return n_cells, nodes_names, simulator_config, sub_key
+    return n_cells, nodes_names, simulator_config
 
 
 @app.cell
-def _(g, nodes_names, tqdm):
+def _(g, nodes_names, nx, tqdm):
     edges_list = []
+    _edges = []
     for _i, _j in tqdm(g.edges):
         if _i in nodes_names and _j in nodes_names:
             edges_list.append((nodes_names.index(_i), nodes_names.index(_j)))
+            _edges.append((_i, _j))
+    g_updated = nx.DiGraph()
+    g_updated.add_edges_from(_edges)
     return (edges_list,)
 
 
 @app.cell
-def _(edges_list):
-    len(edges_list)
-    return
+def _(edges_list, n_cells, nodes_names, nx, random, simulator_config):
+    _g = nx.DiGraph()
+    _temp = [(nodes_names[i[0]], nodes_names[i[1]]) for i in edges_list]
+    _g.add_edges_from(_temp)
 
+    node_set = []
+    edges_set = []
+    node_names_refined = []
+    _ct = 0
+    for _i in range(len(simulator_config)):
+        if simulator_config[_i].get("name") is not None and _g.has_node(
+            simulator_config[_i]["name"]
+        ):
+            node_set.append(simulator_config[_i])
+            node_names_refined.append(simulator_config[_i]["name"])
 
-@app.cell
-def _(simulator_config):
-    len(simulator_config)
-    return
+    for _i in _temp:
+        if _i[0] in node_names_refined and _i[1] in node_names_refined:
+            edges_set.append(
+                (node_names_refined.index(_i[0]), node_names_refined.index(_i[1]))
+            )
 
-
-@app.cell
-def _(edges_list, gpsim, n_cells, random, simulator_config, sub_key):
-    gpsim.simulator(
-        node_set=simulator_config,
-        edges_set=edges_list[:100],
-        n_cells=n_cells,
-        decay=random.uniform(
-            minval=0,
-            maxval=0.99,
-            key=sub_key,
-            shape=(n_cells, len(simulator_config), 1),
-        ),
+    del _g
+    _g1 = nx.DiGraph()
+    _g1.add_edges_from(
+        [(node_names_refined[_i[0]], node_names_refined[_i[1]]) for _i in edges_set]
     )
-    # key, sub_key = random.split(key)
+
+    _key, _sub_key = random.split(random.key(42))
+
+    for _i in range(len(node_set)):
+        _n_regs = len(list(_g1.predecessors(node_set[_i]["name"])))
+        node_set[_i]["ki"] = random.uniform(
+            minval=-2, maxval=2, shape=(n_cells, _n_regs), key=_sub_key
+        )
+        _key, _sub_key = random.split(_key)
+    return edges_set, node_names_refined, node_set
+
+
+@app.cell
+def _(asizeof, edges_set, n_cells, node_set, random, time):
+    from simulator import gpsim
+
+    _key, _sub_key = random.split(random.key(42))
+    _decay = random.uniform(minval=0, maxval=1, shape=(n_cells, 1913, 1), key=_sub_key)
+
+    _t1 = time.time()
+    sim = gpsim.simulator(
+        node_set=node_set,
+        edges_set=edges_set,
+        n_cells=n_cells,
+        protein_sim=True,
+        non_mr_basal=True,
+        decay=_decay,
+    )
+    _t2 = time.time()
+    sim.run_sim(10)
+    gene_conc_1 = sim.gene_conc
+    prot_conc_1 = sim.prot_conc
+    _t3 = time.time()
+    sim.run_sim(100)
+    _t4 = time.time()
+    print("Time taken for initialization = ", (_t2 - _t1))
+    print("Time taken for 10 iterations = ", (_t3 - _t2))
+    print("Time taken for 100 iterations = ", (_t4 - _t3))
+    print(f"Total memory usage: {asizeof.asizeof(sim) / 1024**2:.2f} MB")
+    return gene_conc_1, prot_conc_1, sim
+
+
+@app.cell
+def _(
+    ids,
+    jnp,
+    n_cells,
+    nn,
+    node_names_refined,
+    node_set,
+    np,
+    plt,
+    prot_conc,
+    rna_conc,
+    sim,
+):
+    _prot_conc_target = []
+    _output_prots = np.array(node_names_refined)[
+        jnp.unique(jnp.where(sim.prot_steady_state != jnp.inf)[0])
+    ]
+    _pred_prod_ids = jnp.unique(jnp.where(sim.prot_steady_state != jnp.inf)[0])
+    _output_prod_names = np.array(node_names_refined)[_pred_prod_ids]
+    _target_prots_ids = [ids.to_list().index(_i) for _i in _output_prod_names]
+
+    _output_rna_names = np.array([_i["name"] for _i in node_set])
+    _target_rna_ids = [ids.to_list().index(_i) for _i in _output_rna_names]
+
+    _rna_pred = nn.standardize(sim.steady_states.reshape(-1, n_cells), axis=1)
+    _prot_pred = nn.standardize(
+        sim.prot_steady_state[_pred_prod_ids].reshape(-1, n_cells), axis=1
+    )
+
+    for _i in range(len(prot_conc)):
+        if ids[_i] in _output_prod_names:
+            _prot_conc_target.append(prot_conc[_i])
+
+    _prot_conc_target = jnp.array(_prot_conc_target)
+
+    _prot_target = nn.standardize(_prot_conc_target)
+    _rna_target = nn.standardize(rna_conc.to_numpy()[_target_rna_ids])
+
+    _min_gene_loss = jnp.inf
+
+    def _calc_mse(_target, _pred):
+        _min_loss = jnp.inf
+        idx = 0
+        for _i in range(n_cells):
+            _norm_pred = nn.standardize(_pred[:, _i])
+            _mse_loss = jnp.mean((_target - _norm_pred) ** 2)
+            if _mse_loss < _min_loss:
+                _min_loss = min(_min_loss, _mse_loss)
+                idx = _i
+        return _min_loss, idx
+
+    _min_rna_l, _min_rna_idx = _calc_mse(_rna_target, _rna_pred)
+    _min_prot_l, _min_prot_idx = _calc_mse(_prot_target, _prot_pred)
+
+    print("Comparing steady states")
+    print("Min RNA MSE loss = ", _min_rna_l)
+    print("Min Protein MSE loss = ", _min_prot_l)
+
+    _fig, (_ax1, _ax2) = plt.subplots(2, 1, figsize=(12, 8))
+    _ax1.plot(_rna_target, label="Target")
+    _ax1.plot(_rna_pred[:, _min_rna_idx], label="Pred")
+    _ax1.set_title("RNA conc plot")
+    _ax1.legend()
+
+    _ax2.plot(_prot_target, label="Target")
+    _ax2.plot(_prot_pred[:, _min_prot_idx], label="Pred")
+    _ax2.set_title("Prot conc plot")
+    _ax2.legend()
+
+    plt.show()
+    return
+
+
+@app.cell
+def _(
+    gene_conc_1,
+    ids,
+    jnp,
+    n_cells,
+    nn,
+    node_names_refined,
+    node_set,
+    np,
+    plt,
+    prot_conc,
+    prot_conc_1,
+    rna_conc,
+):
+    _prot_conc_target = []
+    _output_prots = np.array(node_names_refined)[
+        jnp.unique(jnp.where(prot_conc_1 != jnp.inf)[0])
+    ]
+    _pred_prod_ids = jnp.unique(jnp.where(prot_conc_1 > 0)[0])
+    _output_prod_names = np.array(node_names_refined)[_pred_prod_ids]
+    _target_prots_ids = [ids.to_list().index(_i) for _i in _output_prod_names]
+
+    _output_rna_names = np.array([_i["name"] for _i in node_set])
+    _target_rna_ids = [ids.to_list().index(_i) for _i in _output_rna_names]
+
+    _rna_pred = nn.standardize(gene_conc_1.reshape(-1, n_cells), axis=1)
+    _prot_pred = nn.standardize(
+        prot_conc_1[_pred_prod_ids].reshape(-1, n_cells), axis=1
+    )
+
+    for _i in range(len(prot_conc)):
+        if ids[_i] in _output_prod_names:
+            _prot_conc_target.append(prot_conc[_i])
+
+    _prot_conc_target = jnp.array(_prot_conc_target)
+
+    _prot_target = nn.standardize(_prot_conc_target)
+    _rna_target = nn.standardize(rna_conc.to_numpy()[_target_rna_ids])
+
+    _min_gene_loss = jnp.inf
+
+    def _calc_mse(_target, _pred):
+        _min_loss = jnp.inf
+        idx = 0
+        for _i in range(n_cells):
+            _norm_pred = nn.standardize(_pred[:, _i])
+            _mse_loss = jnp.mean((_target - _norm_pred) ** 2)
+            if _mse_loss < _min_loss:
+                _min_loss = min(_min_loss, _mse_loss)
+                idx = _i
+        return _min_loss, idx
+
+    _min_rna_l, _min_rna_idx = _calc_mse(_rna_target, _rna_pred)
+    _min_prot_l, _min_prot_idx = _calc_mse(_prot_target, _prot_pred)
+
+    print("Comparing concentrations after 10 iterations")
+    print("Min RNA MSE loss = ", _min_rna_l)
+    print("Min Protein MSE loss = ", _min_prot_l)
+
+    _fig, (_ax1, _ax2) = plt.subplots(2, 1, figsize=(12, 8))
+    _ax1.plot(_rna_target, label="Target")
+    _ax1.plot(_rna_pred[:, _min_rna_idx], label="Pred")
+    _ax1.set_title("RNA conc plot")
+    _ax1.legend()
+
+    _ax2.plot(_prot_target, label="Target")
+    _ax2.plot(_prot_pred[:, _min_prot_idx], label="Pred")
+    _ax2.set_title("Prot conc plot")
+    _ax2.legend()
+
+    plt.show()
+    return
+
+
+@app.cell
+def _(
+    ids,
+    jnp,
+    n_cells,
+    nn,
+    node_names_refined,
+    node_set,
+    np,
+    plt,
+    prot_conc,
+    rna_conc,
+    sim,
+):
+    _prot_conc_target = []
+    _output_prots = np.array(node_names_refined)[
+        jnp.unique(jnp.where(sim.prot_conc != jnp.inf)[0])
+    ]
+    _pred_prod_ids = jnp.unique(jnp.where(sim.prot_conc > 0)[0])
+    _output_prod_names = np.array(node_names_refined)[_pred_prod_ids]
+    _target_prots_ids = [ids.to_list().index(_i) for _i in _output_prod_names]
+
+    _output_rna_names = np.array([_i["name"] for _i in node_set])
+    _target_rna_ids = [ids.to_list().index(_i) for _i in _output_rna_names]
+
+    _rna_pred = nn.standardize(sim.gene_conc.reshape(-1, n_cells), axis=1)
+    _prot_pred = nn.standardize(
+        sim.prot_conc[_pred_prod_ids].reshape(-1, n_cells), axis=1
+    )
+
+    for _i in range(len(prot_conc)):
+        if ids[_i] in _output_prod_names:
+            _prot_conc_target.append(prot_conc[_i])
+
+    _prot_conc_target = jnp.array(_prot_conc_target)
+
+    _prot_target = nn.standardize(_prot_conc_target)
+    _rna_target = nn.standardize(rna_conc.to_numpy()[_target_rna_ids])
+
+    _min_gene_loss = jnp.inf
+
+    def _calc_mse(_target, _pred):
+        _min_loss = jnp.inf
+        idx = 0
+        for _i in range(n_cells):
+            _norm_pred = nn.standardize(_pred[:, _i])
+            _mse_loss = jnp.mean((_target - _norm_pred) ** 2)
+            if _mse_loss < _min_loss:
+                _min_loss = min(_min_loss, _mse_loss)
+                idx = _i
+        return _min_loss, idx
+
+    _min_rna_l, _min_rna_idx = _calc_mse(_rna_target, _rna_pred)
+    _min_prot_l, _min_prot_idx = _calc_mse(_prot_target, _prot_pred)
+
+    print("Comparing concentrations after 100 iterations")
+    print("Min RNA MSE loss = ", _min_rna_l)
+    print("Min Protein MSE loss = ", _min_prot_l)
+
+    _fig, (_ax1, _ax2) = plt.subplots(2, 1, figsize=(12, 8))
+    _ax1.plot(_rna_target, label="Target")
+    _ax1.plot(_rna_pred[:, _min_rna_idx], label="Pred")
+    _ax1.set_title("RNA conc plot")
+    _ax1.legend()
+
+    _ax2.plot(_prot_target, label="Target")
+    _ax2.plot(_prot_pred[:, _min_prot_idx], label="Pred")
+    _ax2.set_title("Prot conc plot")
+    _ax2.legend()
+
+    plt.show()
     return
 
 
