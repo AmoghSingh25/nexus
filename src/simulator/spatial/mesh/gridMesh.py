@@ -11,9 +11,11 @@ class GridMesh:
         self.width = width
         self.height = height
         self.depth = depth
+        self.dims = [self.width, self.height, self.depth]
 
         self.key, self.sub_key = random.split(random.key(random_key))
         self.n_cells = int(self.height * self.width * self.depth)
+        self.cell_vol = self.width * self.height * self.depth / self.n_cells
         self.key, self.sub_key = random.split(self.key)
 
     def get_neighbours(self, idx):
@@ -51,14 +53,14 @@ class GridMesh:
         )
         neighbor_pos = []
 
-        def check_positive(arr):
-            for i in arr:
-                if i < 0:
+        def check_position(arr):
+            for i in range(len(arr)):
+                if arr[i] < 0 or arr[i] >= self.dims[i]:
                     return False
             return True
 
         for i in neighbor_idx:
             pos_i = i + idx
-            if check_positive(pos_i):
+            if check_position(pos_i):
                 neighbor_pos.append(pos_i)
         return neighbor_pos
