@@ -17,6 +17,7 @@ dependencies = [
     "pympler>=1.1",
     "pytest>=8.4.2",
     "pyyaml>=6.0.3",
+    "requests>=2.32.5",
     "ruff>=0.14.0",
     "tiledb>=0.35.2",
     "tqdm>=4.67.1",

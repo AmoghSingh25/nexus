@@ -10,4 +10,4 @@ notebooks/protein_rna_test_data/
 .pytest_cache/
 .ruff_cache/
 .venv/
-src/simulator/spatial/logs/
+outputs/

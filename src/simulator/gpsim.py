@@ -5,12 +5,12 @@
 import networkx as nx
 import jax.numpy as jnp
 from jax import vmap, random, lax, jit, clear_caches
-from .utils.read_network import _read_data
+from simulator.utils.read_network import _read_data
 from tqdm import tqdm
 import logging
-from .noise_models.wiener_noise import WienerNoise
+from simulator.noise_models.wiener_noise import WienerNoise
 import numpy as np
-from .utils.verify_network import _copy_param_vals
+from simulator.utils.verify_network import _copy_param_vals
 
 
 class simulator:

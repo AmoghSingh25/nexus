@@ -1,0 +1,52 @@
+grn:
+  n_cells: 1
+  delta: 0.01
+  protein_sim: true
+  noise: true
+  noise_amplitude: 0.1
+  decay: 0.8
+  hill_coeff: 1.0
+
+spatial_sim:
+  height: 3
+  width: 3
+  depth: 3
+  delta: 0.01
+  mesh_type: "grid"
+  D: 0.5
+  chemical:
+    name:
+      - "chem1"
+      - "chem2"
+      - "chem3"
+    mol_mass:
+      - 1
+      - 2
+      - 3
+  reaction:
+    reac_1:
+      order: 2
+      rate_coeff: 3
+      reactants:
+        - - "chem1"
+          - 1
+        - - "chem2"
+          - 2
+      products:
+        - - "chem3"
+          - 3
+    reac_2: # Production of chemical
+      order: 0
+      rate_coeff: 1
+      reactants:
+      products:
+        - - "chem3"
+          - 3
+    reac_3: # Decay of chemical
+      order: 0
+      rate_coeff: 1
+      reactants:
+        - - "chem2"
+          - 3
+      products:
+  random_key: 42
