@@ -14,9 +14,10 @@ def _():
         compose,
     )
     import jax.numpy as jnp
+    import marimo as mo
 
-    matplotlib.style.use("ggplot")
-    return SpatialSim, compose, initialize_config_dir, jnp, plt
+    matplotlib.style.use("default")
+    return SpatialSim, compose, initialize_config_dir, jnp, mo, plt
 
 
 @app.cell
@@ -35,45 +36,62 @@ def _(cfg):
     return
 
 
-@app.cell
-def _(SpatialSim, cfg):
-    s = SpatialSim(cfg)
-    return (s,)
-
-
-@app.cell
-def _(s):
-    s.mesh.cells[0, 0, 0].chem.calc_reaction_change()
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## Chemical 0
+    """)
     return
 
 
-app._unparsable_cell(
-    r"""
-    |ret1, ret2 = s.run_sim(10)
-    """,
-    name="_",
-)
-
-
 @app.cell
-def _(jnp, plt, ret1, ret2):
-    _a = jnp.array(ret1)
-    _b = jnp.array(ret2)
+def _(SpatialSim, cfg, jnp, plt):
+    _s = SpatialSim(cfg)
+    _ret1, _ret2 = _s.run_sim(10)
+
+    _a = jnp.array(_ret1)
+    _b = jnp.array(_ret2)
 
     plt.plot(_a[:, 0].reshape(-1), label="Before")
     plt.plot(_b[:, 0].reshape(-1), label="After")
+    plt.title("Without reaction, only diffusion")
     plt.legend()
     plt.show()
     return
 
 
 @app.cell
-def _():
+def _(SpatialSim, cfg, jnp, plt):
+    cfg["spatial_sim"]["reaction_bool"] = False
+    _s = SpatialSim(cfg)
+    _ret1, _ret2 = _s.run_sim(10)
+
+    _a = jnp.array(_ret1)
+    _b = jnp.array(_ret2)
+
+    plt.plot(_a[:, 0].reshape(-1), label="Before")
+    plt.plot(_b[:, 0].reshape(-1), label="After")
+    plt.title("Without reaction, only diffusion")
+    plt.legend()
+    plt.show()
     return
 
 
 @app.cell
-def _():
+def _(SpatialSim, cfg, jnp, plt):
+    cfg["spatial_sim"]["reaction_bool"] = True
+    cfg["spatial_sim"]["diffusion_bool"] = False
+    _s = SpatialSim(cfg)
+    _ret1, _ret2 = _s.run_sim(10)
+
+    _a = jnp.array(_ret1)
+    _b = jnp.array(_ret2)
+
+    plt.plot(_a[:, 0].reshape(-1), label="Before")
+    plt.plot(_b[:, 0].reshape(-1), label="After")
+    plt.title("Without diffusion, only reaction")
+    plt.legend()
+    plt.show()
     return
 
 

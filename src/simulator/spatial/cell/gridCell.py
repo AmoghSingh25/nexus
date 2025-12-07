@@ -26,4 +26,7 @@ class GridCell:
         return self.neighbours
 
     def __str__(self):
-        return f"ID-{self.id}\npos - {self.pos}\nVol - {self.vol}\nChemical - \t{self.chemical}"
+        return f"ID-{self.id}\npos - {self.pos}\nVol - {self.vol}"
+
+    def step(self):
+        self.chem.step()

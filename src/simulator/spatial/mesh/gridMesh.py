@@ -24,6 +24,8 @@ class GridMesh:
         self.key, self.sub_key = random.split(self.key)
         self.cells = []
         self.pos = []
+        self.reaction_bool = cfg.reaction_bool
+        self.diffusion_bool = cfg.diffusion_bool
 
         for i in range(self.width):
             for j in range(self.height):
@@ -123,6 +125,22 @@ class GridMesh:
         for i in range(len(self.pos)):
             mass.append(self.cells[(*self.pos[i],)].chem.chem_mass)
         return mass
+
+    def step(self, delta):
+        # Perform diffusion
+        if self.diffusion_bool:
+            self.calc_conc_change(delta)
+
+        def cell_step(pos_i):
+            self.cells[(*pos_i,)].step()
+
+        # Perform reactions
+
+        # cell_step_vec = jax.vmap(cell_step, in_axes=(0))
+        # cell_step_vec(self.pos)
+        if self.reaction_bool:
+            for pos_i in self.pos:
+                cell_step(pos_i)
 
     def get_cell_id(self, pos):
         """

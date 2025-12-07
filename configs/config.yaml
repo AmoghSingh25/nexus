@@ -8,12 +8,14 @@ grn:
   hill_coeff: 1.0
 
 spatial_sim:
-  height: 3
-  width: 3
-  depth: 3
+  height: 2
+  width: 2
+  depth: 2
   delta: 0.01
   mesh_type: "grid"
   D: 0.5
+  reaction_bool: true
+  diffusion_bool: true
   chemical:
     name:
       - "chem1"

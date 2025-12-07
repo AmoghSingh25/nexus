@@ -69,6 +69,15 @@ class ChemicalField:
 
         react_matrix = react_matrix.at[:].set(react_matrix * self.delta)
 
+        conc_t_1 = self.chem_mass
+        conc_order_0 = self.calc_zero_order(conc_t_1, react_matrix=react_matrix[0])
+        conc_order_1 = self.calc_first_order(conc_order_0, react_matrix=react_matrix[1])
+        conc_order_2 = self.calc_second_order(
+            conc_order_1, react_matrix=react_matrix[2]
+        )
+
+        self.chem_mass = conc_order_2
+
     def calc_zero_order(self, curr_conc, react_matrix):
         # Replace _react_matrix_ with Sample(Poisson(lambda))
         curr_conc = curr_conc.at[:].set(curr_conc + react_matrix)
@@ -81,5 +90,8 @@ class ChemicalField:
 
     def calc_second_order(self, curr_conc, react_matrix):
         # Replace _react_matrix_ with Sample(Poisson(lambda))
-        curr_conc = curr_conc.at[:].set(1 / (1 / curr_conc + react_matrix))
+        curr_conc = curr_conc.at[:].set(1 / (1 / curr_conc - react_matrix))
         return curr_conc
+
+    def step(self):
+        self.calc_reaction_change()

@@ -26,8 +26,7 @@ class SpatialSim:
     def run_sim(self, n_steps):
         init_mass = self.mesh.get_masses()
         for i in tqdm(range(n_steps)):
-            # Run chemical diffusion
-            self.mesh.calc_conc_change(self.delta)
-            # Run reaction
+            self.mesh.step(self.delta)
+
         final_mass = self.mesh.get_masses()
         return init_mass, final_mass
