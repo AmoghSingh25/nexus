@@ -2,6 +2,7 @@ import jax.numpy as jnp
 from jax import random
 from simulator.spatial.models.chemical import Chemical
 from simulator.spatial.models.reaction import Reaction
+import numpy as np
 
 
 class ChemicalField:
@@ -49,34 +50,53 @@ class ChemicalField:
         self.key, self.sub_key = random.split(random.key(key))
         self.chem_mass = random.uniform(self.sub_key, shape=(self.n_chemicals, 1))
         self.key, self.sub_key = random.split(self.key)
+        self.reaction_table = {
+            0: self.calc_zero_order,
+            1: self.calc_first_order,
+            2: self.calc_second_order,
+        }
 
     def __repr__(self):
         return f"No. chemicals - {self.n_chemicals} \nMass - {len(self.reactions)}\n"
 
-    def calc_reaction_change(self):
-        react_matrix = jnp.zeros((3, self.n_chemicals, 1))
-        for i in range(len(self.reactions)):
+    def calc_reaction_change(self, step, cell_id, logger):
+        reaction_order = random.permutation(key=self.sub_key, x=len(self.reactions))
+        self.key, self.sub_key = random.split(self.key)
+
+        conc_t_0 = self.chem_mass
+        reaction_ids = []
+        chem_concs = []
+
+        for i in reaction_order:
             prob_i = self.reactions[i].k * self.reaction_prob[self.reactions[i].order]
             random_prob = random.uniform(self.sub_key)
 
             self.key, self.sub_key = random.split(self.key)
 
             if random_prob <= prob_i:
-                react_matrix = react_matrix.at[self.reactions[i].order].set(
-                    react_matrix[self.reactions[i].order]
-                    + self.reactions[i].generate_reaction_matrix()
+                react_matrix_i = self.reactions[i].generate_reaction_matrix()
+                conc_t_1 = self.reaction_table[self.reactions[i].order](
+                    curr_conc=conc_t_0, react_matrix=react_matrix_i
                 )
+                reaction_ids.append(i)
+                chem_concs.append(np.array(conc_t_1.reshape(-1)))
+                conc_t_0 = conc_t_1
+                # react_matrix = react_matrix.at[self.reactions[i].order].set(
+                #     react_matrix[self.reactions[i].order]
+                #     + self.reactions[i].generate_reaction_matrix()
+                # )
+        reaction_ids = np.array(reaction_ids, dtype=np.int32)
+        # logger.log_reaction_state(step=step, cell_id=cell_id, reaction_ids=reaction_ids, chem_concs=chem_concs)
+        # react_matrix = react_matrix.at[:].set(react_matrix * self.delta)
 
-        react_matrix = react_matrix.at[:].set(react_matrix * self.delta)
+        # conc_t_1 = self.chem_mass
+        # conc_order_0 = self.calc_zero_order(conc_t_1, react_matrix=react_matrix[0])
+        # conc_order_1 = self.calc_first_order(conc_order_0, react_matrix=react_matrix[1])
+        # conc_order_2 = self.calc_second_order(
+        #     conc_order_1, react_matrix=react_matrix[2]
+        # )
 
-        conc_t_1 = self.chem_mass
-        conc_order_0 = self.calc_zero_order(conc_t_1, react_matrix=react_matrix[0])
-        conc_order_1 = self.calc_first_order(conc_order_0, react_matrix=react_matrix[1])
-        conc_order_2 = self.calc_second_order(
-            conc_order_1, react_matrix=react_matrix[2]
-        )
-
-        self.chem_mass = conc_order_2
+        # self.chem_mass = conc_order_2
 
     def calc_zero_order(self, curr_conc, react_matrix):
         # Replace _react_matrix_ with Sample(Poisson(lambda))
@@ -93,5 +113,5 @@ class ChemicalField:
         curr_conc = curr_conc.at[:].set(1 / (1 / curr_conc - react_matrix))
         return curr_conc
 
-    def step(self):
-        self.calc_reaction_change()
+    def step(self, step, logger, cell_id):
+        self.calc_reaction_change(step=step, logger=logger, cell_id=cell_id)

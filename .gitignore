@@ -11,3 +11,4 @@ notebooks/protein_rna_test_data/
 .ruff_cache/
 .venv/
 outputs/
+src/simulator/spatial/logs/

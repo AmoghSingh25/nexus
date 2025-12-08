@@ -14,6 +14,7 @@ spatial_sim:
   delta: 0.01
   mesh_type: "grid"
   D: 0.5
+  n_steps: 10
   reaction_bool: true
   diffusion_bool: true
   chemical:

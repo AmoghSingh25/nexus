@@ -126,13 +126,14 @@ class GridMesh:
             mass.append(self.cells[(*self.pos[i],)].chem.chem_mass)
         return mass
 
-    def step(self, delta):
+    def step(self, step_i, delta, logger):
         # Perform diffusion
         if self.diffusion_bool:
             self.calc_conc_change(delta)
+            logger.log_chem_state(step=step_i, cells=self.cells)
 
         def cell_step(pos_i):
-            self.cells[(*pos_i,)].step()
+            self.cells[(*pos_i,)].step(step=step_i, logger=logger)
 
         # Perform reactions
 

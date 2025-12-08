@@ -32,7 +32,26 @@ def _(compose, initialize_config_dir):
 
 @app.cell
 def _(cfg):
-    cfg["spatial_sim"]["reaction"]
+    len(cfg["spatial_sim"]["chemical"].name)
+    return
+
+
+@app.cell
+def _(SpatialSim, cfg):
+    s = SpatialSim(cfg)
+    s.run_sim()
+    return (s,)
+
+
+@app.cell
+def _(s):
+    s.logger.retrieve_chem_data(0)
+    return
+
+
+@app.cell
+def _(s):
+    s.logger.retrieve_chem_data(3)
     return
 
 

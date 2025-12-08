@@ -28,5 +28,5 @@ class GridCell:
     def __str__(self):
         return f"ID-{self.id}\npos - {self.pos}\nVol - {self.vol}"
 
-    def step(self):
-        self.chem.step()
+    def step(self, step, logger):
+        self.chem.step(step=step, cell_id=self.id, logger=logger)
