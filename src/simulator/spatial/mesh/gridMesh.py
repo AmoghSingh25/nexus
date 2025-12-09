@@ -147,9 +147,9 @@ class GridMesh:
         """
         Returns an ID of a cell, useful for an order of cells to compute flux i->j and uniquely identify cells
 
-        :param pos: Position of the cell to return the ID of
+        :param pos: Position of the cell (i,j,k)
         """
-        return 6 * pos[0] + 3 * pos[1] + pos[2]
+        return pos[0] + self.height * pos[1] + (self.height * self.depth) * pos[2]
 
     def get_neighbours(self, idx):
         # 3D neighbours - 26 neighbours

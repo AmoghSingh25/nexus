@@ -74,29 +74,22 @@ class ChemicalField:
             self.key, self.sub_key = random.split(self.key)
 
             if random_prob <= prob_i:
-                react_matrix_i = self.reactions[i].generate_reaction_matrix()
+                react_matrix_i = (
+                    self.reactions[i].generate_reaction_matrix() * self.delta
+                )
                 conc_t_1 = self.reaction_table[self.reactions[i].order](
                     curr_conc=conc_t_0, react_matrix=react_matrix_i
                 )
                 reaction_ids.append(i)
                 chem_concs.append(np.array(conc_t_1.reshape(-1)))
                 conc_t_0 = conc_t_1
-                # react_matrix = react_matrix.at[self.reactions[i].order].set(
-                #     react_matrix[self.reactions[i].order]
-                #     + self.reactions[i].generate_reaction_matrix()
-                # )
+
+        chem_concs = np.array(chem_concs)
         reaction_ids = np.array(reaction_ids, dtype=np.int32)
-        # logger.log_reaction_state(step=step, cell_id=cell_id, reaction_ids=reaction_ids, chem_concs=chem_concs)
-        # react_matrix = react_matrix.at[:].set(react_matrix * self.delta)
-
-        # conc_t_1 = self.chem_mass
-        # conc_order_0 = self.calc_zero_order(conc_t_1, react_matrix=react_matrix[0])
-        # conc_order_1 = self.calc_first_order(conc_order_0, react_matrix=react_matrix[1])
-        # conc_order_2 = self.calc_second_order(
-        #     conc_order_1, react_matrix=react_matrix[2]
-        # )
-
-        # self.chem_mass = conc_order_2
+        logger.log_reaction_state(
+            step=step, cell_id=cell_id, reaction_ids=reaction_ids, chem_concs=chem_concs
+        )
+        self.chem_mass = conc_t_0
 
     def calc_zero_order(self, curr_conc, react_matrix):
         # Replace _react_matrix_ with Sample(Poisson(lambda))

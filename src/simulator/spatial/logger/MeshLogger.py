@@ -16,20 +16,31 @@ class DataLogger:
         self.n_cells = n_cells
         self.n_chems = n_chems
         self.n_reactions = n_reactions
+        self.chem_dtype = np.dtype(",".join(["float32"] * self.n_chems))
+
+        self.time_tile = min(2, self.n_steps)
+        self.cell_tile = min(2, self.n_cells)
+        self.chem_tile = min(2, self.n_chems)
+        self.reaction_tile = min(2, self.n_reactions)
 
         self._create_chem_arr()
         self._create_diffusion_arr()
         self._create_reaction_arr()
 
     def _create_diffusion_arr(self):
-        d1 = tiledb.Dim(name="t", domain=(0, self.n_steps), tile=2, dtype=np.int32)
+        d1 = tiledb.Dim(
+            name="t", domain=(0, self.n_steps), tile=self.time_tile, dtype=np.int32
+        )
         d2 = tiledb.Dim(
-            name="cells", domain=(0, self.n_cells - 1), tile=2, dtype=np.int32
+            name="cells",
+            domain=(0, self.n_cells - 1),
+            tile=self.cell_tile,
+            dtype=np.int32,
         )
         d3 = tiledb.Dim(
             name="post_diffusion",
             domain=(0, self.n_chems - 1),
-            tile=2,
+            tile=self.chem_tile,
             dtype=np.float32,
         )
         dom = tiledb.Domain(d1, d2, d3)
@@ -40,12 +51,20 @@ class DataLogger:
         tiledb.Array.create(self.diffusion_arr, sch)
 
     def _create_chem_arr(self):
-        d1 = tiledb.Dim(name="t", domain=(0, self.n_steps), tile=2, dtype=np.int32)
+        d1 = tiledb.Dim(
+            name="t", domain=(0, self.n_steps), tile=self.time_tile, dtype=np.int32
+        )
         d2 = tiledb.Dim(
-            name="cells", domain=(0, self.n_cells - 1), tile=2, dtype=np.int32
+            name="cells",
+            domain=(0, self.n_cells - 1),
+            tile=self.cell_tile,
+            dtype=np.int32,
         )
         d3 = tiledb.Dim(
-            name="chem", domain=(0, self.n_chems - 1), tile=2, dtype=np.float32
+            name="chem",
+            domain=(0, self.n_chems - 1),
+            tile=self.chem_tile,
+            dtype=np.float32,
         )
         dom = tiledb.Domain(d1, d2, d3)
 
@@ -55,16 +74,24 @@ class DataLogger:
         tiledb.Array.create(self.chem_arr, sch)
 
     def _create_reaction_arr(self):
-        d1 = tiledb.Dim(name="t", domain=(0, self.n_steps), tile=2, dtype=np.int32)
+        d1 = tiledb.Dim(
+            name="t", domain=(0, self.n_steps), tile=self.time_tile, dtype=np.int32
+        )
         d2 = tiledb.Dim(
-            name="cells", domain=(0, self.n_cells - 1), tile=2, dtype=np.int32
+            name="cells",
+            domain=(0, self.n_cells - 1),
+            tile=self.cell_tile,
+            dtype=np.int32,
         )
         d3 = tiledb.Dim(
-            name="reaction_id", domain=(0, self.n_reactions - 1), tile=2, dtype=np.int32
+            name="reaction_id",
+            domain=(0, self.n_reactions - 1),
+            tile=self.reaction_tile,
+            dtype=np.int32,
         )
         dom = tiledb.Domain(d1, d2, d3)
 
-        att1 = tiledb.Attr(name="chem_conc", dtype=np.float32, var=True)
+        att1 = tiledb.Attr(name="chem_conc", dtype=self.chem_dtype)
 
         sch = tiledb.ArraySchema(domain=dom, sparse=True, attrs=[att1])
 
@@ -104,20 +131,47 @@ class DataLogger:
             step = list([step]) * len(reaction_ids)
         if type(cell_id) is not List:
             cell_id = list([cell_id]) * len(reaction_ids)
-
-        print(chem_concs)
+        chem_concs = chem_concs.view(self.chem_dtype)
         with tiledb.open(self.reaction_arr, "w") as _A:
             _A[step, cell_id, reaction_ids] = chem_concs
             _A.close()
 
     """ Retrieval functions """
 
-    def retrieve_chem_data(self, step=None):
+    def retrieve_chem_data(self, step=None, cell_id=None, chem_id=None):
+        if step is None:
+            step = list(range(self.n_steps))
+        if cell_id is None:
+            cell_id = list(range(self.n_cells))
+        if chem_id is None:
+            chem_id = list(range(self.n_chems))
+
+        with tiledb.open(self.chem_arr, "r") as _A:
+            ret = _A[step, cell_id, chem_id]
+            _A.close()
+
+        return ret
+
+    def retrieve_diffusion_data(self, step=None):
         if step is None:
             step = list(range(self.n_steps))
 
-        with tiledb.open(self.chem_arr, "r") as _A:
+        with tiledb.open(self.diffusion_arr, "r") as _A:
             ret = _A[step]
+            _A.close()
+
+        return ret
+
+    def retrieve_reaction_data(self, step=None, reaction_id=None, cell_id=None):
+        if step is None:
+            step = list(range(self.n_steps))
+        if reaction_id is None:
+            reaction_id = list(range(self.n_reactions))
+        if cell_id is None:
+            cell_id = list(range(self.n_cells))
+
+        with tiledb.open(self.reaction_arr, "r") as _A:
+            ret = _A[step, cell_id, reaction_id]
             _A.close()
 
         return ret

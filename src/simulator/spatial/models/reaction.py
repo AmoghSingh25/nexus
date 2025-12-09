@@ -20,7 +20,7 @@ class Reaction:
     def generate_reaction_matrix(self):
         react_matrix = jnp.zeros(shape=(self.n_chemicals, 1))
         for idx in self.reactant_id:
-            react_matrix = react_matrix.at[idx].set(self.k)
-        for idx in self.prod_id:
             react_matrix = react_matrix.at[idx].set(-self.k)
+        for idx in self.prod_id:
+            react_matrix = react_matrix.at[idx].set(self.k)
         return react_matrix
