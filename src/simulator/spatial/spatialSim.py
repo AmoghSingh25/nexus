@@ -7,7 +7,17 @@ import os
 
 
 class SpatialSim:
+    """
+    Spatial Simulator Class. Creates the mesh, initialized data using config, creates logger and runs the simulation.
+    """
+
     def __init__(self, cfg: DictConfig) -> None:
+        """
+        Docstring for __init__
+
+        :param self: SpatialSim object
+        :param cfg: uv Configuration
+        """
         self.height = cfg.spatial_sim.height
         self.width = cfg.spatial_sim.width
         self.depth = cfg.spatial_sim.depth
@@ -40,6 +50,11 @@ class SpatialSim:
         )
 
     def run_sim(self):
+        """
+        Run the spatial simulation
+
+        :param self: SpatialSim object
+        """
         self.logger.log_chem_state(step=0, cells=self.mesh.cells)
         for i in tqdm(range(self.n_steps)):
             self.mesh.step(step_i=i + 1, delta=self.delta, logger=self.logger)

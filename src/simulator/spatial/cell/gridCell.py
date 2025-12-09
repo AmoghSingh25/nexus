@@ -2,11 +2,19 @@ from simulator.spatial.fields.chemicalField import ChemicalField
 
 
 class GridCell:
+    """
+    GridCell class for GridMesh class. Used to represent the cell inside the GridMesh
+
+    """
+
     def __init__(self, pos, D, key, vol, id, cfg):
         """
-        D - Diffusion constant. Shape - (1, ). Possible shape - (n_neighbours, 1)
-        conc - Chemical concentration. Current shape - (n_cells, 1) assuming simulation of single chemical.
+        GridCell class for GridMesh cell.
+
+        :param D: Diffusion constant. Shape - (1, ). Possible shape - (n_neighbours, 1)
+        :param conc: Chemical concentration.
         """
+
         self.pos = tuple(pos)
         self.D = D
         self.key = key
@@ -23,10 +31,22 @@ class GridCell:
         self.neighbours = []
 
     def get_neighbours(self):
+        """
+        Return neighbours of the cell
+
+        :param self: GridCell
+        """
         return self.neighbours
 
     def __str__(self):
         return f"ID-{self.id}\npos - {self.pos}\nVol - {self.vol}"
 
     def step(self, step, logger):
+        """
+        Perform simulation step of the cell
+
+        :param self: GridCell
+        :param step: Step number
+        :param logger: MeshLogger object
+        """
         self.chem.step(step=step, cell_id=self.id, logger=logger)

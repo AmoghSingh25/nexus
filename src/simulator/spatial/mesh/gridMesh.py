@@ -6,11 +6,25 @@ import numpy as np
 
 
 class GridMesh:
-    def __init__(self, height, width, depth, D, cfg, random_key=42):
-        # Density - Cells(Entities) per unit volume
-        # Each pos is positive - x>0, y>0, z>0
+    """
+    Create a mesh of grid cells for 3D space. Performs flux and diffusion calculation, reaction, updates cells during simulation and other mesh and cell related functions.
+    """
 
-        assert width > 0 and height > 0, "Dimensions must be greater than 0"
+    def __init__(self, height, width, depth, D, cfg, random_key=42):
+        """
+
+        :param self: GridMesh
+        :param height: Height of the grid mesh - Y Axis. Must be >0
+        :param width: Width of the grid mesh - X Axis. Must be >0
+        :param depth: Depth of the grid mesh - Z Axis. Must be >0
+        :param D: Diffusion constant
+        :param cfg: uv Config
+        :param random_key: Random key value for JAX random functions
+        """
+
+        assert width > 0 and height > 0 and depth > 0, (
+            "Dimensions must be greater than 0"
+        )
         self.width = width
         self.height = height
         self.depth = depth
@@ -46,8 +60,8 @@ class GridMesh:
 
     def calc_flux(self, pos):
         """
-        Calculate flux for the cell at position _pos_, to replace with cell _id_
-        Checks if part of the flux is already calculated by another cell before
+        Calculate flux for the cell at position _pos_.
+        Also checks if part of the flux is already calculated by another cell before.
 
         :param pos: Position of cell to calculate the flux
         """
@@ -76,6 +90,7 @@ class GridMesh:
         distances = jnp.linalg.norm(neigh_pos - jnp.array(curr_cell.pos), axis=1)
 
         def calc_flux_i(D, cell1_mass, cell1_vol, cell2_mass, cell2_vol, dist_i):
+            """Helper function for auto vectorization for flux calculation"""
             flux_i = -D * (cell2_mass * cell2_vol - cell1_mass * cell1_vol) / dist_i
             return flux_i
 
@@ -97,7 +112,15 @@ class GridMesh:
         return total_flux
 
     def calc_conc_change(self, delta):
-        # Assuming area of boundary is 1
+        """
+        Calculate change in chemical concentration due to diffusion
+
+        :param self: GridMesh
+        :param delta: Simulation delta
+        """
+
+        # TODO: Assuming area of boundary is 1. Change to dynamic
+
         def compute_delta_m(pos):
             flux = self.calc_flux(pos)
             area = 1
@@ -120,13 +143,17 @@ class GridMesh:
             self.cells[(*self.pos[i],)].flux = {}
         return old_mass_l, new_mass_l
 
-    def get_masses(self):
-        mass = []
-        for i in range(len(self.pos)):
-            mass.append(self.cells[(*self.pos[i],)].chem.chem_mass)
-        return mass
-
     def step(self, step_i, delta, logger):
+        """
+        Perform simulation step for the mesh and the cells within.
+
+        :param self: GridMesh
+        :param step_i: Step index
+        :param delta: Simulation delta
+        :param logger: MeshLogger object
+        """
+        # TODO: Vectorize steps
+
         # Perform diffusion
         if self.diffusion_bool:
             self.calc_conc_change(delta)
@@ -152,6 +179,13 @@ class GridMesh:
         return pos[0] + self.height * pos[1] + (self.height * self.depth) * pos[2]
 
     def get_neighbours(self, idx):
+        """
+        Get neighbours of the cell at pos[idx].
+
+        :param self: GridMesh
+        :param idx: index of cell within pos[idx]
+        """
+
         # 3D neighbours - 26 neighbours
         idx = jnp.array(idx)
         neighbor_idx = jnp.array(

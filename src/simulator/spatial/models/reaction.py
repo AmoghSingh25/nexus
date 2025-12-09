@@ -2,7 +2,23 @@ import jax.numpy as jnp
 
 
 class Reaction:
+    """
+    Class for Reactions. Stores reaction-related parameters and data.
+    """
+
     def __init__(self, id, k, reactants, products, chemicals, order, name="Reaction"):
+        """
+        Initialize Reaction class
+
+        :param self: Reaction
+        :param id: Reaction id
+        :param k: Reaction rate constant
+        :param reactants: List of Reactants
+        :param products: List of Products
+        :param chemicals: List of chemicals in the simulation
+        :param order: Reaction order
+        :param name: Reactio name
+        """
         self.id = id
         self.k = k
         self.reactants = reactants
@@ -18,6 +34,11 @@ class Reaction:
         return f"name={self.name}, ID = {self.id}, reactants = {self.reactants}, products = {self.products}\n"
 
     def generate_reaction_matrix(self):
+        """
+        Generate a reaction matrix that outlines the changes in the concentrations of the chemicals.
+
+        :param self: Reaction
+        """
         react_matrix = jnp.zeros(shape=(self.n_chemicals, 1))
         for idx in self.reactant_id:
             react_matrix = react_matrix.at[idx].set(-self.k)

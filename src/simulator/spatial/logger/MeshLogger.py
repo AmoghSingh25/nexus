@@ -6,7 +6,22 @@ from simulator.spatial.cell.gridCell import GridCell
 
 
 class DataLogger:
+    """
+    Logger class for storing data to tiledb
+    """
+
     def __init__(self, log_dir, file_name, n_steps, n_cells, n_chems, n_reactions):
+        """
+        Initialize Data Logger
+
+        :param self: DataLogger
+        :param log_dir: Directory of the logs
+        :param file_name: Name of the tiledb array to be saved to
+        :param n_steps: Number of simulation steps
+        :param n_cells: Number of cells in the simulation
+        :param n_chems: Number of chemicals in the simulation
+        :param n_reactions: Number of reactions in the simulation
+        """
         self.log_dir = log_dir
         self.chem_arr = os.path.join(self.log_dir, file_name + "_chem.tldb")
         self.reaction_arr = os.path.join(self.log_dir, file_name + "_reaction.tldb")
@@ -27,7 +42,14 @@ class DataLogger:
         self._create_diffusion_arr()
         self._create_reaction_arr()
 
+    """ Helper functions """
+
     def _create_diffusion_arr(self):
+        """
+        Initialize the diffusion array filestore with the schema.
+
+        :param self: DataLogger
+        """
         d1 = tiledb.Dim(
             name="t", domain=(0, self.n_steps), tile=self.time_tile, dtype=np.int32
         )
@@ -51,6 +73,11 @@ class DataLogger:
         tiledb.Array.create(self.diffusion_arr, sch)
 
     def _create_chem_arr(self):
+        """
+        Initialize the chemical array filestore with the schema.
+
+        :param self: DataLogger
+        """
         d1 = tiledb.Dim(
             name="t", domain=(0, self.n_steps), tile=self.time_tile, dtype=np.int32
         )
@@ -74,6 +101,11 @@ class DataLogger:
         tiledb.Array.create(self.chem_arr, sch)
 
     def _create_reaction_arr(self):
+        """
+        Initialize the reaction array filestore with the schema.
+
+        :param self: DataLogger
+        """
         d1 = tiledb.Dim(
             name="t", domain=(0, self.n_steps), tile=self.time_tile, dtype=np.int32
         )
@@ -98,6 +130,13 @@ class DataLogger:
         tiledb.Array.create(self.reaction_arr, sch)
 
     def get_cells_conc(self, cells: np.ndarray[GridCell]):
+        """
+        Helper function to get chemical concentrations of cells.
+
+        :param self: DataLogger
+        :param cells: List of cells
+        :type cells: np.ndarray[GridCell]
+        """
         cells = cells.reshape(-1)
         chem_conc = np.zeros((self.n_cells, self.n_chems))
         pos = []
@@ -109,6 +148,14 @@ class DataLogger:
     """ Logger functions """
 
     def log_chem_state(self, step, cells: np.ndarray[GridCell]):
+        """
+        Logs the chemical concentrations.
+
+        :param self: DataLogger
+        :param step: Simulation step index
+        :param cells: List of cells to store chemical concentration
+        :type cells: np.ndarray[GridCell]
+        """
         chem_conc, pos = self.get_cells_conc(cells=cells)
         cell_idx, chem_idx = np.indices(chem_conc.shape, sparse=False)
 
@@ -121,12 +168,29 @@ class DataLogger:
             _A.close()
 
     def log_diffusion_state(self, step, cells: np.ndarray[GridCell]):
+        """
+        Logs the chemical concentrations post diffusion.
+
+        :param self: DataLogger
+        :param step: Simulation step index
+        :param cells: List of cells to store chemical concentration
+        :type cells: np.ndarray[GridCell]
+        """
         chem_conc, pos = self.get_cells_conc(cells=cells)
         with tiledb.open(self.diffusion_arr, "w") as _A:
             _A[step, :, :] = chem_conc
             _A.close()
 
     def log_reaction_state(self, step, cell_id, reaction_ids, chem_concs):
+        """
+        Logs the reactions performed along with chemical concentrations post the reactions.
+
+        :param self: DataLogger
+        :param step: Simulation step index
+        :param cell_id: Index of the cell
+        :param reaction_ids: List of reaction IDs that have have taken place
+        :param chem_concs: Concentration of chemicals post reactions
+        """
         if type(step) is not List:
             step = list([step]) * len(reaction_ids)
         if type(cell_id) is not List:
@@ -139,6 +203,14 @@ class DataLogger:
     """ Retrieval functions """
 
     def retrieve_chem_data(self, step=None, cell_id=None, chem_id=None):
+        """
+        Return chemical concentrations from the tiledb array. If any of the parameters are not set, data is returned across the entire possible range for this parameter.
+
+        :param self: DataLogger
+        :param step: Simulation step index being queried
+        :param cell_id: ID of the cell being queried
+        :param chem_id: ID of the chemical being queried
+        """
         if step is None:
             step = list(range(self.n_steps))
         if cell_id is None:
@@ -153,6 +225,12 @@ class DataLogger:
         return ret
 
     def retrieve_diffusion_data(self, step=None):
+        """
+        Return post diffusion concentrations from the tiledb array. If any of the parameters are not set, data is returned across the entire possible range for this parameter.
+
+        :param self: DataLogger
+        :param step: Simulation step index being queried
+        """
         if step is None:
             step = list(range(self.n_steps))
 
@@ -163,6 +241,14 @@ class DataLogger:
         return ret
 
     def retrieve_reaction_data(self, step=None, reaction_id=None, cell_id=None):
+        """
+        Returns reaction-related data from the tiledb array. If any of the parameters are not set, data is returned across the entire possible range for this parameter.
+
+        :param self: DataLogger
+        :param step: Simulation step index being queried
+        :param reaction_id: ID of the reaction being queried
+        :param cell_id: ID of the cell being queried
+        """
         if step is None:
             step = list(range(self.n_steps))
         if reaction_id is None:

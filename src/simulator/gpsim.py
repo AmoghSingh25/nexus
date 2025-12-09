@@ -438,6 +438,12 @@ class simulator:
         return x_t, p_t
 
     def run_sim(self, n_steps):
+        """
+        Run the simulation for n_steps
+
+        :param self: simulator
+        :param n_steps: Number of steps to run the simulation.
+        """
         logging.info("Running simulator...")
         gene_conc_history = []
         prot_conc_history = []

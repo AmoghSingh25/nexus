@@ -6,7 +6,21 @@ import numpy as np
 
 
 class ChemicalField:
+    """
+    Chemical Field class to store data about the chemicals inside a cell. Handles the reactions within the cells.
+    """
+
     def __init__(self, chem_names, mol_masses, reaction_config, delta, key=42):
+        """
+        Initialize Chemical Field
+
+        :param self: ChemicalField
+        :param chem_names: List of chemical names in the simulation.
+        :param mol_masses: List of molecular masses of the chemicals.
+        :param reaction_config: Subset of the uv Config related to reactions.
+        :param delta: Simulation timestep.
+        :param key: Key for the JAX random functions
+        """
         self.chemicals = []
         self.n_chemicals = len(chem_names)
         self.reactions = []
@@ -43,7 +57,8 @@ class ChemicalField:
 
         self.reaction_prob = jnp.zeros((3,))
         for i in range(len(self.reaction_order_sum)):
-            # order_sum_i = (1-jnp.exp(-self.delta * self.reaction_order_sum[i])) / self.reaction_order_sum[i]
+            # TODO: Modify probability calculation
+            # TODO: order_sum_i = (1-jnp.exp(-self.delta * self.reaction_order_sum[i])) / self.reaction_order_sum[i]
             order_sum_i = 1 / self.reaction_order_sum[i]
             self.reaction_prob = self.reaction_prob.at[i].set(order_sum_i)
 
@@ -60,6 +75,16 @@ class ChemicalField:
         return f"No. chemicals - {self.n_chemicals} \nMass - {len(self.reactions)}\n"
 
     def calc_reaction_change(self, step, cell_id, logger):
+        """
+        Calculate change in chemical concentration due to reactions. Randomly shuffles the reaction order during each step. The subsequent concentration from the reaction_i is used for reaction_i+1.
+        Executes reaction based on probability.
+
+        :param self: ChemicalField
+        :param step: Simulation step idx
+        :param cell_id: ID of the cell relating to the chemical field
+        :param logger: Logger object (Currently setup to use MeshLogger)
+        """
+
         reaction_order = random.permutation(key=self.sub_key, x=len(self.reactions))
         self.key, self.sub_key = random.split(self.key)
 
@@ -92,19 +117,48 @@ class ChemicalField:
         self.chem_mass = conc_t_0
 
     def calc_zero_order(self, curr_conc, react_matrix):
-        # Replace _react_matrix_ with Sample(Poisson(lambda))
+        """
+        Perform zero order reaction and return updated concentrations.
+
+        :param self: ChemicalField
+        :param curr_conc: Current chemical concentration
+        :param react_matrix: Reaction matrix for reaction from Reaction.generate_reaction_matrix()
+        """
+        # TODO: Replace _react_matrix_ with Sample(Poisson(lambda))
         curr_conc = curr_conc.at[:].set(curr_conc + react_matrix)
         return curr_conc
 
     def calc_first_order(self, curr_conc, react_matrix):
-        # Replace _react_matrix_ with Sample(Poisson(lambda))
+        """
+        Perform first order reaction and return updated concentrations.
+
+        :param self: ChemicalField
+        :param curr_conc: Current chemical concentration
+        :param react_matrix: Reaction matrix for reaction from Reaction.generate_reaction_matrix()
+        """
+        # TODO: Replace _react_matrix_ with Sample(Poisson(lambda))
         curr_conc = curr_conc.at[:].set(jnp.exp(jnp.log(curr_conc) + react_matrix))
         return curr_conc
 
     def calc_second_order(self, curr_conc, react_matrix):
-        # Replace _react_matrix_ with Sample(Poisson(lambda))
+        """
+        Perform second order reaction and return updated concentrations.
+
+        :param self: ChemicalField
+        :param curr_conc: Current chemical concentration
+        :param react_matrix: Reaction matrix for reaction from Reaction.generate_reaction_matrix()
+        """
+        # TODO: Replace _react_matrix_ with Sample(Poisson(lambda))
         curr_conc = curr_conc.at[:].set(1 / (1 / curr_conc - react_matrix))
         return curr_conc
 
     def step(self, step, logger, cell_id):
+        """
+        Execute simulation step for reaction.
+
+        :param self: ChemicalField
+        :param step: Index of the current step of the simulation
+        :param logger: Logger object (Currently MeshLogger)
+        :param cell_id: Index of the cell of the current ChemicalField
+        """
         self.calc_reaction_change(step=step, logger=logger, cell_id=cell_id)
