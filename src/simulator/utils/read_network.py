@@ -12,6 +12,8 @@ def _create_bins(bin_vals, n_bins, n_cells):
     cells_per_bin = n_cells // n_bins
     for i in range(n_bins):
         frmt_bins.extend([bin_vals[i]] * cells_per_bin)
+    if n_cells % n_bins != 0:
+        frmt_bins.extend([bin_vals[-1]] * (n_cells - len(frmt_bins)))
     return jnp.array(frmt_bins)
 
 

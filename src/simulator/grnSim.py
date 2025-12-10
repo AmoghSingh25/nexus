@@ -11,24 +11,15 @@ import logging
 from simulator.noise_models.wiener_noise import WienerNoise
 import numpy as np
 from simulator.utils.verify_network import _copy_param_vals
+from omegaconf import DictConfig
 
 
-class simulator:
+class GRNSim:
     def __init__(
         self,
-        gene_data=None,
-        mr_data=None,
+        cfg: DictConfig,
         node_set=None,
         edges_set=None,
-        config_file="",
-        n_cells=1,
-        protein_sim=True,
-        non_mr_basal=False,
-        delta=0.01,
-        noise=True,
-        noise_amplitude=[0.1],
-        decay=[0.8],
-        hill_coeffs=[1.0],
     ):
         """
         Shapes of variables :
@@ -45,29 +36,35 @@ class simulator:
         decay -         (n_cells, n_genes, 1)
         """
 
-        self.delta = delta
-        self.n_cells = n_cells
-        self.protein_sim = protein_sim
-        self.noise = noise
-        self.noise_amp = jnp.array(noise_amplitude)
+        self.delta = cfg.delta
+        self.n_cells = cfg.n_cells
+        self.protein_sim = cfg.protein_sim
+        self.noise = cfg.noise
+        if self.noise:
+            self.noise_amp = jnp.array([cfg.noise_amplitude])
+        else:
+            self.noise_amp = jnp.array([0.0])
         self.copy_cells = False
-        self.non_mr_basal = non_mr_basal
+        self.non_mr_basal = cfg.non_mr_basal
+        self.decay = jnp.array(cfg.decay)
+        self.hill_coeffs = jnp.array(cfg.hill_coeffs)
+        self.n_steps = cfg.n_steps
+
         if node_set is None and edges_set is None:
             node_set, edges_set, self.copy_cells = _read_data(
-                gene_data=gene_data,
-                mr_data=mr_data,
-                config_file=config_file,
-                n_cells=n_cells,
-                protein_sim=protein_sim,
+                gene_data=cfg.get("gene_data", None),
+                mr_data=cfg.get("mr_data", None),
+                config_file=cfg.get("config_file", ""),
+                n_cells=self.n_cells,
+                protein_sim=self.protein_sim,
             )
-        self.n_genes = len(node_set)
 
-        self.decay = jnp.array(decay)
-        self.hill_coeffs = jnp.array(hill_coeffs)
+        self.n_genes = len(node_set)
 
         self.decay = _copy_param_vals(
             var=self.decay, var_name="Decay", n_cells=self.n_cells, n_genes=self.n_genes
         )
+
         self.hill_coeffs = _copy_param_vals(
             var=self.hill_coeffs,
             var_name="hill coefficients",
@@ -106,27 +103,24 @@ class simulator:
             self.is_mr.append(True if node["type"] == "mr" else False)
             if node["type"] == "mr":
                 self.basal_rates.append(
-                    jnp.array(node["basal_rate"]).reshape((n_cells, 1))
+                    jnp.array(node["basal_rate"]).reshape((self.n_cells, 1))
                 )
                 self.ki_values.append(jnp.array([0]))
             else:
                 regulators = list(sorted(self.g.predecessors(i)))
-                basal_rate_i = jnp.zeros((n_cells, 1))  # 0 basal rate for non-MRs
+                basal_rate_i = jnp.zeros((self.n_cells, 1))  # 0 basal rate for non-MRs
                 self.key, self.sub_key = random.split(self.key)
                 self.g.add_node(i)
                 ki_vals = jnp.array(node["ki"])
                 if self.non_mr_basal:
                     self.basal_rates.append(
-                        jnp.array(node["basal_rate"]).reshape((n_cells, 1))
+                        jnp.array(node["basal_rate"]).reshape((self.n_cells, 1))
                     )
                 else:
                     self.basal_rates.append(basal_rate_i)
 
                 if ki_vals.ndim == 2:
                     # ki_vals = ki_vals.reshape(self.n_cells, len(regulators), 1)
-                    print(self.n_cells)
-                    print(ki_vals.shape)
-                    print(self.ki_matrix[:, i, regulators].shape)
                     # ki_vals = jnp.repeat(ki_vals, repeats=self.n_cells, axis=0)
                     self.ki_matrix[:, i, regulators] = ki_vals
 
@@ -219,7 +213,6 @@ class simulator:
 
         A similar method is used for estimating the steady state concentration of the proteins and is mentioned in `docs/simulator.md`
         """
-        logging.info("Calculating steady states...")
 
         def _single_gene_steady_state(
             n_cells,
@@ -416,7 +409,6 @@ class simulator:
             auto_vec_genes,
             in_axes=(None, 1, None, 0, 1, 0, None, None, 0, 0, 1, 0, 0),
         )
-
         x_t, p_t = auto_vec_cells(
             jnp.arange(self.n_genes),
             self.gene_conc,
@@ -432,12 +424,13 @@ class simulator:
             self.prot_tran_rates,
             self.prot_decay,
         )
+
         x_t = x_t.reshape((self.n_cells, self.n_genes)).T
         p_t = p_t.reshape((self.n_cells, self.n_genes)).T
 
         return x_t, p_t
 
-    def run_sim(self, n_steps):
+    def run_sim(self):
         """
         Run the simulation for n_steps
 
@@ -447,7 +440,7 @@ class simulator:
         logging.info("Running simulator...")
         gene_conc_history = []
         prot_conc_history = []
-        for _ in tqdm(range(n_steps)):
+        for _ in tqdm(range(self.n_steps)):
             self.gene_conc, self.prot_conc = self.jit_x_t()
             gene_conc_history.append(self.gene_conc)
             prot_conc_history.append(self.prot_conc)

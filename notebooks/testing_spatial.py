@@ -21,7 +21,7 @@ def _():
 
 @app.cell
 def _(compose, initialize_config_dir, os):
-    def get_config(config_name="config"):
+    def get_config(config_name="test_config"):
         conf_path = os.path.join(os.getcwd(), "configs")
         with initialize_config_dir(version_base=None, config_dir=conf_path):
             cfg = compose(config_name=config_name)
@@ -43,7 +43,7 @@ def _(plt, s1):
         plt.plot(_chem_data_before, label="Before")
         plt.plot(_chem_data_after, label="After")
         plt.legend()
-        plt.xlabel("Step")
+        plt.xlabel("Cells")
         plt.ylabel("Chemical Mass")
 
     return (plot_chemical_data,)
@@ -57,33 +57,29 @@ def _():
 
 @app.cell
 def _(SpatialSim, get_config):
-    _config = get_config()
-    s1 = SpatialSim(_config)
-    s1.run_sim()
+    _config = get_config("test_config")
+    _config.spatial_sim.diffusion_bool = False
+    _config.spatial_sim.logging = True
+    s1 = SpatialSim(_config.spatial_sim)
+    # s1.run_sim()
     return (s1,)
+
+
+@app.cell
+def _(s1):
+    s1.run_sim()
+    return
+
+
+@app.cell
+def _(s1):
+    return
 
 
 @app.cell
 def _(chem_id, plot_chemical_data, plt, s1):
     plot_chemical_data(s1, chem_id=chem_id)
-    plt.title(f"Chemical - {str(chem_id)}")
-    plt.show()
-    return
-
-
-@app.cell
-def _(SpatialSim, get_config):
-    _config = get_config()
-    _config["spatial_sim"]["reaction_bool"] = False
-    s2 = SpatialSim(_config)
-    s2.run_sim()
-    return (s2,)
-
-
-@app.cell
-def _(chem_id, plot_chemical_data, plt, s2):
-    plot_chemical_data(s2, 2)
-    plt.title(f"Chemical - {str(chem_id)}. No Reaction")
+    plt.title(f"chem{str(chem_id)}")
     plt.show()
     return
 
@@ -92,12 +88,34 @@ def _(chem_id, plot_chemical_data, plt, s2):
 def _(SpatialSim, chem_id, get_config, plot_chemical_data, plt):
     _config = get_config()
     _config["spatial_sim"]["diffusion_bool"] = False
-    s3 = SpatialSim(_config)
+    s3 = SpatialSim(_config.spatial_sim)
     s3.run_sim()
 
     plot_chemical_data(s3, chem_id=chem_id)
-    plt.title(f"Chemical - {str(chem_id)}. No diffusion")
+    plt.title(f"chem{str(chem_id)}. No diffusion")
     plt.show()
+    return
+
+
+@app.cell
+def _(SpatialSim, get_config):
+    _config = get_config()
+    _config["spatial_sim"]["reaction_bool"] = False
+    s2 = SpatialSim(_config.spatial_sim)
+    s2.run_sim()
+    return (s2,)
+
+
+@app.cell
+def _(chem_id, plot_chemical_data, plt, s2):
+    plot_chemical_data(s2, chem_id=chem_id)
+    plt.title(f"chem{str(chem_id)}. No Reaction")
+    plt.show()
+    return
+
+
+@app.cell
+def _():
     return
 
 

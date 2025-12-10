@@ -1,12 +1,11 @@
+
 # Config for GRN set to simulate SERGIO configuration
 grn:
   ## Simulation related
-  n_cells: 100
+  n_cells: 2
   delta: 0.01
   n_steps: 10
-  gene_data: "configs/sample_data/Interaction_cID_4.txt"
-  mr_data: "configs/sample_data/Regs_cID_4.txt"
-  config_file: ""
+  config_file: "configs/sample_data/sample_network_2cell.yaml"
   
   ## Gene related
   non_mr_basal: false
@@ -38,7 +37,7 @@ spatial_sim:
   delta: 0.01
   n_steps: 10
   random_key: 42
-  logging: false
+  logging: true
   
   ## Chemicals
   chemical:
@@ -54,17 +53,6 @@ spatial_sim:
   ## Reactions
   reaction_bool: true
   reaction:
-    reac_1:
-      order: 2
-      rate_coeff: 3
-      reactants:
-        - - "chem1"
-          - 1
-        - - "chem2"
-          - 2
-      products:
-        - - "chem3"
-          - 3
     reac_2: # Production of chemical
       order: 0
       rate_coeff: 1

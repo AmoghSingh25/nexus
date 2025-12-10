@@ -137,13 +137,12 @@ class DataLogger:
         :param cells: List of cells
         :type cells: np.ndarray[GridCell]
         """
-        cells = cells.reshape(-1)
-        chem_conc = np.zeros((self.n_cells, self.n_chems))
+        chem_conc = []
         pos = []
-        for idx in range(len(cells)):
-            chem_conc[idx] = cells[idx].chem.chem_mass.reshape(-1)
+        for idx in cells.keys():
+            chem_conc.append(cells[idx].chem.chem_mass.reshape(-1))
             pos.append(cells[idx].pos)
-        return chem_conc, pos
+        return np.array(chem_conc), pos
 
     """ Logger functions """
 

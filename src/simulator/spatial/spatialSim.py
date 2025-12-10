@@ -18,36 +18,37 @@ class SpatialSim:
         :param self: SpatialSim object
         :param cfg: uv Configuration
         """
-        self.height = cfg.spatial_sim.height
-        self.width = cfg.spatial_sim.width
-        self.depth = cfg.spatial_sim.depth
-        self.delta = cfg.spatial_sim.delta
-        self.mesh_type = cfg.spatial_sim.mesh_type
-        self.D = cfg.spatial_sim.D
+        self.height = cfg.height
+        self.width = cfg.width
+        self.depth = cfg.depth
+        self.delta = cfg.delta
+        self.mesh_type = cfg.mesh_type
+        self.D = cfg.D
 
         self.timestamp = str(int(time.time()))
 
         if self.mesh_type == "grid":
             self.mesh = GridMesh(
-                height=self.height,
-                width=self.width,
-                depth=self.depth,
-                D=self.D,
-                cfg=cfg["spatial_sim"],
+                cfg=cfg,
             )
         else:
             raise ValueError("Incorrect mesh type")
 
-        self.n_steps = cfg.spatial_sim.n_steps
-
-        self.logger = DataLogger(
-            log_dir=os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs"),
-            file_name=self.timestamp,
-            n_steps=cfg.spatial_sim.n_steps,
-            n_cells=self.mesh.n_cells,
-            n_chems=len(cfg["spatial_sim"]["chemical"].name),
-            n_reactions=len(cfg.spatial_sim.reaction),
-        )
+        self.n_steps = cfg.n_steps
+        self.logging = cfg.get("logging", True)
+        if self.logging:
+            self.logger = DataLogger(
+                log_dir=os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)), "logs"
+                ),
+                file_name=self.timestamp,
+                n_steps=cfg.n_steps,
+                n_cells=self.mesh.n_cells,
+                n_chems=len(cfg["chemical"].name),
+                n_reactions=len(cfg.reaction),
+            )
+        else:
+            self.logger = None
 
     def run_sim(self):
         """
@@ -55,7 +56,7 @@ class SpatialSim:
 
         :param self: SpatialSim object
         """
-        self.logger.log_chem_state(step=0, cells=self.mesh.cells)
+        self.logging and self.logger.log_chem_state(step=0, cells=self.mesh.cells)
         for i in tqdm(range(self.n_steps)):
             self.mesh.step(step_i=i + 1, delta=self.delta, logger=self.logger)
-        self.logger.log_chem_state(self.n_steps, self.mesh.cells)
+        self.logging and self.logger.log_chem_state(self.n_steps, self.mesh.cells)

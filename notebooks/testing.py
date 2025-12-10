@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.17.7"
+__generated_with = "0.18.4"
 app = marimo.App(width="full")
 
 
@@ -11,17 +11,39 @@ def _():
     import matplotlib.pyplot as plt
     import time
     import jax.numpy as jnp
+    from hydra import initialize_config_dir, compose
+    import os
+    from simulator import grnSim
 
     matplotlib.style.use("default")
     import logging
 
     logger = logging.getLogger("sample_logger")
     logger.setLevel(logging.ERROR)
-    return jnp, np, plt, time
+    return compose, grnSim, initialize_config_dir, jnp, np, os, plt, time
 
 
 @app.cell
-def _():
+def _(compose, initialize_config_dir, os):
+    def get_config(config_name="config"):
+        conf_path = os.path.join(os.getcwd(), "configs")
+        with initialize_config_dir(version_base=None, config_dir=conf_path):
+            cfg = compose(config_name=config_name)
+        return cfg
+
+    return (get_config,)
+
+
+@app.cell
+def _(get_config):
+    cfg = get_config(config_name="test_config")
+    return (cfg,)
+
+
+@app.cell
+def _(cfg, grnSim):
+    _s = grnSim.GRNSim(cfg=cfg.grn)
+    _s.run_sim()
     return
 
 
@@ -42,9 +64,7 @@ def _(np, plt):
 
 
 @app.cell
-def _(time):
-    from simulator import gpsim
-
+def _(gpsim, time):
     n_cells_1 = 2700
     n_genes_1 = 100
     _start = time.time()
@@ -62,7 +82,7 @@ def _(time):
     print("Time taken = ", _end - _start)
     print("Steady state calculation time = ", _start2 - _start)
     print("Simulation time = ", _end - _start2)
-    return gpsim, n_cells_1, n_genes_1, sim1
+    return n_cells_1, n_genes_1, sim1
 
 
 @app.cell
