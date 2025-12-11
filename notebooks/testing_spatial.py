@@ -31,15 +31,17 @@ def _(compose, initialize_config_dir, os):
 
 
 @app.cell
-def _(plt, s1):
+def _(plt):
     def plot_chemical_data(sim, chem_id):
-        _s = s1
+        _s = sim
         _chem_data_before = _s.logger.retrieve_chem_data(step=0, chem_id=chem_id)[
             "conc"
         ]
         _chem_data_after = _s.logger.retrieve_chem_data(step=-1, chem_id=chem_id)[
             "conc"
         ]
+        print(_chem_data_before)
+        print(_chem_data_after)
         plt.plot(_chem_data_before, label="Before")
         plt.plot(_chem_data_after, label="After")
         plt.legend()
@@ -51,35 +53,25 @@ def _(plt, s1):
 
 @app.cell
 def _():
-    chem_id = 1
+    chem_id = 2
     return (chem_id,)
 
 
 @app.cell
 def _(SpatialSim, get_config):
-    _config = get_config("test_config")
-    _config.spatial_sim.diffusion_bool = False
+    _config = get_config()
+    _config.spatial_sim.diffusion_bool = True
+    _config.spatial_sim.reaction_bool = True
     _config.spatial_sim.logging = True
     s1 = SpatialSim(_config.spatial_sim)
-    # s1.run_sim()
-    return (s1,)
-
-
-@app.cell
-def _(s1):
     s1.run_sim()
-    return
-
-
-@app.cell
-def _(s1):
-    return
+    return (s1,)
 
 
 @app.cell
 def _(chem_id, plot_chemical_data, plt, s1):
     plot_chemical_data(s1, chem_id=chem_id)
-    plt.title(f"chem{str(chem_id)}")
+    plt.title(f"chem{str(chem_id + 1)}")
     plt.show()
     return
 
@@ -92,30 +84,21 @@ def _(SpatialSim, chem_id, get_config, plot_chemical_data, plt):
     s3.run_sim()
 
     plot_chemical_data(s3, chem_id=chem_id)
-    plt.title(f"chem{str(chem_id)}. No diffusion")
+    plt.title(f"chem{str(chem_id + 1)}. Only reaction")
     plt.show()
     return
 
 
 @app.cell
-def _(SpatialSim, get_config):
+def _(SpatialSim, chem_id, get_config, plot_chemical_data, plt):
     _config = get_config()
     _config["spatial_sim"]["reaction_bool"] = False
+    _config["spatial_sim"]["diffusion_bool"] = True
     s2 = SpatialSim(_config.spatial_sim)
     s2.run_sim()
-    return (s2,)
-
-
-@app.cell
-def _(chem_id, plot_chemical_data, plt, s2):
     plot_chemical_data(s2, chem_id=chem_id)
-    plt.title(f"chem{str(chem_id)}. No Reaction")
+    plt.title(f"chem{str(chem_id + 1)}. Only diffusion")
     plt.show()
-    return
-
-
-@app.cell
-def _():
     return
 
 

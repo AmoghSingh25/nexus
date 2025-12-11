@@ -78,7 +78,7 @@ class GRNSim:
             n_genes=self.n_genes,
         )
 
-        self.key, self.sub_key = random.split(random.key(42))
+        self.key, self.sub_key = random.split(random.key(cfg.get("random_key", 42)))
 
         self.noise_a = WienerNoise(delta=self.delta)
         self.noise_b = WienerNoise(delta=self.delta, random_key=43)
@@ -109,7 +109,7 @@ class GRNSim:
             else:
                 regulators = list(sorted(self.g.predecessors(i)))
                 basal_rate_i = jnp.zeros((self.n_cells, 1))  # 0 basal rate for non-MRs
-                self.key, self.sub_key = random.split(self.key)
+                # self.key, self.sub_key = random.split(self.key)
                 self.g.add_node(i)
                 ki_vals = jnp.array(node["ki"])
                 if self.non_mr_basal:

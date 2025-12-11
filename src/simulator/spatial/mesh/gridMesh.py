@@ -3,6 +3,7 @@ from jax import random
 import jax.numpy as jnp
 from simulator.spatial.cell.gridCell import GridCell
 import numpy as np
+from simulator.spatial.utils.random_generators import generate_choices
 
 
 class GridMesh:
@@ -33,15 +34,21 @@ class GridMesh:
         self.n_chemicals = len(cfg["chemical"]["name"])
 
         self.key, self.sub_key = random.split(random.key(random_key))
+
         x, y, z = jnp.mgrid[0 : self.width, 0 : self.height, 0 : self.depth]
         self.positions = jnp.vstack([x.ravel(), y.ravel(), z.ravel()]).T
         if cfg.get("sparse_cells", False):
             self.n_cells = cfg.cell_num
             max_cells = int(self.height * self.width * self.depth)
-            self.positions = random.choice(
-                self.sub_key, self.positions, shape=(self.n_cells,), replace=False
+
+            self.key, self.sub_key, self.positions = generate_choices(
+                key=self.key,
+                sub_key=self.sub_key,
+                a=self.positions,
+                shape=(self.n_cells,),
+                replace=False,
             )
-            self.key, self.sub_key = random.split(self.key)
+
             if self.n_cells > max_cells:
                 raise ValueError(
                     f"Number of cells {self.n_cells} exceeds maximum possible {max_cells} for given dimensions"
@@ -176,9 +183,6 @@ class GridMesh:
             self.cells[cell_id].step(step=step_i, logger=logger)
 
         # Perform reactions
-
-        # cell_step_vec = jax.vmap(cell_step, in_axes=(0))
-        # cell_step_vec(self.pos)
         if self.reaction_bool:
             for cell_id in self.cell_ids:
                 cell_step(cell_id)

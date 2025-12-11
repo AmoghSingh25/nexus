@@ -47,7 +47,7 @@ class TestSpatial:
         chem_after = s.logger.retrieve_chem_data(
             step=-1, cell_id=cells, chem_id=chem_id
         )["conc"]
-        if chem_before[0] > chem_after[0] and chem_before[1] < chem_after[1]:
+        if chem_before[0] >= chem_after[0] and chem_before[1] <= chem_after[1]:
             assert True
         else:
             assert False

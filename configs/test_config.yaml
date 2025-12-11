@@ -6,6 +6,7 @@ grn:
   delta: 0.01
   n_steps: 10
   config_file: "configs/sample_data/sample_network_2cell.yaml"
+  random_key: 42
   
   ## Gene related
   non_mr_basal: false
@@ -57,13 +58,17 @@ spatial_sim:
       order: 0
       rate_coeff: 1
       reactants:
+      reactants_exponent:
       products:
-        - - "chem3"
-          - 3
+        - "chem3"
+      products_exponent:
+        - 3
     reac_3: # Decay of chemical
       order: 0
       rate_coeff: 1
       reactants:
-        - - "chem2"
-          - 3
+        - "chem2"
+      reactants_exponent:
+        - 3
       products:
+      products_exponent:
