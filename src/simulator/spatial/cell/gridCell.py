@@ -24,6 +24,7 @@ class GridCell:
             key=self.key,
             reaction_config=cfg["reaction"],
             delta=cfg["delta"],
+            use_prob=cfg["reaction_prob"],
         )
         self.vol = vol
         self.id = id

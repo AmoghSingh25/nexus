@@ -53,6 +53,7 @@ spatial_sim:
   
   ## Reactions
   reaction_bool: true
+  reaction_prob: false
   reaction:
     reac_2: # Production of chemical
       order: 0

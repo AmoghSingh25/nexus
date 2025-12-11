@@ -15,7 +15,9 @@ class ChemicalField:
     Chemical Field class to store data about the chemicals inside a cell. Handles the reactions within the cells.
     """
 
-    def __init__(self, chem_names, mol_masses, reaction_config, delta, key=42):
+    def __init__(
+        self, chem_names, mol_masses, reaction_config, delta, use_prob, key=42
+    ):
         """
         Initialize Chemical Field
 
@@ -33,6 +35,7 @@ class ChemicalField:
         self.chem_names = chem_names
         self.delta = delta
         self.key, self.sub_key = random.split(random.key(key))
+        self.use_prob = use_prob
 
         for i in range(self.n_chemicals):
             self.chemicals.append(
@@ -69,14 +72,17 @@ class ChemicalField:
 
         self.reaction_prob = jnp.zeros((3,))
         for i in range(len(self.reactions)):
-            if self.reaction_order_sum[i] > 0.0:
-                prob_i = (
-                    self.reactions[i].k
-                    * (1 - jnp.exp(-self.delta * self.reaction_order_sum[i]))
-                ) / self.reaction_order_sum[i]
+            if self.use_prob:
+                if self.reaction_order_sum[i] > 0.0:
+                    prob_i = (
+                        self.reactions[i].k
+                        * (1 - jnp.exp(-self.delta * self.reaction_order_sum[i]))
+                    ) / self.reaction_order_sum[i]
+                else:
+                    prob_i = 0.0
             else:
-                prob_i = 0.0
-            self.reactions[i].prob = prob_i * 10.0
+                prob_i = 1.0
+            self.reactions[i].prob = prob_i
 
         self.key, self.sub_key, self.chem_mass = generate_uniform(
             key=self.key, sub_key=self.sub_key, shape=(self.n_chemicals, 1)
@@ -117,7 +123,6 @@ class ChemicalField:
             )
 
             if random_prob <= prob_i:
-                print("REACTION _ _ ", i)
                 self.key, self.sub_key, poisson_i = generate_poisson(
                     key=self.key,
                     sub_key=self.sub_key,
