@@ -14,9 +14,10 @@ def _():
         compose,
     )
     import os
+    import marimo as mo
 
     matplotlib.style.use("default")
-    return SpatialSim, compose, initialize_config_dir, os, plt
+    return SpatialSim, compose, initialize_config_dir, mo, os, plt
 
 
 @app.cell
@@ -53,8 +54,16 @@ def _(plt):
 
 @app.cell
 def _():
-    chem_id = 2
+    chem_id = 0
     return (chem_id,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## Grid Mesh
+    """)
+    return
 
 
 @app.cell
@@ -71,6 +80,7 @@ def _(SpatialSim, get_config):
 @app.cell
 def _(chem_id, plot_chemical_data, plt, s1):
     plot_chemical_data(s1, chem_id=chem_id)
+    s1.cleanup()
     plt.title(f"chem{str(chem_id + 1)}")
     plt.show()
     return
@@ -84,6 +94,7 @@ def _(SpatialSim, chem_id, get_config, plot_chemical_data, plt):
     s3.run_sim()
 
     plot_chemical_data(s3, chem_id=chem_id)
+    s3.cleanup()
     plt.title(f"chem{str(chem_id + 1)}. Only reaction")
     plt.show()
     return
@@ -97,8 +108,87 @@ def _(SpatialSim, chem_id, get_config, plot_chemical_data, plt):
     s2 = SpatialSim(_config.spatial_sim)
     s2.run_sim()
     plot_chemical_data(s2, chem_id=chem_id)
+    s2.cleanup()
     plt.title(f"chem{str(chem_id + 1)}. Only diffusion")
     plt.show()
+    return (s2,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## Free Mesh testing
+    """)
+    return
+
+
+@app.cell
+def _(SpatialSim, get_config):
+    _config = get_config("freemesh_config")
+    s2 = SpatialSim(_config.spatial_sim)
+    s2.run_sim()
+    return (s2,)
+
+
+@app.cell
+def _(chem_id, plot_chemical_data, plt, s2):
+    plot_chemical_data(s2, chem_id=chem_id)
+    s2.cleanup()
+    plt.title(f"chem{str(chem_id + 1)}")
+    plt.show()
+    return
+
+
+@app.cell
+def _(SpatialSim, chem_id, get_config, plot_chemical_data, plt):
+    _config = get_config("freemesh_config")
+    _config["spatial_sim"]["diffusion_bool"] = False
+    s3 = SpatialSim(_config.spatial_sim)
+    s3.run_sim()
+    plot_chemical_data(s3, chem_id=chem_id)
+    s3.cleanup()
+    plt.title(f"chem{str(chem_id + 1)}. Only reaction")
+    plt.show()
+    return
+
+
+@app.cell
+def _(SpatialSim, chem_id, get_config, plot_chemical_data, plt):
+    _config = get_config("freemesh_config")
+    _config["spatial_sim"]["reaction_bool"] = False
+    _config["spatial_sim"]["diffusion_bool"] = True
+    s4 = SpatialSim(_config.spatial_sim)
+    s4.run_sim()
+    plot_chemical_data(s4, chem_id=chem_id)
+    s4.cleanup()
+    plt.title(f"chem{str(chem_id + 1)}. Only diffusion")
+    plt.show()
+    return
+
+
+@app.cell
+def _(SpatialSim, get_config):
+    base_config = get_config("freemesh_config")
+    base_config.spatial_sim.reaction_bool = False
+    base_config.spatial_sim.diffusion_bool = True
+
+    _s = SpatialSim(base_config.spatial_sim)
+    _s.run_sim()
+    chem_before = _s.logger.retrieve_chem_data(step=0)["conc"]
+    chem_after = _s.logger.retrieve_chem_data(step=-1)["conc"]
+    _s.cleanup()
+    return chem_after, chem_before
+
+
+@app.cell
+def _(chem_before):
+    chem_before
+    return
+
+
+@app.cell
+def _(chem_after):
+    chem_after
     return
 
 

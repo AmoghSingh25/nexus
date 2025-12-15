@@ -1,3 +1,4 @@
+import shutil
 import os
 import tiledb
 import numpy as np
@@ -260,3 +261,11 @@ class DataLogger:
             _A.close()
 
         return ret
+
+    def cleanup(self):
+        if os.path.exists(self.chem_arr):
+            shutil.rmtree(self.chem_arr)
+        if os.path.exists(self.reaction_arr):
+            shutil.rmtree(self.reaction_arr)
+        if os.path.exists(self.diffusion_arr):
+            shutil.rmtree(self.diffusion_arr)

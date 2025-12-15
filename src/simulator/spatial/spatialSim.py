@@ -1,4 +1,5 @@
 from simulator.spatial.mesh.gridMesh import GridMesh
+from simulator.spatial.mesh.freeMesh import FreeMesh
 from omegaconf import DictConfig
 from tqdm import tqdm
 from simulator.spatial.logger.MeshLogger import DataLogger
@@ -31,6 +32,8 @@ class SpatialSim:
             self.mesh = GridMesh(
                 cfg=cfg,
             )
+        elif self.mesh_type == "lattice-free":
+            self.mesh = FreeMesh(cfg=cfg)
         else:
             raise ValueError("Incorrect mesh type")
 
@@ -60,3 +63,7 @@ class SpatialSim:
         for i in tqdm(range(self.n_steps)):
             self.mesh.step(step_i=i + 1, delta=self.delta, logger=self.logger)
         self.logging and self.logger.log_chem_state(self.n_steps, self.mesh.cells)
+
+    def cleanup(self):
+        if self.logger is not None:
+            self.logger.cleanup()
