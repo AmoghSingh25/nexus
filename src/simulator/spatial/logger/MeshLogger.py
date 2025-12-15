@@ -2,7 +2,7 @@ import os
 import tiledb
 import numpy as np
 from typing import List
-from simulator.spatial.cell.gridCell import GridCell
+from simulator.spatial.field.gridField import GridField
 
 
 class DataLogger:
@@ -129,13 +129,13 @@ class DataLogger:
 
         tiledb.Array.create(self.reaction_arr, sch)
 
-    def get_cells_conc(self, cells: np.ndarray[GridCell]):
+    def get_cells_conc(self, cells: np.ndarray[GridField]):
         """
         Helper function to get chemical concentrations of cells.
 
         :param self: DataLogger
         :param cells: List of cells
-        :type cells: np.ndarray[GridCell]
+        :type cells: np.ndarray[GridField]
         """
         chem_conc = []
         pos = []
@@ -146,14 +146,14 @@ class DataLogger:
 
     """ Logger functions """
 
-    def log_chem_state(self, step, cells: np.ndarray[GridCell]):
+    def log_chem_state(self, step, cells: np.ndarray[GridField]):
         """
         Logs the chemical concentrations.
 
         :param self: DataLogger
         :param step: Simulation step index
         :param cells: List of cells to store chemical concentration
-        :type cells: np.ndarray[GridCell]
+        :type cells: np.ndarray[GridField]
         """
         chem_conc, pos = self.get_cells_conc(cells=cells)
         cell_idx, chem_idx = np.indices(chem_conc.shape, sparse=False)
@@ -166,14 +166,14 @@ class DataLogger:
             _A[step_idx, cell_idx, chem_idx] = chem_conc
             _A.close()
 
-    def log_diffusion_state(self, step, cells: np.ndarray[GridCell]):
+    def log_diffusion_state(self, step, cells: np.ndarray[GridField]):
         """
         Logs the chemical concentrations post diffusion.
 
         :param self: DataLogger
         :param step: Simulation step index
         :param cells: List of cells to store chemical concentration
-        :type cells: np.ndarray[GridCell]
+        :type cells: np.ndarray[GridField]
         """
         chem_conc, pos = self.get_cells_conc(cells=cells)
         with tiledb.open(self.diffusion_arr, "w") as _A:

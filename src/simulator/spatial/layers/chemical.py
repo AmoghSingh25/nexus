@@ -10,18 +10,18 @@ from simulator.spatial.utils.random_generators import (
 )
 
 
-class ChemicalField:
+class ChemicalLayer:
     """
-    Chemical Field class to store data about the chemicals inside a cell. Handles the reactions within the cells.
+    Chemical Layer class to store data about the chemicals inside a field. Handles the reactions within the fields.
     """
 
     def __init__(
         self, chem_names, mol_masses, reaction_config, delta, use_prob, key=42
     ):
         """
-        Initialize Chemical Field
+        Initialize Chemical Layer
 
-        :param self: ChemicalField
+        :param self: ChemicalLayer
         :param chem_names: List of chemical names in the simulation.
         :param mol_masses: List of molecular masses of the chemicals.
         :param reaction_config: Subset of the uv Config related to reactions.

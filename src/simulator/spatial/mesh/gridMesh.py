@@ -1,7 +1,7 @@
 import jax
 from jax import random
 import jax.numpy as jnp
-from simulator.spatial.cell.gridCell import GridCell
+from simulator.spatial.field.gridField import GridField
 import numpy as np
 from simulator.spatial.utils.random_generators import generate_choices
 
@@ -64,7 +64,7 @@ class GridMesh:
         curr_id = 0
 
         for [i, j, k] in self.positions:
-            cell_i = GridCell(
+            cell_i = GridField(
                 pos=[i, j, k],
                 D=self.D,
                 key=(i + j + k),
