@@ -59,6 +59,7 @@ class SpatialSim:
 
         :param self: SpatialSim object
         """
+
         self.logging and self.logger.log_chem_state(step=0, cells=self.mesh.cells)
         for i in tqdm(range(self.n_steps)):
             self.mesh.step(step_i=i + 1, delta=self.delta, logger=self.logger)

@@ -22,13 +22,13 @@ grn:
 # Lattice free setup
 spatial_sim:
   ## Mesh related
-  height: 3
-  width: 3
-  depth: 3
+  height: 2
+  width: 2
+  depth: 1
   mesh_type: "lattice-free"
   sparse_cells: true
   # cell_num: 10
-  cell_density: 5 # Default value is 10
+  cell_density: 1 # Default value is 10
 
   ## Diffusion related
   D: 0.5

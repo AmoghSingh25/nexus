@@ -33,7 +33,7 @@ def _(compose, initialize_config_dir, os):
 
 @app.cell
 def _(plt):
-    def plot_chemical_data(sim, chem_id):
+    def plot_cell_chemicals(sim, chem_id):
         _s = sim
         _chem_data_before = _s.logger.retrieve_chem_data(step=0, chem_id=chem_id)[
             "conc"
@@ -41,15 +41,35 @@ def _(plt):
         _chem_data_after = _s.logger.retrieve_chem_data(step=-1, chem_id=chem_id)[
             "conc"
         ]
-        print(_chem_data_before)
-        print(_chem_data_after)
         plt.plot(_chem_data_before, label="Before")
         plt.plot(_chem_data_after, label="After")
+        plt.xticks(
+            list(range(len(_chem_data_before))),
+            labels=list(range(len(_chem_data_before))),
+        )
         plt.legend()
-        plt.xlabel("Cells")
+        plt.xlabel("Cell ID")
         plt.ylabel("Chemical Mass")
 
-    return (plot_chemical_data,)
+    def plot_chemical_progress(sim, chem_id, cell_id=0):
+        _s = sim
+        _chem_datas = []
+        for _chem_i in range(_s.mesh.n_chemicals):
+            _chem_datas.append(
+                _s.logger.retrieve_chem_data(chem_id=_chem_i, cell_id=cell_id)["conc"]
+            )
+            plt.plot(_chem_datas[-1], label=f"Chem {str(_chem_i)}")
+
+        plt.legend()
+        plt.xlabel("Steps")
+        plt.ylabel("Chemical Mass")
+
+    return plot_cell_chemicals, plot_chemical_progress
+
+
+@app.cell
+def _():
+    return
 
 
 @app.cell
@@ -90,11 +110,11 @@ def _(chem_id, plot_chemical_data, plt, s1):
 def _(SpatialSim, chem_id, get_config, plot_chemical_data, plt):
     _config = get_config()
     _config["spatial_sim"]["diffusion_bool"] = False
-    s3 = SpatialSim(_config.spatial_sim)
-    s3.run_sim()
+    _s = SpatialSim(_config.spatial_sim)
+    _s.run_sim()
 
-    plot_chemical_data(s3, chem_id=chem_id)
-    s3.cleanup()
+    plot_chemical_data(_s, chem_id=chem_id)
+    _s.cleanup()
     plt.title(f"chem{str(chem_id + 1)}. Only reaction")
     plt.show()
     return
@@ -111,7 +131,7 @@ def _(SpatialSim, chem_id, get_config, plot_chemical_data, plt):
     s2.cleanup()
     plt.title(f"chem{str(chem_id + 1)}. Only diffusion")
     plt.show()
-    return (s2,)
+    return
 
 
 @app.cell(hide_code=True)
@@ -123,44 +143,42 @@ def _(mo):
 
 
 @app.cell
-def _(SpatialSim, get_config):
+def _(SpatialSim, chem_id, get_config, plot_chemical_progress, plt):
+    _cell_id = 1
     _config = get_config("freemesh_config")
-    s2 = SpatialSim(_config.spatial_sim)
-    s2.run_sim()
-    return (s2,)
-
-
-@app.cell
-def _(chem_id, plot_chemical_data, plt, s2):
-    plot_chemical_data(s2, chem_id=chem_id)
-    s2.cleanup()
-    plt.title(f"chem{str(chem_id + 1)}")
+    _config["spatial_sim"]["n_steps"] = 10
+    _config["spatial_sim"]["reaction_bool"] = False
+    s3 = SpatialSim(_config.spatial_sim)
+    s3.run_sim()
+    plot_chemical_progress(s3, chem_id=chem_id, cell_id=_cell_id)
+    # s3.cleanup()
+    plt.title(f"chem{str(chem_id + 1)} in cell {str(_cell_id)}")
     plt.show()
     return
 
 
 @app.cell
-def _(SpatialSim, chem_id, get_config, plot_chemical_data, plt):
+def _(SpatialSim, chem_id, get_config, plot_cell_chemicals, plt):
     _config = get_config("freemesh_config")
     _config["spatial_sim"]["diffusion_bool"] = False
-    s3 = SpatialSim(_config.spatial_sim)
-    s3.run_sim()
-    plot_chemical_data(s3, chem_id=chem_id)
-    s3.cleanup()
+    _s = SpatialSim(_config.spatial_sim)
+    _s.run_sim()
+    plot_cell_chemicals(_s, chem_id=chem_id)
+    _s.cleanup()
     plt.title(f"chem{str(chem_id + 1)}. Only reaction")
     plt.show()
     return
 
 
 @app.cell
-def _(SpatialSim, chem_id, get_config, plot_chemical_data, plt):
+def _(SpatialSim, chem_id, get_config, plot_cell_chemicals, plt):
     _config = get_config("freemesh_config")
     _config["spatial_sim"]["reaction_bool"] = False
     _config["spatial_sim"]["diffusion_bool"] = True
-    s4 = SpatialSim(_config.spatial_sim)
-    s4.run_sim()
-    plot_chemical_data(s4, chem_id=chem_id)
-    s4.cleanup()
+    _s = SpatialSim(_config.spatial_sim)
+    _s.run_sim()
+    plot_cell_chemicals(_s, chem_id=chem_id)
+    _s.cleanup()
     plt.title(f"chem{str(chem_id + 1)}. Only diffusion")
     plt.show()
     return

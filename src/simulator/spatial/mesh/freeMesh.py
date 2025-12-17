@@ -40,8 +40,9 @@ class FreeMesh:
 
         self.cell_density = cfg.get("cell_density", 10)
 
-        self.cell_vol = self.height * self.width * self.depth
-        self.n_cells = int(self.cell_vol * self.cell_density)
+        self.mesh_vol = self.height * self.width * self.depth
+        self.n_cells = int(self.mesh_vol * self.cell_density)
+        self.cell_vol = self.mesh_vol / self.n_cells
 
         self.key, self.sub_key, self.positions = generate_uniform(
             key=self.key,
@@ -55,6 +56,8 @@ class FreeMesh:
         self.reaction_bool = cfg.reaction_bool
         self.diffusion_bool = cfg.diffusion_bool
         curr_id = 0
+        self.delta_m = 0  # Adjust mass of chemicals if there is a mismatch in previous and current mass
+
         self.n_neighbours = 3  # TODO: Use config to set value
 
         for [i, j, k] in self.positions:
@@ -120,6 +123,7 @@ class FreeMesh:
 
         for i in range(len(flux_list)):
             self.cells[neighbour_cells[i]].flux[curr_cell.id] = -1 * flux_list[i]
+            self.cells[curr_cell.id].flux[neighbour_cells[i]] = flux_list[i]
 
         flux_list = jnp.append(flux_list, flux.reshape(-1, self.n_chemicals, 1), axis=0)
         total_flux = jnp.sum(flux_list, axis=0)
@@ -135,28 +139,56 @@ class FreeMesh:
         """
 
         # TODO: Assuming area of boundary is 1. Change to dynamic
-
         def compute_delta_m(cell_id):
             flux = self.calc_flux(cell_id)
             area = 1
             delta_m = flux * area * delta
+            if jnp.any(self.cells[cell_id].chem.chem_mass + delta_m < 0):
+                fix_flux(cell_id, self.cells[cell_id].chem.chem_mass + delta_m)
             return delta_m
 
+        def fix_flux(cell_id, diff_mass):
+            neighbours = self.cells[cell_id].neighbours
+            neg_idx = jnp.where(diff_mass < 0)
+            diff_i = (diff_mass[neg_idx] / neighbours.shape[0]).reshape(-1)
+            for i in neighbours:
+                flux_i = self.cells[i.item()].flux[cell_id][neg_idx] - diff_i
+                self.cells[i.item()].flux[cell_id] = (
+                    self.cells[i.item()].flux[cell_id].at[neg_idx].set(flux_i)
+                )
+                self.cells[cell_id].flux[i.item()] = (
+                    self.cells[cell_id].flux[i.item()].at[neg_idx].set(-1 * flux_i)
+                )
+
         delta_m_l = []
+        ## Initial loop to fix negative masses
+        for i in self.cells.keys():
+            compute_delta_m(cell_id=i)
+
+        ## Final loop to set fixed masses
         for i in self.cells.keys():
             delta_m_l.append(compute_delta_m(cell_id=i))
 
-        old_mass_l = []
-        new_mass_l = []
+        ## DEBUG: Flux check
+        # for i in self.cells.keys():
+        #     neighbours_i = self.cells[i].neighbours
+        #     for j in neighbours_i:
+        #         flux_i = self.cells[i].flux[j.item()]
+        #         flux_j = self.cells[j.item()].flux[i]
+        #         if not jnp.all(flux_i == -1 * flux_j):
+        #             print("MISMATCH IN FLUX")
+        prev_mass = 0
+        new_mass = 0
+
         for i in self.cells.keys():
             chem_mass_i = self.cells[i].chem.chem_mass
-            old_mass_l.append(chem_mass_i)
+            prev_mass += jnp.sum(chem_mass_i)
             chem_mass_i += delta_m_l[i]
-            chem_mass_i.at[chem_mass_i < 0].set(0)
             self.cells[i].chem.chem_mass = chem_mass_i
-            new_mass_l.append(chem_mass_i)
+            new_mass += jnp.sum(chem_mass_i)
             self.cells[i].flux = {}
-        return old_mass_l, new_mass_l
+        self.delta_m = (prev_mass - new_mass) / self.n_cells
+        print("Delta M = ", self.delta_m)
 
     def step(self, step_i, delta, logger):
         """
@@ -170,6 +202,7 @@ class FreeMesh:
         # TODO: Vectorize steps
 
         # Perform diffusion
+
         if self.diffusion_bool:
             self.calc_conc_change(delta)
             logger is not None and logger.log_chem_state(step=step_i, cells=self.cells)

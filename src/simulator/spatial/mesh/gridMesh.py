@@ -145,23 +145,37 @@ class GridMesh:
             flux = self.calc_flux(cell_id)
             area = 1
             delta_m = flux * area * delta
+            if jnp.any(self.cells[cell_id].chem.chem_mass + delta_m < 0):
+                fix_flux(cell_id, self.cells[cell_id].chem.chem_mass + delta_m)
             return delta_m
 
+        def fix_flux(cell_id, diff_mass):
+            neighbours = self.cells[cell_id].neighbours
+            neg_idx = jnp.where(diff_mass < 0)
+            diff_i = (diff_mass[neg_idx] / neighbours.shape[0]).reshape(-1)
+            for i in neighbours:
+                flux_i = self.cells[i.item()].flux[cell_id][neg_idx] - diff_i
+                self.cells[i.item()].flux[cell_id] = (
+                    self.cells[i.item()].flux[cell_id].at[neg_idx].set(flux_i)
+                )
+                self.cells[cell_id].flux[i.item()] = (
+                    self.cells[cell_id].flux[i.item()].at[neg_idx].set(-1 * flux_i)
+                )
+
         delta_m_l = []
+        ## Initial loop to fix negative masses
+        for i in self.cells.keys():
+            compute_delta_m(cell_id=i)
+
+        ## Final loop to set fixed masses
         for i in self.cells.keys():
             delta_m_l.append(compute_delta_m(cell_id=i))
 
-        old_mass_l = []
-        new_mass_l = []
         for i in self.cells.keys():
             chem_mass_i = self.cells[i].chem.chem_mass
-            old_mass_l.append(chem_mass_i)
             chem_mass_i += delta_m_l[i]
-            chem_mass_i.at[chem_mass_i < 0].set(0)
             self.cells[i].chem.chem_mass = chem_mass_i
-            new_mass_l.append(chem_mass_i)
             self.cells[i].flux = {}
-        return old_mass_l, new_mass_l
 
     def step(self, step_i, delta, logger):
         """
