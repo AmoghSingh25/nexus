@@ -139,9 +139,14 @@ class ChemicalLayer:
 
         chem_concs = np.array(chem_concs)
         reaction_ids = np.array(reaction_ids, dtype=np.int32)
+
+        logger is not None and logger.log_reaction_order(
+            step=step, cell_id=cell_id, reaction_order=np.asarray(reaction_order)
+        )
         logger is not None and logger.log_reaction_state(
             step=step, cell_id=cell_id, reaction_ids=reaction_ids, chem_concs=chem_concs
         )
+
         self.chem_mass = conc_t_0
 
     def calc_zero_order(self, curr_conc, react_matrix):

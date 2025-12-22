@@ -69,11 +69,6 @@ def _(plt):
 
 @app.cell
 def _():
-    return
-
-
-@app.cell
-def _():
     chem_id = 0
     return (chem_id,)
 
