@@ -7,6 +7,7 @@ app = marimo.App(width="medium")
 @app.cell
 def _():
     from simulator.spatial.spatialSim import SpatialSim
+    from simulator.spatial_vec.spatialSim import SpatialSimVec
     import matplotlib.pyplot as plt
     import matplotlib
     from hydra import (
@@ -17,7 +18,15 @@ def _():
     import marimo as mo
 
     matplotlib.style.use("default")
-    return SpatialSim, compose, initialize_config_dir, mo, os, plt
+    return (
+        SpatialSim,
+        SpatialSimVec,
+        compose,
+        initialize_config_dir,
+        mo,
+        os,
+        plt,
+    )
 
 
 @app.cell
@@ -202,6 +211,48 @@ def _(chem_before):
 @app.cell
 def _(chem_after):
     chem_after
+    return
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## Vectorized spatial testing
+    """)
+    return
+
+
+@app.cell
+def _(SpatialSim, get_config):
+    _config = get_config("freemesh_config")
+    _config.spatial_sim.diffusion_bool = True
+    _config.spatial_sim.reaction_bool = False
+    _config.spatial_sim.logging = True
+    _s1 = SpatialSim(_config.spatial_sim)
+    _s1.run_sim()
+    return
+
+
+@app.cell
+def _(SpatialSimVec, get_config, plot_cell_chemicals, plt):
+    _config = get_config("freemesh_config")
+    _config.spatial_sim.diffusion_bool = True
+    _config.spatial_sim.reaction_bool = False
+    _config.spatial_sim.reaction_prob = False
+    # _config.spatial_sim.logging = False
+    _s1 = SpatialSimVec(_config.spatial_sim)
+    _s1.run_sim()
+
+    _chemid = 2
+    plot_cell_chemicals(_s1, chem_id=_chemid)
+    _s1.cleanup()
+    plt.title(f"chem{str(_chemid + 1)}")
+    plt.show()
     return
 
 

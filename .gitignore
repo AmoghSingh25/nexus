@@ -12,3 +12,4 @@ notebooks/protein_rna_test_data/
 .venv/
 outputs/
 src/simulator/spatial/logs/
+src/simulator/spatial_vec/logs/

@@ -182,7 +182,7 @@ class DataLogger:
 
     """ Logger functions """
 
-    def log_chem_state(self, step, cells: np.ndarray[GridField]):
+    def log_chem_state(self, step, field_chem):
         """
         Logs the chemical concentrations.
 
@@ -191,17 +191,16 @@ class DataLogger:
         :param cells: List of cells to store chemical concentration
         :type cells: np.ndarray[GridField]
         """
-        chem_conc, pos = self.get_cells_conc(cells=cells)
-        print("chem conc - ", chem_conc.shape)
-        print(np.indices(chem_conc.shape).shape)
-        cell_idx, chem_idx = np.indices(chem_conc.shape, sparse=False)
+        # chem_conc, pos = self.get_cells_conc(cells=cells)
+        field_chem = field_chem.reshape(field_chem.shape[0:2])
+        field_idx, chem_idx = np.indices(field_chem.shape, sparse=False)
 
-        chem_conc = chem_conc.ravel()
-        cell_idx = cell_idx.ravel()
+        field_chem = field_chem.ravel()
+        field_idx = field_idx.ravel()
         chem_idx = chem_idx.ravel()
         step_idx = list([step]) * len(chem_idx)
         with tiledb.open(self.chem_arr, "w") as _A:
-            _A[step_idx, cell_idx, chem_idx] = chem_conc
+            _A[step_idx, field_idx, chem_idx] = field_chem
             _A.close()
 
     def log_diffusion_state(self, step, cells: np.ndarray[GridField]):
@@ -334,13 +333,13 @@ class DataLogger:
         return ret
 
     def cleanup(self):
-        if os.path.exists(self.chem_arr):
-            shutil.rmtree(self.chem_arr)
-        if os.path.exists(self.reaction_arr):
-            shutil.rmtree(self.reaction_arr)
-        if os.path.exists(self.diffusion_arr):
-            shutil.rmtree(self.diffusion_arr)
-        if os.path.exists(self.reaction_order_arr):
-            shutil.rmtree(self.reaction_order_arr)
         if os.path.exists(self.base_path):
             shutil.rmtree(self.base_path)
+        # if os.path.exists(self.chem_arr):
+        #     shutil.rmtree(self.chem_arr)
+        # if os.path.exists(self.reaction_arr):
+        #     shutil.rmtree(self.reaction_arr)
+        # if os.path.exists(self.diffusion_arr):
+        #     shutil.rmtree(self.diffusion_arr)
+        # if os.path.exists(self.reaction_order_arr):
+        #     shutil.rmtree(self.reaction_order_arr)

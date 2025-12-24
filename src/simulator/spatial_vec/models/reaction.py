@@ -66,23 +66,3 @@ class Reaction:
             # exp_i = self.reactant_exp[idx]
             react_matrix = react_matrix.at[id_i].set(self.k)
         return react_matrix
-
-
-def _generate_reaction_matrix(n_chemicals, reactant_ids, prod_ids, k):
-    """
-    Generate a reaction matrix that outlines the changes in the concentrations of the chemicals.
-
-    :param self: Reaction
-    """
-    react_matrix = jnp.zeros(shape=(n_chemicals, 1))
-
-    for idx in range(len(reactant_ids)):
-        id_i = reactant_ids[idx]
-        # exp_i = self.reactant_exp[idx]
-        react_matrix = react_matrix.at[id_i].set(-k)
-
-    for idx in range(len(prod_ids)):
-        id_i = prod_ids[idx]
-        # exp_i = self.reactant_exp[idx]
-        react_matrix = react_matrix.at[id_i].set(k)
-    return react_matrix

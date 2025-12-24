@@ -1,12 +1,12 @@
-import numpy as np
-import jax.numpy as jnp
 import jax
 from jax import random
-from simulator.spatial.field.freeField import FreeField
-from simulator.spatial.utils.random_generators import generate_uniform
+import jax.numpy as jnp
+from simulator.spatial.field.gridField import GridField
+import numpy as np
+from simulator.spatial.utils.random_generators import generate_choices
 
 
-class FreeMesh:
+class GridMesh:
     """
     Create a mesh of grid cells for 3D space. Performs flux and diffusion calculation, reaction, updates cells during simulation and other mesh and cell related functions.
     """
@@ -37,39 +37,42 @@ class FreeMesh:
 
         x, y, z = jnp.mgrid[0 : self.width, 0 : self.height, 0 : self.depth]
         self.positions = jnp.vstack([x.ravel(), y.ravel(), z.ravel()]).T
+        if cfg.get("sparse_cells", False):
+            self.n_cells = cfg.cell_num
+            max_cells = int(self.height * self.width * self.depth)
 
-        self.cell_density = cfg.get("cell_density", 10)
+            self.key, self.sub_key, self.positions = generate_choices(
+                key=self.key,
+                sub_key=self.sub_key,
+                a=self.positions,
+                shape=(self.n_cells,),
+                replace=False,
+            )
 
-        self.mesh_vol = self.height * self.width * self.depth
-        self.n_cells = int(self.mesh_vol * self.cell_density)
-        self.cell_vol = self.mesh_vol / self.n_cells
-
-        self.key, self.sub_key, self.positions = generate_uniform(
-            key=self.key,
-            sub_key=self.sub_key,
-            shape=(self.n_cells, 3),
-        )
-        self.positions = jnp.round(self.positions, decimals=2)
+            if self.n_cells > max_cells:
+                raise ValueError(
+                    f"Number of cells {self.n_cells} exceeds maximum possible {max_cells} for given dimensions"
+                )
+        else:
+            self.n_cells = int(self.height * self.width * self.depth)
+        self.cell_vol = self.width * self.height * self.depth / self.n_cells
 
         self.cells = {}
         self.cell_ids = []
         self.reaction_bool = cfg.reaction_bool
         self.diffusion_bool = cfg.diffusion_bool
         curr_id = 0
-        self.delta_m = 0  # Adjust mass of chemicals if there is a mismatch in previous and current mass
-
-        self.n_neighbours = 3  # TODO: Use config to set value
 
         for [i, j, k] in self.positions:
-            cell_i = FreeField(
+            cell_i = GridField(
                 pos=[i, j, k],
                 D=self.D,
-                key=curr_id,
+                key=(i + j + k),
                 vol=self.cell_vol,
                 id=curr_id,
                 cfg=cfg,
             )
-            cell_i.neighbours = self.get_neighbours(jnp.array([i, j, k]))
+            cell_i.neighbours = self.get_neighbours(cell_i.pos)
             self.cells[curr_id] = cell_i
             self.cell_ids.append(curr_id)
             curr_id += 1
@@ -120,15 +123,14 @@ class FreeMesh:
             curr_cell.vol,
             distances,
         )
+
         for i in range(len(flux_list)):
             self.cells[neighbour_cells[i]].flux[curr_cell.id] = -1 * flux_list[i]
-            self.cells[curr_cell.id].flux[neighbour_cells[i]] = flux_list[i]
 
         flux_list = jnp.append(flux_list, flux.reshape(-1, self.n_chemicals, 1), axis=0)
         total_flux = jnp.sum(flux_list, axis=0)
         return total_flux
 
-    # TODO: Fix diffusion, large negative and large positive values
     def calc_conc_change(self, delta):
         """
         Calculate change in chemical concentration due to diffusion
@@ -138,6 +140,7 @@ class FreeMesh:
         """
 
         # TODO: Assuming area of boundary is 1. Change to dynamic
+
         def compute_delta_m(cell_id):
             flux = self.calc_flux(cell_id)
             area = 1
@@ -168,18 +171,11 @@ class FreeMesh:
         for i in self.cells.keys():
             delta_m_l.append(compute_delta_m(cell_id=i))
 
-        prev_mass = 0
-        new_mass = 0
-
         for i in self.cells.keys():
             chem_mass_i = self.cells[i].chem.chem_mass
-            prev_mass += jnp.sum(chem_mass_i)
             chem_mass_i += delta_m_l[i]
             self.cells[i].chem.chem_mass = chem_mass_i
-            new_mass += jnp.sum(chem_mass_i)
             self.cells[i].flux = {}
-        self.delta_m = (prev_mass - new_mass) / self.n_cells
-        print("Delta M = ", self.delta_m)
 
     def step(self, step_i, delta, logger):
         """
@@ -193,7 +189,6 @@ class FreeMesh:
         # TODO: Vectorize steps
 
         # Perform diffusion
-
         if self.diffusion_bool:
             self.calc_conc_change(delta)
             logger is not None and logger.log_chem_state(step=step_i, cells=self.cells)
@@ -214,13 +209,57 @@ class FreeMesh:
         """
         return pos[0] + self.height * pos[1] + (self.height * self.depth) * pos[2]
 
-    def get_neighbours(self, pos):
+    def get_neighbours(self, idx):
         """
         Get neighbours of the cell at pos[idx].
 
         :param self: GridMesh
         :param idx: index of cell within pos[idx]
         """
-        l1_norm = jnp.linalg.norm(pos - self.positions, axis=1, ord=1)
-        neigh_idxs = jnp.argsort(l1_norm)[1 : self.n_neighbours + 1]
-        return neigh_idxs
+
+        # 3D neighbours - 26 neighbours
+        idx = jnp.array(idx)
+        neighbor_idx = jnp.array(
+            [
+                [-1, -1, -1],
+                [-1, -1, 0],
+                [-1, -1, 1],
+                [-1, 0, -1],
+                [-1, 0, 0],
+                [-1, 0, 1],
+                [-1, 1, -1],
+                [-1, 1, 0],
+                [-1, 1, 1],
+                [0, -1, -1],
+                [0, -1, 0],
+                [0, -1, 1],
+                [0, 0, -1],
+                [0, 0, 1],
+                [0, 1, -1],
+                [0, 1, 0],
+                [0, 1, 1],
+                [1, -1, -1],
+                [1, -1, 0],
+                [1, -1, 1],
+                [1, 0, -1],
+                [1, 0, 0],
+                [1, 0, 1],
+                [1, 1, -1],
+                [1, 1, 0],
+                [1, 1, 1],
+            ]
+        )
+        neighbor_pos = []
+
+        def check_position(arr):
+            if not np.any(np.all(self.positions == arr, axis=1)):
+                return -1
+            else:
+                return np.where(np.all(self.positions == arr, axis=1))[0][0]
+
+        for i in neighbor_idx:
+            pos_i = i + idx
+            neighbour_cell_id = check_position(pos_i)
+            if neighbour_cell_id != -1:
+                neighbor_pos.append(neighbour_cell_id)
+        return neighbor_pos
