@@ -228,13 +228,15 @@ def _(mo):
 
 
 @app.cell
-def _(SpatialSim, get_config):
+def _(SpatialSimVec, get_config):
     _config = get_config("freemesh_config")
     _config.spatial_sim.diffusion_bool = True
     _config.spatial_sim.reaction_bool = False
     _config.spatial_sim.logging = True
-    _s1 = SpatialSim(_config.spatial_sim)
+    _s1 = SpatialSimVec(_config.spatial_sim)
     _s1.run_sim()
+    print(_s1.mesh.positions)
+    _s1.mesh.get_radial_limits(pos=_s1.mesh.positions[0])
     return
 
 

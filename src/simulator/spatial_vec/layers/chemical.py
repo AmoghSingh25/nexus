@@ -64,6 +64,8 @@ def calc_reaction_change(
             None,
         )
 
+    ## TODO: Fix logging with JAX traced arrays
+
     # chem_concs = np.array(chem_concs)
     # reaction_ids = np.array(reaction_ids, dtype=np.int32)
 
@@ -81,11 +83,9 @@ def calc_zero_order(args):
     """
     Perform zero order reaction and return updated concentrations.
 
-    :param self: ChemicalField
-    :param curr_conc: Current chemical concentration
-    :param react_matrix: Reaction matrix for reaction from Reaction.generate_reaction_matrix()
+    :param args[0]: Current chemical concentration
+    :param args[1]: Reaction matrix for reaction from Reaction.generate_reaction_matrix()
     """
-    # TODO: Replace _react_matrix_ with Sample(Poisson(lambda))
     curr_conc = args[0].at[:].set(args[0] + args[1])
     return curr_conc
 
@@ -94,11 +94,9 @@ def calc_first_order(args):
     """
     Perform first order reaction and return updated concentrations.
 
-    :param self: ChemicalField
-    :param curr_conc: Current chemical concentration
-    :param react_matrix: Reaction matrix for reaction from Reaction.generate_reaction_matrix()
+    :param args[0]: Current chemical concentration
+    :param args[1]: Reaction matrix for reaction from Reaction.generate_reaction_matrix()
     """
-    # TODO: Replace _react_matrix_ with Sample(Poisson(lambda))
     curr_conc = args[0].at[:].set(jnp.exp(jnp.log(args[0]) + args[1]))
     return curr_conc
 
@@ -107,10 +105,8 @@ def calc_second_order(args):
     """
     Perform second order reaction and return updated concentrations.
 
-    :param self: ChemicalField
-    :param curr_conc: Current chemical concentration
-    :param react_matrix: Reaction matrix for reaction from Reaction.generate_reaction_matrix()
+    :param args[0]: Current chemical concentration
+    :param args[1]: Reaction matrix for reaction from Reaction.generate_reaction_matrix()
     """
-    # TODO: Replace _react_matrix_ with Sample(Poisson(lambda))
     curr_conc = args[0].at[:].set(1 / (1 / args[0] - args[1]))
     return curr_conc

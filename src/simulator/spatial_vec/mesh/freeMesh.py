@@ -335,13 +335,19 @@ class FreeMesh:
         """
         return pos[0] + self.height * pos[1] + (self.height * self.depth) * pos[2]
 
-    def get_neighbours(self, pos):
+    def get_neighbours(self, pos, norm_ord=1):
         """
         Get neighbours of the cell at pos[idx].
 
         :param self: GridMesh
         :param idx: index of cell within pos[idx]
         """
-        l1_norm = jnp.linalg.norm(pos - self.positions, axis=1, ord=1)
+        l1_norm = jnp.linalg.norm(pos - self.positions, axis=1, ord=norm_ord)
         neigh_idxs = jnp.argsort(l1_norm)[1 : self.n_neighbours + 1]
         return neigh_idxs
+
+    def get_radial_limits(self, pos, radius=1, norm_ord=1):
+        l1_norm = jnp.linalg.norm(pos - self.positions, axis=1, ord=norm_ord)
+        print(l1_norm)
+        radial_neighs = jnp.where((l1_norm < radius) and (l1_norm > 0))
+        return radial_neighs
