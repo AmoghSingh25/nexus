@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import jax.numpy as jnp
 import jax
 from jax import random
@@ -12,6 +13,7 @@ from simulator.spatial_vec.layers.chemical import (
     calc_second_order,
     calc_reaction_change,
 )
+from simulator.spatial_vec.layers.force import calc_vel
 
 
 class FreeMesh:
@@ -52,6 +54,8 @@ class FreeMesh:
         self.n_cells = int(self.mesh_vol * self.cell_density)
         self.cell_vol = self.mesh_vol / self.n_cells
 
+        ## Cell positions, sizes, mass
+
         self.key, self.sub_key, self.positions = generate_uniform(
             key=self.key,
             sub_key=self.sub_key,
@@ -60,8 +64,23 @@ class FreeMesh:
         self.positions = jnp.round(self.positions, decimals=2)
 
         self.cells = {}
+        self.key, self.sub_key, self.cell_sizes = generate_uniform(
+            key=self.key, sub_key=self.sub_key, shape=(self.n_cells, 1)
+        )
+
+        self.cell_vel = jnp.zeros(shape=(self.n_cells, 3))
+
+        self.cell_mass = jnp.ones_like(self.cell_sizes)
+
         self.reaction_bool = cfg.reaction_bool
         self.diffusion_bool = cfg.diffusion_bool
+
+        self.repulsion_coeff = cfg.repulsion_coeff
+        self.attraction_coeff = cfg.attraction_coeff
+        self.drift_vel_coeff = cfg.drift_vel_coeff
+
+        self.debug_plot = cfg.debug_plot
+
         curr_id = 0
         self.delta_m = 0  # Adjust mass of chemicals if there is a mismatch in previous and current mass
 
@@ -289,6 +308,33 @@ class FreeMesh:
 
         self.delta_m = (prev_mass - new_mass) / self.n_cells
 
+    def calc_movement(self):
+        # Calculate velocities
+        for cell_id in range(self.n_cells):
+            radial_neighs, radial_neigh_dists = self.get_radial_limits(
+                self.positions[cell_id], radius=3
+            )
+            ret_vel = calc_vel(
+                radial_neigh_dists,
+                self.cell_sizes[cell_id],
+                self.cell_sizes[radial_neighs],
+                self.cell_mass[cell_id],
+                self.cell_mass[radial_neighs],
+                self.positions[cell_id],
+                self.positions[radial_neighs],
+                self.cell_vel[cell_id],
+                attraction_coeff=self.attraction_coeff,
+                repulsion_coeff=self.repulsion_coeff,
+                drift_vel_coeff=self.drift_vel_coeff,
+            )
+            self.cell_vel = self.cell_vel.at[cell_id].set(ret_vel)
+
+        # Compute cell movement
+        for cell_id in range(self.n_cells):
+            self.positions = self.positions.at[cell_id].set(
+                self.positions[cell_id] + self.cell_vel[cell_id] * self.delta
+            )
+
     def step(self, step_i, delta, logger: DataLogger):
         """
         Perform simulation step for the mesh and the cells within.
@@ -327,6 +373,16 @@ class FreeMesh:
             self.field_chem = chem_mass_i
             self.field_keys = field_keys_i
 
+        # Perform movement/force calculation
+        self.calc_movement()
+
+        if self.debug_plot:
+            print("Step - ", step_i)
+            plt.figure()
+            ax = plt.subplot(projection="3d")
+            ax.scatter(self.positions[:, 0], self.positions[:, 1], self.positions[:, 2])
+            plt.show()
+
     def get_cell_id(self, pos):
         """
         Returns an ID of a cell, useful for an order of cells to compute flux i->j and uniquely identify cells
@@ -348,6 +404,5 @@ class FreeMesh:
 
     def get_radial_limits(self, pos, radius=1, norm_ord=1):
         l1_norm = jnp.linalg.norm(pos - self.positions, axis=1, ord=norm_ord)
-        print(l1_norm)
-        radial_neighs = jnp.where((l1_norm < radius) and (l1_norm > 0))
-        return radial_neighs
+        radial_neighs = jnp.where((l1_norm < radius) & (l1_norm > 0))
+        return radial_neighs, l1_norm[radial_neighs]
