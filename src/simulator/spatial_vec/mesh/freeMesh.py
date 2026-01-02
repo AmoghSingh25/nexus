@@ -78,6 +78,7 @@ class FreeMesh:
         self.repulsion_coeff = cfg.repulsion_coeff
         self.attraction_coeff = cfg.attraction_coeff
         self.drift_vel_coeff = cfg.drift_vel_coeff
+        self.random_vel_coeff = cfg.random_vel_coeff
 
         self.debug_plot = cfg.debug_plot
 
@@ -326,7 +327,16 @@ class FreeMesh:
                 attraction_coeff=self.attraction_coeff,
                 repulsion_coeff=self.repulsion_coeff,
                 drift_vel_coeff=self.drift_vel_coeff,
+                delta=self.delta,
             )
+
+            # Add in random velocity direction
+            self.key, self.sub_key, random_vel = generate_uniform(
+                key=self.key, sub_key=self.sub_key, shape=(3)
+            )
+            random_vel = self.random_vel_coeff * random_vel
+            ret_vel = ret_vel + random_vel
+
             self.cell_vel = self.cell_vel.at[cell_id].set(ret_vel)
 
         # Compute cell movement

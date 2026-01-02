@@ -42,9 +42,10 @@ spatial_sim:
   debug_plot: false
 
   ## Movement related
-  attraction_coeff: 0.5
+  attraction_coeff: 1
   repulsion_coeff: 1
   drift_vel_coeff: 0.01
+  random_vel_coeff: 0.01
 
   
   ## Chemicals
