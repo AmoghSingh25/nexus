@@ -230,7 +230,7 @@ def _(mo):
 @app.cell
 def _(SpatialSimVec, get_config):
     _config = get_config("freemesh_config")
-    _config.spatial_sim.n_steps = 5
+    _config.spatial_sim.n_steps = 20
     _config.spatial_sim.diffusion_bool = True
     _config.spatial_sim.reaction_bool = False
     _config.spatial_sim.logging = True

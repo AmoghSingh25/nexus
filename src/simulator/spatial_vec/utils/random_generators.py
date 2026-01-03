@@ -23,3 +23,9 @@ def generate_choices(key, sub_key, **kwargs):
     ret = random.choice(key=sub_key, **kwargs)
     key, sub_key = random.split(key)
     return key, sub_key, ret
+
+
+def generate_normal(key, sub_key, mean=0, **kwargs):
+    ret = random.normal(key=sub_key, **kwargs)
+    key, sub_key = random.split(key)
+    return key, sub_key, mean + ret

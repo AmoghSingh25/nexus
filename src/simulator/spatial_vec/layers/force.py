@@ -37,7 +37,7 @@ def calc_inter_cell_force(
         jnp.invert(overlap_cells_mask)
         * attraction_coeff
         * (source_cell_mass * neighbour_cell_masses).reshape(-1)
-        / dists
+        / dists**2
     )
 
     repulsion_force_component = repulsion_force @ (-1 * unit_force_vectors)
@@ -52,6 +52,7 @@ def calc_drift_velocity(prev_vel, drift_vel_coeff):
     return prev_vel * drift_vel_coeff
 
 
+## TODO: Limit positions within the +ve boundaries
 def calc_vel(
     dists,
     source_cell_size,

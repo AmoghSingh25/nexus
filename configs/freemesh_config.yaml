@@ -47,6 +47,9 @@ spatial_sim:
   drift_vel_coeff: 0.01
   random_vel_coeff: 0.01
 
+  ## Cycle related
+  cycle_len: 10
+  cell_death_prob: 0.1
   
   ## Chemicals
   chemical:

@@ -4,7 +4,10 @@ import jax
 from jax import random
 
 # from simulator.spatial.field.freeField import FreeField
-from simulator.spatial_vec.utils.random_generators import generate_uniform
+from simulator.spatial_vec.utils.random_generators import (
+    generate_uniform,
+    generate_normal,
+)
 from simulator.spatial_vec.logger.meshLogger import DataLogger
 from simulator.spatial_vec.models.reaction import Reaction
 from simulator.spatial_vec.layers.chemical import (
@@ -63,12 +66,40 @@ class FreeMesh:
         )
         self.positions = jnp.round(self.positions, decimals=2)
 
-        self.cells = {}
+        # self.cells = {}
         self.key, self.sub_key, self.cell_sizes = generate_uniform(
             key=self.key, sub_key=self.sub_key, shape=(self.n_cells, 1)
         )
 
         self.cell_vel = jnp.zeros(shape=(self.n_cells, 3))
+        self.cell_states = jnp.zeros(shape=(self.n_cells, 1), dtype=jnp.int8)
+        self.cell_time = jnp.zeros(shape=(self.n_cells, 1), dtype=jnp.int16)
+
+        self.cycle_len = cfg.cycle_len
+        self.interphase_len = self.cycle_len * 0.9
+        self.mitosis_len = self.cycle_len * 0.1
+        self.cell_death_prob = cfg.cell_death_prob
+
+        self.key, self.sub_key, self.interphase_chkpt = generate_normal(
+            key=self.key,
+            sub_key=self.sub_key,
+            mean=self.interphase_len,
+            shape=(self.n_cells, 1),
+            dtype=jnp.float16,
+        )
+        self.interphase_chkpt = jnp.round(self.interphase_chkpt).astype(jnp.int16)
+
+        self.key, self.sub_key, self.mitosis_chkpt = generate_normal(
+            key=self.key,
+            sub_key=self.sub_key,
+            mean=self.mitosis_len,
+            shape=(self.n_cells, 1),
+            dtype=jnp.float16,
+        )
+        self.mitosis_chkpt = self.mitosis_chkpt.at[self.mitosis_chkpt < 1].set(1)
+        self.mitosis_chkpt = (
+            jnp.round(self.mitosis_chkpt).astype(jnp.int16) + self.interphase_chkpt
+        )
 
         self.cell_mass = jnp.ones_like(self.cell_sizes)
 
@@ -385,6 +416,41 @@ class FreeMesh:
 
         # Perform movement/force calculation
         self.calc_movement()
+
+        # Cell Cycling
+
+        ## TODO: Split cells
+        # split_cells_mask = self.cell_states == 2
+        for cell_id in range(len(self.positions)):
+            cell_pos_i = self.positions[cell_id]
+            self.key, self.sub_key, daughter_cell_i = generate_uniform(
+                key=self.key, sub_key=self.sub_key, shape=(3)
+            )
+            daughter_cell_i = daughter_cell_i + cell_pos_i
+
+        ## Check interphase
+        transition_cell_mask = (self.cell_time >= self.interphase_chkpt) & (
+            self.cell_states == 0
+        )
+        self.cell_states = self.cell_states.at[transition_cell_mask].set(1)
+
+        ## Check mitosis
+        interphase_cell_mask = (self.cell_time >= self.mitosis_chkpt) & (
+            self.cell_states == 1
+        )
+        self.cell_states = self.cell_states.at[interphase_cell_mask].set(2)
+
+        ## Update cell death
+        self.key, self.sub_key, cell_death_prob = generate_uniform(
+            key=self.key, sub_key=self.sub_key, shape=(self.n_cells)
+        )
+        cell_death_mask = jnp.any(
+            (self.cell_states == 2) | (self.cell_states == 1) | (self.cell_states == 0)
+        ) & (cell_death_prob <= self.cell_death_prob)
+        self.cell_states = self.cell_states.at[cell_death_mask].set(-1)
+
+        # Update cell times
+        self.cell_time = self.cell_time.at[:].set(self.cell_time + 1)
 
         if self.debug_plot:
             print("Step - ", step_i)
