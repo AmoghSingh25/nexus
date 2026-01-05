@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import jax.numpy as jnp
 import jax
 from jax import random
+import math
 
 # from simulator.spatial.field.freeField import FreeField
 from simulator.spatial_vec.utils.random_generators import (
@@ -59,6 +60,7 @@ class FreeMesh:
 
         ## Cell positions, sizes, mass
 
+        ## Random positions within the limits of Height, Width, Depth
         self.key, self.sub_key, self.positions = generate_uniform(
             key=self.key,
             sub_key=self.sub_key,
@@ -67,7 +69,7 @@ class FreeMesh:
         self.positions = jnp.round(self.positions, decimals=2)
 
         # self.cells = {}
-        self.key, self.sub_key, self.cell_sizes = generate_uniform(
+        self.key, self.sub_key, self.cell_radius = generate_uniform(
             key=self.key, sub_key=self.sub_key, shape=(self.n_cells, 1)
         )
 
@@ -101,7 +103,7 @@ class FreeMesh:
             jnp.round(self.mitosis_chkpt).astype(jnp.int16) + self.interphase_chkpt
         )
 
-        self.cell_mass = jnp.ones_like(self.cell_sizes)
+        self.cell_mass = jnp.ones_like(self.cell_radius)
 
         self.reaction_bool = cfg.reaction_bool
         self.diffusion_bool = cfg.diffusion_bool
@@ -348,8 +350,8 @@ class FreeMesh:
             )
             ret_vel = calc_vel(
                 radial_neigh_dists,
-                self.cell_sizes[cell_id],
-                self.cell_sizes[radial_neighs],
+                self.cell_radius[cell_id],
+                self.cell_radius[radial_neighs],
                 self.cell_mass[cell_id],
                 self.cell_mass[radial_neighs],
                 self.positions[cell_id],
@@ -376,6 +378,33 @@ class FreeMesh:
                 self.positions[cell_id] + self.cell_vel[cell_id] * self.delta
             )
 
+    def add_cell(self, pos, cell_state, radius):
+        ## TODO: Check all required states and arrays are updated
+        self.positions = jnp.append(self.positions, pos, axis=0)
+        self.cell_states = jnp.append(self.cell_states, cell_state, axis=0)
+        self.cell_radius = jnp.append(self.cell_radius, radius, axis=0)
+        self.cell_time = jnp.append(self.cell_time, jnp.array([[0]]), axis=0)
+        self.key, self.sub_key, new_interphase_chkpt = generate_normal(
+            key=self.key,
+            sub_key=self.sub_key,
+            mean=self.interphase_len,
+            shape=(1, 1),
+            dtype=jnp.float16,
+        )
+        self.key, self.sub_key, new_mitosis_chkpt = generate_normal(
+            key=self.key,
+            sub_key=self.sub_key,
+            mean=self.mitosis_len,
+            shape=(1, 1),
+            dtype=jnp.float16,
+        )
+
+        self.interphase_chkpt = jnp.append(
+            self.interphase_chkpt, new_interphase_chkpt, axis=0
+        )
+        self.mitosis_chkpt = jnp.append(self.mitosis_chkpt, new_mitosis_chkpt, axis=0)
+        self.n_cells += 1
+
     def step(self, step_i, delta, logger: DataLogger):
         """
         Perform simulation step for the mesh and the cells within.
@@ -385,6 +414,8 @@ class FreeMesh:
         :param delta: Simulation delta
         :param logger: MeshLogger object
         """
+        if self.debug_plot:
+            print("Step - ", step_i)
 
         # Perform diffusion
         if self.diffusion_bool:
@@ -418,15 +449,44 @@ class FreeMesh:
         self.calc_movement()
 
         # Cell Cycling
-
         ## TODO: Split cells
-        # split_cells_mask = self.cell_states == 2
-        for cell_id in range(len(self.positions)):
+        split_cells_mask = jnp.array(list(range(len(self.cell_states)))).reshape(-1)[
+            (self.cell_states == 2).reshape(-1)
+        ]
+        for cell_id in split_cells_mask:
             cell_pos_i = self.positions[cell_id]
             self.key, self.sub_key, daughter_cell_i = generate_uniform(
                 key=self.key, sub_key=self.sub_key, shape=(3)
             )
-            daughter_cell_i = daughter_cell_i + cell_pos_i
+            self.key, self.sub_key, rand_point = generate_uniform(
+                key=self.key, sub_key=self.sub_key, shape=(3)
+            )
+            t_sqrt = math.sqrt(
+                self.cell_radius[cell_id][0] ** 2
+                / (
+                    (rand_point[0] - cell_pos_i[0]) ** 2
+                    + (rand_point[1] - cell_pos_i[1]) ** 2
+                    + (rand_point[2] - cell_pos_i[2]) ** 2
+                )
+            )
+            cell_boundary_pt_1 = t_sqrt * (rand_point - cell_pos_i) + cell_pos_i
+            cell_boundary_pt_2 = (
+                -t_sqrt * (rand_point - cell_pos_i) + cell_pos_i
+            ).reshape(1, 3)
+
+            ## TODO: Check and Update all parameters of parent cell post split
+            self.positions = self.positions.at[cell_id].set(cell_boundary_pt_1)
+            self.cell_states = self.cell_states.at[cell_id].set(0)
+            self.cell_radius = self.cell_radius.at[cell_id].set(
+                self.cell_radius[cell_id][0] / 2
+            )
+            self.cell_time = self.cell_time.at[cell_id].set(0)
+
+            self.add_cell(
+                cell_boundary_pt_2,
+                jnp.array([[0]]),
+                (self.cell_radius[cell_id] / 2).reshape(1, 1),
+            )  ##TODO: Update new radius to conserve mass
 
         ## Check interphase
         transition_cell_mask = (self.cell_time >= self.interphase_chkpt) & (
@@ -453,11 +513,11 @@ class FreeMesh:
         self.cell_time = self.cell_time.at[:].set(self.cell_time + 1)
 
         if self.debug_plot:
-            print("Step - ", step_i)
             plt.figure()
             ax = plt.subplot(projection="3d")
             ax.scatter(self.positions[:, 0], self.positions[:, 1], self.positions[:, 2])
             plt.show()
+            print("\n\n")
 
     def get_cell_id(self, pos):
         """

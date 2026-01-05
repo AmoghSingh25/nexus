@@ -16,6 +16,7 @@ def _():
     )
     import os
     import marimo as mo
+    import jax.numpy as jnp
 
     matplotlib.style.use("default")
     return (
@@ -23,6 +24,7 @@ def _():
         SpatialSimVec,
         compose,
         initialize_config_dir,
+        jnp,
         mo,
         os,
         plt,
@@ -224,6 +226,15 @@ def _(mo):
     mo.md(r"""
     ## Vectorized spatial testing
     """)
+    return
+
+
+@app.cell
+def _(jnp):
+    _a = jnp.array([2.5878243, 0.59299123, 0.12292886])
+    _b = jnp.array([2.833334, 0.55704165, 0.10685025])
+    print(_a - _b)
+    print(jnp.sqrt(sum((_a - _b) ** 2)) / 2)
     return
 
 
