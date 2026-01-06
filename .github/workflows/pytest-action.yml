@@ -21,6 +21,9 @@ jobs:
 
       - name: Download packages using uv
         run: uv sync
+        
+      - name: Download local package
+        run: uv pip install -e .
 
       - name: Run Pytest
         run: uv run pytest

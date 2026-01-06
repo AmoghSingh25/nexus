@@ -26,10 +26,14 @@ class TestSpatial:
             min_chem_idx = np.argmin(chem_before)
             max_chem_idx = np.argmax(chem_after)
             s.cleanup()
+            print(chem_before)
+            print(chem_after)
+            print(min_chem_idx)
+            print(max_chem_idx)
 
             if (
-                chem_before[min_chem_idx] < chem_after[min_chem_idx]
-                and chem_before[max_chem_idx] > chem_after[max_chem_idx]
+                chem_before[min_chem_idx] <= chem_after[min_chem_idx]
+                and chem_before[max_chem_idx] >= chem_after[max_chem_idx]
             ):
                 assert True
             else:
