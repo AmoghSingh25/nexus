@@ -33,7 +33,7 @@ class DataLogger:
         :param n_reactions: Number of reactions in the simulation
         """
         self.log_dir = log_dir
-        if not os.path.exists(os.path.join(self.log_dir, file_name)):
+        if not os.path.exists(os.path.join(self.log_dir, file_name)) and not read_only:
             os.mkdir(os.path.join(self.log_dir, file_name))
         self.base_path = os.path.join(self.log_dir, file_name)
         self.chem_arr = os.path.join(self.base_path, "chem.tldb")
@@ -192,8 +192,6 @@ class DataLogger:
         :type cells: np.ndarray[GridField]
         """
         chem_conc, pos = self.get_cells_conc(cells=cells)
-        print("chem conc - ", chem_conc.shape)
-        print(np.indices(chem_conc.shape).shape)
         cell_idx, chem_idx = np.indices(chem_conc.shape, sparse=False)
 
         chem_conc = chem_conc.ravel()

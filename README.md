@@ -57,3 +57,15 @@ sim = gpsim.simulator(
 # Run for 10 steps and return the progression of gene and protein concentration
 gene_conc, prot_conc = sim.run_sim(n_steps=10)
 ```
+### Visualization
+
+Currently the visualization server, `src/visualization/testing_visualization.py` only supports GridMesh data visualization. To run the visualization, pass the log file name of a previously run simulation run with the `-f` flag. A sample log file is provided under `src/simulator/spatial/logs/1767656604` and the server defaults to using the sample log file.
+
+Performing a simulation run and running the visualization
+
+```py
+# From DynamicSim/
+uv run src/simulator/spatial/main.py # Runs the spatial sim with default `test_config.yaml` configuration
+
+uv run src/visualization/testing_visualization.py -f FILE_NAME # FILE_NAME is the timestamp under src/simulator/spatial/logs/
+```

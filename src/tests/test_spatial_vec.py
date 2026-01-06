@@ -29,7 +29,7 @@ class TestSpatial:
 
             if (
                 chem_before[min_chem_idx] < chem_after[min_chem_idx]
-                and chem_after[max_chem_idx] >= chem_after[max_chem_idx]
+                and chem_before[max_chem_idx] > chem_after[max_chem_idx]
             ):
                 assert True
             else:

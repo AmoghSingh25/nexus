@@ -1,31 +1,31 @@
+import os
 from simulator.spatial.spatialSim import SpatialSim
-import hydra
-from omegaconf import DictConfig, OmegaConf
-import matplotlib.pyplot as plt
+from hydra import (
+    initialize_config_dir,
+    compose,
+)
+from omegaconf import OmegaConf
 import matplotlib
 
 matplotlib.style.use("ggplot")
 
 
-@hydra.main(
-    version_base=None, config_path="../../../configs", config_name="config.yaml"
-)
-def main(cfg: DictConfig) -> None:
+def get_config(config_name="test_config"):
+    conf_path = os.path.join(os.getcwd(), "configs")
+    with initialize_config_dir(version_base=None, config_dir=conf_path):
+        cfg = compose(config_name=config_name)
+    return cfg
+
+
+def main():
+    _config = get_config()
+    _config.spatial_sim.diffusion_bool = True
+    _config.spatial_sim.reaction_bool = True
+    _config.spatial_sim.logging = True
     print("Configuration being used - ")
-    print(OmegaConf.to_yaml(cfg))
-    s = SpatialSim(cfg)
-    conc_before = []
-    conc_after = []
-    for i in s.cells.reshape(-1):
-        conc_before.append(i.chemical.mass)
-    for i in s.cells.reshape(-1):
-        s.calc_conc_change(i.pos)
-    for i in s.cells.reshape(-1):
-        conc_after.append(i.chemical.mass)
-    plt.plot(conc_before, label="Before")
-    plt.plot(conc_after, label="After")
-    plt.legend()
-    plt.show()
+    print(OmegaConf.to_yaml(_config))
+    s1 = SpatialSim(_config.spatial_sim)
+    s1.run_sim()
 
 
 if __name__ == "__main__":

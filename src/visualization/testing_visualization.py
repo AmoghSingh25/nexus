@@ -1,3 +1,5 @@
+import os
+import argparse
 import pandas as pd
 import numpy as np
 from dash import Dash, html, dcc, Input, Output, callback
@@ -82,101 +84,114 @@ def reaction_order(cell_id):
     return ret_df.to_dict("records")
 
 
-inp_file_name = "1766431592"
-logger_inst = DataLogger(
-    log_dir="../simulator/spatial/logs", file_name=inp_file_name, read_only=True
-)
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-f", "--File", help="Name of logfile to run visualization")
+    args = parser.parse_args()
 
-app = Dash()
-app.layout = [
-    html.Div(
-        children=[
-            html.Div(
-                children="Chemical concentration graph",
-                style={"font-size": "30px"},
-                className="ag-theme-material-dark",
-            ),
-            dcc.Graph(
-                figure={},
-                id="cell_figure",
-                className="ag-theme-material-dark",
-            ),
-            dbc.Row(
-                [
-                    html.Div(
-                        children="Choose Cell",
-                        className="ag-theme-material-dark",
-                    ),
-                    dcc.Dropdown(
-                        options=[
-                            {"label": "Cell - " + str(x), "value": x}
-                            for x in range(logger_inst.n_cells)
-                        ],
-                        value=0,
-                        id="cell-id",
-                        multi=True,
-                        style={"width": "fit-content"},
-                        className="ag-theme-material-dark",
-                    ),
-                    html.Div(
-                        children="Choose Chemical",
-                        className="ag-theme-material-dark",
-                    ),
-                    dcc.Dropdown(
-                        options=[
-                            {"label": "Chem - " + str(x), "value": x}
-                            for x in range(logger_inst.n_chems)
-                        ],
-                        value=0,
-                        id="chem-id",
-                        multi=True,
-                        style={"width": "fit-content"},
-                        className="ag-theme-material-dark",
-                    ),
-                ],
-                id="select_row",
-            ),
-        ],
-        style={"backgroundColor": "#000000", "padding": "20px", "height": "100%"},
-        className="ag-theme-material-dark",
-    ),
-    html.Div(style={"width": "100%", "height": "10px", "backgroundColor": "white"}),
-    html.Div(
-        children=[
-            html.Div(
-                children="Reaction order view",
-                style={"font-size": "30px"},
-                className="ag-theme-material-dark",
-            ),
-            dbc.Row(
-                [
-                    html.Div(
-                        children="Choose Cell",
-                        style={"color": "white", "font-family": "Arial"},
-                        className="ag-theme-material-dark",
-                    ),
-                    dcc.Dropdown(
-                        options=[
-                            {"label": "Cell - " + str(x), "value": x}
-                            for x in range(logger_inst.n_cells)
-                        ],
-                        value=0,
-                        id="cell-id-reaction",
-                        className="ag-theme-material-auto-dark",
-                        style={"width": "30%"},
-                    ),
-                ],
-                id="select_row_reaction",
-            ),
-            dag.AgGrid(
-                rowData=reaction_order(0),
-                columnDefs=[{"field": i} for i in ["Step", "Reaction Order"]],
-                id="reaction-table",
-                className="ag-theme-material-dark",
-            ),
-        ],
-        style={"backgroundColor": "#000000", "padding": "20px", "height": "100%"},
-        className="ag-theme-material-dark",
-    ),
-]
-app.run(debug=True)
+    if args.File:
+        ## TODO: Allow user to select log file to run from webpage
+        inp_file_name = args.File
+    else:
+        inp_file_name = "1767656604"
+
+    base_dir = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "../simulator/spatial/logs"
+    )
+    if not os.path.exists(os.path.join(base_dir, inp_file_name)):
+        raise FileNotFoundError("Log file does not exist")
+    logger_inst = DataLogger(log_dir=base_dir, file_name=inp_file_name, read_only=True)
+
+    app = Dash()
+    app.layout = [
+        html.Div(
+            children=[
+                html.Div(
+                    children="Chemical concentration graph",
+                    style={"font-size": "30px"},
+                    className="ag-theme-material-dark",
+                ),
+                dcc.Graph(
+                    figure={},
+                    id="cell_figure",
+                    className="ag-theme-material-dark",
+                ),
+                dbc.Row(
+                    [
+                        html.Div(
+                            children="Choose Cell",
+                            className="ag-theme-material-dark",
+                        ),
+                        dcc.Dropdown(
+                            options=[
+                                {"label": "Cell - " + str(x), "value": x}
+                                for x in range(logger_inst.n_cells)
+                            ],
+                            value=0,
+                            id="cell-id",
+                            multi=True,
+                            style={"width": "fit-content"},
+                            className="ag-theme-material-dark",
+                        ),
+                        html.Div(
+                            children="Choose Chemical",
+                            className="ag-theme-material-dark",
+                        ),
+                        dcc.Dropdown(
+                            options=[
+                                {"label": "Chem - " + str(x), "value": x}
+                                for x in range(logger_inst.n_chems)
+                            ],
+                            value=0,
+                            id="chem-id",
+                            multi=True,
+                            style={"width": "fit-content"},
+                            className="ag-theme-material-dark",
+                        ),
+                    ],
+                    id="select_row",
+                ),
+            ],
+            style={"backgroundColor": "#000000", "padding": "20px", "height": "100%"},
+            className="ag-theme-material-dark",
+        ),
+        html.Div(style={"width": "100%", "height": "10px", "backgroundColor": "white"}),
+        html.Div(
+            children=[
+                html.Div(
+                    children="Reaction order view",
+                    style={"font-size": "30px"},
+                    className="ag-theme-material-dark",
+                ),
+                dbc.Row(
+                    [
+                        html.Div(
+                            children="Choose Cell",
+                            style={"color": "white", "font-family": "Arial"},
+                            className="ag-theme-material-dark",
+                        ),
+                        dcc.Dropdown(
+                            options=[
+                                {"label": "Cell - " + str(x), "value": x}
+                                for x in range(logger_inst.n_cells)
+                            ],
+                            value=0,
+                            id="cell-id-reaction",
+                            className="ag-theme-material-auto-dark",
+                            style={"width": "30%"},
+                        ),
+                    ],
+                    id="select_row_reaction",
+                ),
+                dag.AgGrid(
+                    rowData=reaction_order(0),
+                    columnDefs=[{"field": i} for i in ["Step", "Reaction Order"]],
+                    id="reaction-table",
+                    className="ag-theme-material-dark",
+                ),
+            ],
+            style={"backgroundColor": "#000000", "padding": "20px", "height": "100%"},
+            className="ag-theme-material-dark",
+        ),
+    ]
+    app.run(debug=True)
