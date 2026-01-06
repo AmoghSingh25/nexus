@@ -46,16 +46,11 @@ uv sync
 ### Simulator
 
 ```py
-# Import simulator
-from simulator import gpsim
+## Gene-Protein Sim
+uv run src/simulator/run_gpsim.py
 
-# Initialize
-sim = gpsim.simulator(
-  config_file="configs/sample_data/sample_network_2cell.yaml", n_cells=2
-)
-
-# Run for 10 steps and return the progression of gene and protein concentration
-gene_conc, prot_conc = sim.run_sim(n_steps=10)
+## Spatial Sim
+uv run src/simulator/spatial/main.py
 ```
 ### Visualization
 
