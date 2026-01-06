@@ -5,9 +5,6 @@ from hydra import (
     compose,
 )
 from omegaconf import OmegaConf
-import matplotlib
-
-matplotlib.style.use("ggplot")
 
 
 def get_config(config_name="test_config"):

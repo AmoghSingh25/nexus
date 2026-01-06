@@ -65,10 +65,10 @@ def cell_graph(cell_id, chem_id):
     return fig
 
 
-# @callback(
-#     Output(component_id="reaction-table", component_property="rowData"),
-#     Input(component_id="cell-id-reaction", component_property="value"),
-# )
+@callback(
+    Output(component_id="reaction-table", component_property="rowData"),
+    Input(component_id="cell-id-reaction", component_property="value"),
+)
 def reaction_order(cell_id):
     reaction_order_struct = []
     reaction_order_data = logger_inst.retrieve_reaction_order(cell_id=cell_id)
