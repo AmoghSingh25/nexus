@@ -38,10 +38,10 @@ class FreeMesh:
         x, y, z = jnp.mgrid[0 : self.width, 0 : self.height, 0 : self.depth]
         self.positions = jnp.vstack([x.ravel(), y.ravel(), z.ravel()]).T
 
-        self.cell_density = cfg.get("cell_density", 10)
+        self.cell_concentration = cfg.get("cell_concentration", 10)
 
         self.mesh_vol = self.height * self.width * self.depth
-        self.n_cells = int(self.mesh_vol * self.cell_density)
+        self.n_cells = int(self.mesh_vol * self.cell_concentration)
         self.cell_vol = self.mesh_vol / self.n_cells
 
         self.key, self.sub_key, self.positions = generate_uniform(
@@ -128,7 +128,6 @@ class FreeMesh:
         total_flux = jnp.sum(flux_list, axis=0)
         return total_flux
 
-    # TODO: Fix diffusion, large negative and large positive values
     def calc_conc_change(self, delta):
         """
         Calculate change in chemical concentration due to diffusion

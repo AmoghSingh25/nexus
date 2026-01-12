@@ -52,11 +52,11 @@ class FreeMesh:
         x, y, z = jnp.mgrid[0 : self.width, 0 : self.height, 0 : self.depth]
         self.positions = jnp.vstack([x.ravel(), y.ravel(), z.ravel()]).T
 
-        self.cell_density = cfg.get("cell_density", 10)
+        self.cell_concentration = cfg.get("cell_concentration", 10)
 
         self.mesh_vol = self.height * self.width * self.depth
-        self.n_cells = int(self.mesh_vol * self.cell_density)
-        self.cell_vol = self.mesh_vol / self.n_cells
+        self.n_cells = int(self.mesh_vol * self.cell_concentration)
+        self.field_vol_singular = self.mesh_vol / self.n_cells
 
         ## Cell positions, sizes, mass
 
@@ -68,10 +68,7 @@ class FreeMesh:
         )
         self.positions = jnp.round(self.positions, decimals=2)
 
-        # self.cells = {}
-        self.key, self.sub_key, self.cell_radius = generate_uniform(
-            key=self.key, sub_key=self.sub_key, shape=(self.n_cells, 1)
-        )
+        ## Cellular-level attributes
 
         self.cell_vel = jnp.zeros(shape=(self.n_cells, 3))
         self.cell_states = jnp.zeros(shape=(self.n_cells, 1), dtype=jnp.int8)
@@ -103,10 +100,40 @@ class FreeMesh:
             jnp.round(self.mitosis_chkpt).astype(jnp.int16) + self.interphase_chkpt
         )
 
-        self.cell_mass = jnp.ones_like(self.cell_radius)
+        self.cell_density = cfg.get("cell_density", 1.0)
+
+        self.cell_target_vol_param = cfg.get("cell_target_vol", 1.0)
+        self.cell_vol_growth_rate_param = cfg.get("cell_vol_growth_rate", 1.0)
+
+        self.key, self.sub_key, self.cell_target_vol = generate_uniform(
+            key=self.key,
+            sub_key=self.sub_key,
+            shape=(self.n_cells, 1),
+            minval=max(1e-4, self.cell_target_vol_param * 0.9),
+            maxval=self.cell_target_vol_param * 1.1,
+        )
+        self.key, self.sub_key, self.cell_vol_growth_rate = generate_uniform(
+            key=self.key,
+            sub_key=self.sub_key,
+            shape=(self.n_cells, 1),
+            minval=max(1e-4, self.cell_vol_growth_rate_param * 0.9),
+            maxval=self.cell_vol_growth_rate_param * 1.1,
+        )
+        self.key, self.sub_key, self.cell_vol = generate_uniform(
+            key=self.key,
+            sub_key=self.sub_key,
+            shape=(self.n_cells, 1),
+            minval=max(1e-4, self.cell_target_vol_param * 0.1),
+            maxval=self.cell_target_vol_param,
+        )
+        self.cell_radius = jnp.pow((self.cell_vol * 3) / (4.0 * math.pi), 1 / 3)
+
+        self.cell_mass = self.cell_density * self.cell_vol
 
         self.reaction_bool = cfg.reaction_bool
         self.diffusion_bool = cfg.diffusion_bool
+        self.movement_bool = cfg.movement_bool
+        self.cycle_bool = cfg.cycle_bool
 
         self.repulsion_coeff = cfg.repulsion_coeff
         self.attraction_coeff = cfg.attraction_coeff
@@ -137,7 +164,7 @@ class FreeMesh:
         for [i, j, k] in self.positions:
             self.field_D.append(self.D)
             self.field_pos.append(tuple([i, j, k]))
-            self.field_vol.append(self.cell_vol)
+            self.field_vol.append(self.field_vol_singular)
             self.field_keys.append(random.split(random.key(curr_id)))
             self.field_id.append(curr_id)
             self.field_neighbours.append(self.get_neighbours(jnp.array([i, j, k])))
@@ -230,11 +257,12 @@ class FreeMesh:
 
     def calc_flux(self, cell_id):
         """
-        Calculate flux for the cell at position _pos_.
-        Also checks if part of the flux is already calculated by another cell before.
+        Calculate flux for the field at position _pos_.
+        Also checks if part of the flux is already calculated by another field before.
 
-        :param pos: Position of cell to calculate the flux
+        :param pos: Position of field to calculate the flux
         """
+        ## TODO: Rename cell_* to field_*
         curr_cell_id = cell_id.item()
         neighbour_cells = []
         neigh_pos = []
@@ -378,12 +406,32 @@ class FreeMesh:
                 self.positions[cell_id] + self.cell_vel[cell_id] * self.delta
             )
 
-    def add_cell(self, pos, cell_state, radius):
+    def add_cell(self, pos, cell_state, new_radius, parent_growth_rate, target_vol):
         ## TODO: Check all required states and arrays are updated
         self.positions = jnp.append(self.positions, pos, axis=0)
         self.cell_states = jnp.append(self.cell_states, cell_state, axis=0)
-        self.cell_radius = jnp.append(self.cell_radius, radius, axis=0)
         self.cell_time = jnp.append(self.cell_time, jnp.array([[0]]), axis=0)
+        new_vol = (4.0 * math.pi * new_radius**3) / 3.0
+        self.cell_radius = jnp.append(self.cell_radius, new_radius, axis=0)
+        self.cell_vol = jnp.append(self.cell_vol, new_vol, axis=0)
+        self.cell_mass = jnp.append(
+            self.cell_mass, jnp.array([self.cell_density * new_vol])
+        )
+
+        self.key, self.sub_key, new_growth_rate = generate_uniform(
+            key=self.key,
+            sub_key=self.sub_key,
+            shape=(1, 1),
+            minval=max(1e-4, 0.9 * parent_growth_rate),
+            maxval=1.1 * parent_growth_rate,
+        )
+        self.key, self.sub_key, new_target_vol = generate_uniform(
+            key=self.key,
+            sub_key=self.sub_key,
+            shape=(1, 1),
+            minval=max(1e-4, 0.9 * target_vol),
+            maxval=1.1 * target_vol,
+        )
         self.key, self.sub_key, new_interphase_chkpt = generate_normal(
             key=self.key,
             sub_key=self.sub_key,
@@ -403,7 +451,91 @@ class FreeMesh:
             self.interphase_chkpt, new_interphase_chkpt, axis=0
         )
         self.mitosis_chkpt = jnp.append(self.mitosis_chkpt, new_mitosis_chkpt, axis=0)
+        self.cell_target_vol = jnp.append(self.cell_target_vol, new_target_vol, axis=0)
+        self.cell_vol_growth_rate = jnp.append(
+            self.cell_vol_growth_rate, new_growth_rate, axis=0
+        )
         self.n_cells += 1
+
+    def calc_cycle(self):
+        split_cells_mask = jnp.array(list(range(len(self.cell_states)))).reshape(-1)[
+            (self.cell_states == 2).reshape(-1)
+        ]
+        for cell_id in split_cells_mask:
+            cell_pos_i = self.positions[cell_id]
+            self.key, self.sub_key, daughter_cell_i = generate_uniform(
+                key=self.key, sub_key=self.sub_key, shape=(3)
+            )
+            self.key, self.sub_key, rand_point = generate_uniform(
+                key=self.key, sub_key=self.sub_key, shape=(3)
+            )
+            t_sqrt = math.sqrt(
+                self.cell_radius[cell_id][0] ** 2
+                / (
+                    (rand_point[0] - cell_pos_i[0]) ** 2
+                    + (rand_point[1] - cell_pos_i[1]) ** 2
+                    + (rand_point[2] - cell_pos_i[2]) ** 2
+                )
+            )
+            cell_boundary_pt_1 = t_sqrt * (rand_point - cell_pos_i) + cell_pos_i
+            cell_boundary_pt_2 = (
+                -t_sqrt * (rand_point - cell_pos_i) + cell_pos_i
+            ).reshape(1, 3)
+
+            ## TODO: Check and Update all parameters of parent cell post split
+            ## Parameters being updated - Radius, position, cell_state, cell_vol, cell_mass, cell_time
+
+            new_radius = self.cell_radius[cell_id][0] / math.sqrt(2)
+            self.positions = self.positions.at[cell_id].set(cell_boundary_pt_1)
+            self.cell_states = self.cell_states.at[cell_id].set(0)
+
+            self.cell_radius = self.cell_radius.at[cell_id].set(new_radius)
+            self.cell_vol = self.cell_vol.at[cell_id].set(
+                (4.0 * math.pi * new_radius**3) / 3.0
+            )
+            self.cell_mass = self.cell_mass.at[cell_id].set(
+                self.cell_density * self.cell_vol[cell_id]
+            )
+            self.cell_time = self.cell_time.at[cell_id].set(0)
+
+            self.add_cell(
+                pos=cell_boundary_pt_2,
+                cell_state=jnp.array([[0]]),
+                new_radius=(new_radius).reshape(1, 1),
+                parent_growth_rate=self.cell_vol_growth_rate[cell_id],
+                target_vol=self.cell_target_vol[cell_id],
+            )
+
+        ## Check interphase
+        transition_cell_mask = (self.cell_time >= self.interphase_chkpt) & (
+            self.cell_states == 0
+        )
+        self.cell_states = self.cell_states.at[transition_cell_mask].set(1)
+
+        ## Check mitosis
+        interphase_cell_mask = (self.cell_time >= self.mitosis_chkpt) & (
+            self.cell_states == 1
+        )
+        self.cell_states = self.cell_states.at[interphase_cell_mask].set(2)
+
+        ## Update cell death
+        self.key, self.sub_key, cell_death_prob = generate_uniform(
+            key=self.key, sub_key=self.sub_key, shape=(self.n_cells)
+        )
+        cell_death_mask = jnp.any(
+            (self.cell_states == 2) | (self.cell_states == 1) | (self.cell_states == 0)
+        ) & (cell_death_prob <= self.cell_death_prob)
+        self.cell_states = self.cell_states.at[cell_death_mask].set(-1)
+
+        # Update cell times
+        self.cell_time = self.cell_time.at[:].set(self.cell_time + 1)
+
+    def calc_cell_growth(self):
+        diff_target = self.cell_target_vol - self.cell_vol
+        vol_inc = self.cell_vol_growth_rate * diff_target
+        self.cell_vol = self.cell_vol + vol_inc
+        self.cell_radius = jnp.pow((self.cell_vol * 3) / (4.0 * math.pi), 1 / 3)
+        self.cell_mass = self.cell_vol * self.cell_density
 
     def step(self, step_i, delta, logger: DataLogger):
         """
@@ -446,71 +578,15 @@ class FreeMesh:
             self.field_keys = field_keys_i
 
         # Perform movement/force calculation
-        self.calc_movement()
+        if self.movement_bool:
+            self.calc_movement()
 
         # Cell Cycling
-        ## TODO: Split cells
-        split_cells_mask = jnp.array(list(range(len(self.cell_states)))).reshape(-1)[
-            (self.cell_states == 2).reshape(-1)
-        ]
-        for cell_id in split_cells_mask:
-            cell_pos_i = self.positions[cell_id]
-            self.key, self.sub_key, daughter_cell_i = generate_uniform(
-                key=self.key, sub_key=self.sub_key, shape=(3)
-            )
-            self.key, self.sub_key, rand_point = generate_uniform(
-                key=self.key, sub_key=self.sub_key, shape=(3)
-            )
-            t_sqrt = math.sqrt(
-                self.cell_radius[cell_id][0] ** 2
-                / (
-                    (rand_point[0] - cell_pos_i[0]) ** 2
-                    + (rand_point[1] - cell_pos_i[1]) ** 2
-                    + (rand_point[2] - cell_pos_i[2]) ** 2
-                )
-            )
-            cell_boundary_pt_1 = t_sqrt * (rand_point - cell_pos_i) + cell_pos_i
-            cell_boundary_pt_2 = (
-                -t_sqrt * (rand_point - cell_pos_i) + cell_pos_i
-            ).reshape(1, 3)
+        if self.cycle_bool:
+            self.calc_cycle()
 
-            ## TODO: Check and Update all parameters of parent cell post split
-            self.positions = self.positions.at[cell_id].set(cell_boundary_pt_1)
-            self.cell_states = self.cell_states.at[cell_id].set(0)
-            self.cell_radius = self.cell_radius.at[cell_id].set(
-                self.cell_radius[cell_id][0] / 2
-            )
-            self.cell_time = self.cell_time.at[cell_id].set(0)
-
-            self.add_cell(
-                cell_boundary_pt_2,
-                jnp.array([[0]]),
-                (self.cell_radius[cell_id] / 2).reshape(1, 1),
-            )  ##TODO: Update new radius to conserve mass
-
-        ## Check interphase
-        transition_cell_mask = (self.cell_time >= self.interphase_chkpt) & (
-            self.cell_states == 0
-        )
-        self.cell_states = self.cell_states.at[transition_cell_mask].set(1)
-
-        ## Check mitosis
-        interphase_cell_mask = (self.cell_time >= self.mitosis_chkpt) & (
-            self.cell_states == 1
-        )
-        self.cell_states = self.cell_states.at[interphase_cell_mask].set(2)
-
-        ## Update cell death
-        self.key, self.sub_key, cell_death_prob = generate_uniform(
-            key=self.key, sub_key=self.sub_key, shape=(self.n_cells)
-        )
-        cell_death_mask = jnp.any(
-            (self.cell_states == 2) | (self.cell_states == 1) | (self.cell_states == 0)
-        ) & (cell_death_prob <= self.cell_death_prob)
-        self.cell_states = self.cell_states.at[cell_death_mask].set(-1)
-
-        # Update cell times
-        self.cell_time = self.cell_time.at[:].set(self.cell_time + 1)
+        # Cell Growth
+        self.calc_cell_growth()
 
         if self.debug_plot:
             plt.figure()
@@ -518,6 +594,7 @@ class FreeMesh:
             ax.scatter(self.positions[:, 0], self.positions[:, 1], self.positions[:, 2])
             plt.show()
             print("\n\n")
+        return self.cell_vol
 
     def get_cell_id(self, pos):
         """

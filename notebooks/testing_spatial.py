@@ -16,7 +16,6 @@ def _():
     )
     import os
     import marimo as mo
-    import jax.numpy as jnp
 
     matplotlib.style.use("default")
     return (
@@ -24,7 +23,6 @@ def _():
         SpatialSimVec,
         compose,
         initialize_config_dir,
-        jnp,
         mo,
         os,
         plt,
@@ -230,24 +228,19 @@ def _(mo):
 
 
 @app.cell
-def _(jnp):
-    _a = jnp.array([2.5878243, 0.59299123, 0.12292886])
-    _b = jnp.array([2.833334, 0.55704165, 0.10685025])
-    print(_a - _b)
-    print(jnp.sqrt(sum((_a - _b) ** 2)) / 2)
-    return
-
-
-@app.cell
 def _(SpatialSimVec, get_config):
     _config = get_config("freemesh_config")
     _config.spatial_sim.n_steps = 20
     _config.spatial_sim.diffusion_bool = True
     _config.spatial_sim.reaction_bool = False
+    _config.spatial_sim.movement_bool = False
+    _config.spatial_sim.cycle_bool = True
     _config.spatial_sim.logging = True
-    _config.spatial_sim.debug_plot = True
+    _config.spatial_sim.debug_plot = False
     _s1 = SpatialSimVec(_config.spatial_sim)
     _s1.run_sim()
+
+    _s1.cleanup()
     return
 
 

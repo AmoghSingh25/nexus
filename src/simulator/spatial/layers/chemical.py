@@ -157,7 +157,6 @@ class ChemicalLayer:
         :param curr_conc: Current chemical concentration
         :param react_matrix: Reaction matrix for reaction from Reaction.generate_reaction_matrix()
         """
-        # TODO: Replace _react_matrix_ with Sample(Poisson(lambda))
         curr_conc = curr_conc.at[:].set(curr_conc + react_matrix)
         return curr_conc
 
@@ -169,7 +168,6 @@ class ChemicalLayer:
         :param curr_conc: Current chemical concentration
         :param react_matrix: Reaction matrix for reaction from Reaction.generate_reaction_matrix()
         """
-        # TODO: Replace _react_matrix_ with Sample(Poisson(lambda))
         curr_conc = curr_conc.at[:].set(jnp.exp(jnp.log(curr_conc) + react_matrix))
         return curr_conc
 
@@ -181,7 +179,6 @@ class ChemicalLayer:
         :param curr_conc: Current chemical concentration
         :param react_matrix: Reaction matrix for reaction from Reaction.generate_reaction_matrix()
         """
-        # TODO: Replace _react_matrix_ with Sample(Poisson(lambda))
         curr_conc = curr_conc.at[:].set(1 / (1 / curr_conc - react_matrix))
         return curr_conc
 

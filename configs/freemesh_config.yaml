@@ -28,7 +28,8 @@ spatial_sim:
   mesh_type: "lattice-free"
   sparse_cells: true
   # cell_num: 10
-  cell_density: 1 # Default value is 10
+  cell_concentration: 1 # Default value is 10
+  field_vol: 1.0
 
   ## Diffusion related
   D: 0.5
@@ -42,14 +43,19 @@ spatial_sim:
   debug_plot: false
 
   ## Movement related
+  movement_bool: true
   attraction_coeff: 1
   repulsion_coeff: 1
   drift_vel_coeff: 0.01
   random_vel_coeff: 0.01
 
   ## Cycle related
+  cycle_bool: true
   cycle_len: 10
-  cell_death_prob: 0.1
+  cell_death_prob: 0.01
+  cell_target_vol: 1.0
+  cell_density: 1.0
+  cell_vol_growth_rate: 0.3
   
   ## Chemicals
   chemical:
