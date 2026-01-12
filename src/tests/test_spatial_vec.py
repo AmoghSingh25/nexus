@@ -24,7 +24,7 @@ class TestSpatial:
             chem_before = s.logger.retrieve_chem_data(step=0, cell_id=cell_id)["conc"]
             chem_after = s.logger.retrieve_chem_data(step=-1, cell_id=cell_id)["conc"]
             min_chem_idx = np.argmin(chem_before)
-            max_chem_idx = np.argmax(chem_after)
+            max_chem_idx = np.argmax(chem_before)
             s.cleanup()
             print(chem_before)
             print(chem_after)
