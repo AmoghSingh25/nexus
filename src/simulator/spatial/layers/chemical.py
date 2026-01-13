@@ -104,7 +104,7 @@ class ChemicalLayer:
         :param self: ChemicalField
         :param step: Simulation step idx
         :param cell_id: ID of the cell relating to the chemical field
-        :param logger: Logger object (Currently setup to use MeshLogger)
+        :param logger: Logger object (Currently setup to use mesh_logger)
         """
 
         self.key, self.sub_key, reaction_order = generate_permutation(
@@ -188,7 +188,7 @@ class ChemicalLayer:
 
         :param self: ChemicalField
         :param step: Index of the current step of the simulation
-        :param logger: Logger object (Currently MeshLogger)
+        :param logger: Logger object (Currently mesh_logger)
         :param cell_id: Index of the cell of the current ChemicalField
         """
         self.calc_reaction_change(step=step, logger=logger, cell_id=cell_id)

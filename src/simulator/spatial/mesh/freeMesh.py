@@ -187,7 +187,7 @@ class FreeMesh:
         :param self: GridMesh
         :param step_i: Step index
         :param delta: Simulation delta
-        :param logger: MeshLogger object
+        :param logger: mesh_logger object
         """
         # TODO: Vectorize steps
 
