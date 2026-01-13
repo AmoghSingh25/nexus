@@ -3,7 +3,7 @@ import argparse
 import pandas as pd
 import numpy as np
 from dash import Dash, html, dcc, Input, Output, callback
-from simulator.spatial.logger.meshLogger import DataLogger
+from simulator.spatial.logger.mesh_logger import DataLogger
 import dash_ag_grid as dag
 import plotly.express as px
 import plotly.graph_objects as go

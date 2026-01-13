@@ -34,7 +34,7 @@ class DataLogger:
         """
         self.log_dir = log_dir
         if not os.path.exists(os.path.join(self.log_dir, file_name)) and not read_only:
-            os.mkdir(os.path.join(self.log_dir, file_name))
+            os.makedirs(os.path.join(self.log_dir, file_name), exist_ok=True)
         self.base_path = os.path.join(self.log_dir, file_name)
         self.chem_arr = os.path.join(self.base_path, "chem.tldb")
         self.reaction_arr = os.path.join(self.base_path, "reaction.tldb")

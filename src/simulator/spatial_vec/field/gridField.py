@@ -48,6 +48,6 @@ class GridField:
 
         :param self: GridField
         :param step: Step number
-        :param logger: MeshLogger object
+        :param logger: mesh_logger object
         """
         self.chem.step(step=step, cell_id=self.id, logger=logger)

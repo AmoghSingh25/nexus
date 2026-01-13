@@ -26,7 +26,7 @@ def calc_reaction_change(
 
     :param step: Simulation step idx
     :param cell_id: ID of the cell relating to the chemical field
-    :param logger: Logger object (Currently setup to use MeshLogger)
+    :param logger: Logger object (Currently setup to use mesh_logger)
     """
 
     key, sub_key, reaction_order = generate_permutation(

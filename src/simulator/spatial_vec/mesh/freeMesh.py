@@ -9,7 +9,7 @@ from simulator.spatial_vec.utils.random_generators import (
     generate_uniform,
     generate_normal,
 )
-from simulator.spatial_vec.logger.meshLogger import DataLogger
+from simulator.spatial_vec.logger.mesh_logger import DataLogger
 from simulator.spatial_vec.models.reaction import Reaction
 from simulator.spatial_vec.layers.chemical import (
     calc_zero_order,
@@ -547,7 +547,7 @@ class FreeMesh:
         :param self: GridMesh
         :param step_i: Step index
         :param delta: Simulation delta
-        :param logger: MeshLogger object
+        :param logger: mesh_logger object
         """
         if self.debug_plot:
             print("Step - ", step_i)

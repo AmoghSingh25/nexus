@@ -2,7 +2,7 @@ from simulator.spatial_vec.mesh.gridMesh import GridMesh
 from simulator.spatial_vec.mesh.freeMesh import FreeMesh
 from omegaconf import DictConfig
 from tqdm import tqdm
-from simulator.spatial_vec.logger.meshLogger import DataLogger
+from simulator.spatial_vec.logger.mesh_logger import DataLogger
 import time
 import os
 
