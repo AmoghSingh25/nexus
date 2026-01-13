@@ -55,7 +55,7 @@ spatial_sim:
   cell_death_prob: 0.01
   cell_target_vol: 1.0
   cell_density: 1.0
-  cell_vol_growth_rate: 0.3
+  cell_vol_growth_rate: 1.0
   
   ## Chemicals
   chemical:

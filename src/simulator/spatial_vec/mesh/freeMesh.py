@@ -65,6 +65,10 @@ class FreeMesh:
             key=self.key,
             sub_key=self.sub_key,
             shape=(self.n_cells, 3),
+            minval=jnp.array(
+                [[-self.width / 2.0, -self.height / 2.0, -self.depth / 2.0]]
+            ),
+            maxval=jnp.array([[self.width / 2.0, self.height / 2.0, self.depth / 2.0]]),
         )
         self.positions = jnp.round(self.positions, decimals=2)
 
@@ -385,6 +389,7 @@ class FreeMesh:
                 self.positions[cell_id],
                 self.positions[radial_neighs],
                 self.cell_vel[cell_id],
+                boundary_vals=(self.width, self.height, self.depth),
                 attraction_coeff=self.attraction_coeff,
                 repulsion_coeff=self.repulsion_coeff,
                 drift_vel_coeff=self.drift_vel_coeff,
@@ -407,7 +412,7 @@ class FreeMesh:
             )
 
     def add_cell(self, pos, cell_state, new_radius, parent_growth_rate, target_vol):
-        ## TODO: Check all required states and arrays are updated
+        ## Arrays updated - Positions, state, time, radius, vol, mass
         self.positions = jnp.append(self.positions, pos, axis=0)
         self.cell_states = jnp.append(self.cell_states, cell_state, axis=0)
         self.cell_time = jnp.append(self.cell_time, jnp.array([[0]]), axis=0)
@@ -416,7 +421,7 @@ class FreeMesh:
         self.cell_vol = jnp.append(self.cell_vol, new_vol, axis=0)
         self.cell_mass = jnp.append(
             self.cell_mass, jnp.array([self.cell_density * new_vol])
-        )
+        ).reshape(-1, 1)
 
         self.key, self.sub_key, new_growth_rate = generate_uniform(
             key=self.key,
@@ -463,9 +468,7 @@ class FreeMesh:
         ]
         for cell_id in split_cells_mask:
             cell_pos_i = self.positions[cell_id]
-            self.key, self.sub_key, daughter_cell_i = generate_uniform(
-                key=self.key, sub_key=self.sub_key, shape=(3)
-            )
+
             self.key, self.sub_key, rand_point = generate_uniform(
                 key=self.key, sub_key=self.sub_key, shape=(3)
             )
@@ -532,7 +535,7 @@ class FreeMesh:
 
     def calc_cell_growth(self):
         diff_target = self.cell_target_vol - self.cell_vol
-        vol_inc = self.cell_vol_growth_rate * diff_target
+        vol_inc = self.cell_vol_growth_rate * diff_target * self.delta
         self.cell_vol = self.cell_vol + vol_inc
         self.cell_radius = jnp.pow((self.cell_vol * 3) / (4.0 * math.pi), 1 / 3)
         self.cell_mass = self.cell_vol * self.cell_density

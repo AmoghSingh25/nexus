@@ -20,16 +20,22 @@ class TestSpatial:
         try:
             s = SpatialSimVec(base_config.spatial_sim)
             s.run_sim()
-            cell_id = random.randint(a=0, b=s.mesh.n_cells - 1)
-            chem_before = s.logger.retrieve_chem_data(step=0, cell_id=cell_id)["conc"]
-            chem_after = s.logger.retrieve_chem_data(step=-1, cell_id=cell_id)["conc"]
+            cell_id_1 = random.randint(a=0, b=s.mesh.n_cells - 1)
+            cell_id_2 = random.randint(a=0, b=s.mesh.n_cells - 1)
+            while cell_id_2 == cell_id_1:
+                cell_id_1 = random.randint(a=0, b=s.mesh.n_cells - 1)
+                cell_id_2 = random.randint(a=0, b=s.mesh.n_cells - 1)
+
+            chem_before = s.logger.retrieve_chem_data(
+                step=0, cell_id=[cell_id_1, cell_id_2]
+            )["conc"]
+            chem_after = s.logger.retrieve_chem_data(
+                step=-1, cell_id=[cell_id_1, cell_id_2]
+            )["conc"]
+
             min_chem_idx = np.argmin(chem_before)
             max_chem_idx = np.argmax(chem_before)
             s.cleanup()
-            print(chem_before)
-            print(chem_after)
-            print(min_chem_idx)
-            print(max_chem_idx)
 
             if (
                 chem_before[min_chem_idx] <= chem_after[min_chem_idx]
