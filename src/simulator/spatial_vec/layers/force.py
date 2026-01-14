@@ -17,7 +17,6 @@ def calc_inter_cell_force(
     repulsion_coeff,
     delta,
 ):
-    ## Assuming quadratic force function for repulsion
     combined_cell_sizes = (neighbour_cell_sizes + source_cell_size).reshape(-1)
     combined_cell_masses = (source_cell_mass + neighbour_cell_masses).reshape(-1)
 

@@ -108,5 +108,5 @@ def calc_second_order(args):
     :param args[0]: Current chemical concentration
     :param args[1]: Reaction matrix for reaction from Reaction.generate_reaction_matrix()
     """
-    curr_conc = args[0].at[:].set(1 / (1 / args[0] - args[1]))
+    curr_conc = args[0].at[:].set(1 / ((1 / args[0]) - args[1]))
     return curr_conc
