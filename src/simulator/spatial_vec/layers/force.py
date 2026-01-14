@@ -61,7 +61,6 @@ def calc_vel(
     source_cell_pos,
     neigh_cell_pos,
     prev_vel,
-    boundary_vals,
     attraction_coeff=1,
     repulsion_coeff=1,
     drift_vel_coeff=0.1,

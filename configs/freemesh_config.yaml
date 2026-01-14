@@ -34,6 +34,7 @@ spatial_sim:
   ## Diffusion related
   D: 0.5
   diffusion_bool: true
+  n_neighbours: 3
   
   ## Simulation Related
   delta: 0.01
@@ -52,6 +53,7 @@ spatial_sim:
   ## Cycle related
   cycle_bool: true
   cycle_len: 10
+  interphase_len: 0.9
   cell_death_prob: 0.01
   cell_target_vol: 1.0
   cell_density: 1.0

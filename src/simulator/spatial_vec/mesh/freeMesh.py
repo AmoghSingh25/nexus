@@ -3,8 +3,6 @@ import jax.numpy as jnp
 import jax
 from jax import random
 import math
-
-# from simulator.spatial.field.freeField import FreeField
 from simulator.spatial_vec.utils.random_generators import (
     generate_uniform,
     generate_normal,
@@ -28,7 +26,7 @@ class FreeMesh:
     def __init__(self, cfg, random_key=42):
         """
 
-        :param self: GridMesh
+        :param self: FreeMesh
         :param height: Height of the grid mesh - Y Axis. Must be >0
         :param width: Width of the grid mesh - X Axis. Must be >0
         :param depth: Depth of the grid mesh - Z Axis. Must be >0
@@ -74,13 +72,18 @@ class FreeMesh:
 
         ## Cellular-level attributes
 
+        self.param_interphase_len = cfg.get("interphase_len", 0.9)
+        self.param_mitosis_len = 1 - self.param_interphase_len
+
         self.cell_vel = jnp.zeros(shape=(self.n_cells, 3))
         self.cell_states = jnp.zeros(shape=(self.n_cells, 1), dtype=jnp.int8)
         self.cell_time = jnp.zeros(shape=(self.n_cells, 1), dtype=jnp.int16)
 
+        self.live_cells_mask = self.cell_states != -1
+
         self.cycle_len = cfg.cycle_len
-        self.interphase_len = self.cycle_len * 0.9
-        self.mitosis_len = self.cycle_len * 0.1
+        self.interphase_len = self.cycle_len * self.param_interphase_len
+        self.mitosis_len = self.cycle_len * self.param_mitosis_len
         self.cell_death_prob = cfg.cell_death_prob
 
         self.key, self.sub_key, self.interphase_chkpt = generate_normal(
@@ -89,6 +92,9 @@ class FreeMesh:
             mean=self.interphase_len,
             shape=(self.n_cells, 1),
             dtype=jnp.float16,
+        )
+        self.interphase_chkpt = self.interphase_chkpt.at[self.interphase_chkpt < 1].set(
+            1
         )
         self.interphase_chkpt = jnp.round(self.interphase_chkpt).astype(jnp.int16)
 
@@ -149,7 +155,7 @@ class FreeMesh:
         curr_id = 0
         self.delta_m = 0  # Adjust mass of chemicals if there is a mismatch in previous and current mass
 
-        self.n_neighbours = 3  # TODO: Use config to set value
+        self.n_neighbours = cfg.get("n_neighbours", 3)
 
         ## Diffusion
         self.field_pos = []
@@ -321,7 +327,7 @@ class FreeMesh:
         """
         Calculate change in chemical concentration due to diffusion
 
-        :param self: GridMesh
+        :param self: FreeMesh
         :param delta: Simulation delta
         """
 
@@ -348,11 +354,11 @@ class FreeMesh:
                 )
 
         delta_m_l = []
+
         ## Initial loop to fix negative masses
+        ## TODO: Complete vectorization
         self.vec_compute_delta_m = jax.vmap(compute_delta_m, in_axes=(0))
         # self.vec_compute_delta_m(self.field_id)
-
-        ## TODO: Complete vectorization
         for i in self.field_id:
             compute_delta_m(cell_id=i)
 
@@ -375,8 +381,15 @@ class FreeMesh:
         self.delta_m = (prev_mass - new_mass) / self.n_cells
 
     def calc_movement(self):
+        """
+        Compute velocities for all the cells as a function of inter-cellular forces, random forces and drift force.
+        Update the positions of the cells based on the forces.
+
+        :param self: Description
+        """
+
         # Calculate velocities
-        for cell_id in range(self.n_cells):
+        for cell_id in jnp.arange(self.n_cells)[self.live_cells_mask.reshape(-1)]:
             radial_neighs, radial_neigh_dists = self.get_radial_limits(
                 self.positions[cell_id], radius=3
             )
@@ -389,7 +402,6 @@ class FreeMesh:
                 self.positions[cell_id],
                 self.positions[radial_neighs],
                 self.cell_vel[cell_id],
-                boundary_vals=(self.width, self.height, self.depth),
                 attraction_coeff=self.attraction_coeff,
                 repulsion_coeff=self.repulsion_coeff,
                 drift_vel_coeff=self.drift_vel_coeff,
@@ -411,7 +423,30 @@ class FreeMesh:
                 self.positions[cell_id] + self.cell_vel[cell_id] * self.delta
             )
 
-    def add_cell(self, pos, cell_state, new_radius, parent_growth_rate, target_vol):
+    def add_cell(
+        self,
+        pos,
+        cell_state,
+        new_radius,
+        parent_growth_rate,
+        parent_interphase_len,
+        parent_mitosis_len,
+        parent_target_vol,
+    ):
+        """
+        Add a cell with the given parameters to the simulation. Derive growth rate, interphase and mitosis lengths and target volume
+        from a normal distribution centered around the respective parameters of the parent cell.
+
+        :param self: FreeMesh
+        :param pos: Position of the new cell
+        :param cell_state: Cell state of the new cell
+        :param new_radius: Radius of the new cell
+        :param parent_growth_rate: Growth rate of the parent cell
+        :param parent_interphase_len: Interphase length of the parent cell
+        :param parent_mitosis_len: Mitosis length of the parent cell
+        :param parent_target_vol: Target volume of the parent cell
+        """
+
         ## Arrays updated - Positions, state, time, radius, vol, mass
         self.positions = jnp.append(self.positions, pos, axis=0)
         self.cell_states = jnp.append(self.cell_states, cell_state, axis=0)
@@ -434,22 +469,30 @@ class FreeMesh:
             key=self.key,
             sub_key=self.sub_key,
             shape=(1, 1),
-            minval=max(1e-4, 0.9 * target_vol),
-            maxval=1.1 * target_vol,
+            minval=max(1e-4, 0.9 * parent_target_vol),
+            maxval=1.1 * parent_target_vol,
         )
         self.key, self.sub_key, new_interphase_chkpt = generate_normal(
             key=self.key,
             sub_key=self.sub_key,
-            mean=self.interphase_len,
+            mean=parent_interphase_len,
             shape=(1, 1),
             dtype=jnp.float16,
         )
+        new_interphase_chkpt = jnp.round(new_interphase_chkpt).astype(jnp.int16)
+        if new_interphase_chkpt < 1:
+            new_interphase_chkpt = 1
         self.key, self.sub_key, new_mitosis_chkpt = generate_normal(
             key=self.key,
             sub_key=self.sub_key,
-            mean=self.mitosis_len,
+            mean=parent_mitosis_len,
             shape=(1, 1),
             dtype=jnp.float16,
+        )
+        if new_mitosis_chkpt < 0:
+            new_mitosis_chkpt = 1
+        new_mitosis_chkpt = new_interphase_chkpt + jnp.round(new_mitosis_chkpt).astype(
+            jnp.int16
         )
 
         self.interphase_chkpt = jnp.append(
@@ -462,7 +505,24 @@ class FreeMesh:
         )
         self.n_cells += 1
 
+    def kill_cells(self, killed_cells_mask):
+        """
+        Modify parameters of the cells to be killed.
+
+        :param self: Description
+        :param killed_cells_mask: Boolean mask indicating cells to be killed
+        """
+        self.cell_states = self.cell_states.at[killed_cells_mask].set(-1)
+        self.cell_mass = self.cell_mass.at[killed_cells_mask].set(0)
+        self.cell_radius = self.cell_radius.at[killed_cells_mask].set(0)
+        self.cell_vol = self.cell_vol.at[killed_cells_mask].set(0)
+
     def calc_cycle(self):
+        """
+        Compute cycling for all cells. Checks for transitions, calls add_cell for cells undergoing split and performs random cell death.
+
+        :param self: Description
+        """
         split_cells_mask = jnp.array(list(range(len(self.cell_states)))).reshape(-1)[
             (self.cell_states == 2).reshape(-1)
         ]
@@ -485,7 +545,6 @@ class FreeMesh:
                 -t_sqrt * (rand_point - cell_pos_i) + cell_pos_i
             ).reshape(1, 3)
 
-            ## TODO: Check and Update all parameters of parent cell post split
             ## Parameters being updated - Radius, position, cell_state, cell_vol, cell_mass, cell_time
 
             new_radius = self.cell_radius[cell_id][0] / math.sqrt(2)
@@ -506,6 +565,8 @@ class FreeMesh:
                 cell_state=jnp.array([[0]]),
                 new_radius=(new_radius).reshape(1, 1),
                 parent_growth_rate=self.cell_vol_growth_rate[cell_id],
+                parent_interphase_len=self.interphase_chkpt[cell_id],
+                parent_mitosis_len=self.mitosis_chkpt[cell_id],
                 target_vol=self.cell_target_vol[cell_id],
             )
 
@@ -528,23 +589,42 @@ class FreeMesh:
         cell_death_mask = jnp.any(
             (self.cell_states == 2) | (self.cell_states == 1) | (self.cell_states == 0)
         ) & (cell_death_prob <= self.cell_death_prob)
-        self.cell_states = self.cell_states.at[cell_death_mask].set(-1)
+        self.kill_cells(killed_cells_mask=cell_death_mask)
+
+        # Update live cells mask parameter
+        self.live_cells_mask = self.cell_states != -1
 
         # Update cell times
         self.cell_time = self.cell_time.at[:].set(self.cell_time + 1)
 
     def calc_cell_growth(self):
-        diff_target = self.cell_target_vol - self.cell_vol
-        vol_inc = self.cell_vol_growth_rate * diff_target * self.delta
-        self.cell_vol = self.cell_vol + vol_inc
-        self.cell_radius = jnp.pow((self.cell_vol * 3) / (4.0 * math.pi), 1 / 3)
-        self.cell_mass = self.cell_vol * self.cell_density
+        """
+        Update the volume, radius and mass of the cell to simulate cell growth.
+
+        :param self: Description
+        """
+        diff_target = (
+            self.cell_target_vol[self.live_cells_mask]
+            - self.cell_vol[self.live_cells_mask]
+        )
+        new_vol = (
+            self.cell_vol[self.live_cells_mask]
+            + self.cell_vol_growth_rate[self.live_cells_mask] * diff_target * self.delta
+        )
+
+        self.cell_vol = self.cell_vol.at[self.live_cells_mask].set(new_vol)
+        self.cell_radius = self.cell_radius.at[self.live_cells_mask].set(
+            jnp.pow((new_vol * 3) / (4.0 * math.pi), 1 / 3)
+        )
+        self.cell_mass = self.cell_mass.at[self.live_cells_mask].set(
+            new_vol * self.cell_density
+        )
 
     def step(self, step_i, delta, logger: DataLogger):
         """
         Perform simulation step for the mesh and the cells within.
 
-        :param self: GridMesh
+        :param self: FreeMesh
         :param step_i: Step index
         :param delta: Simulation delta
         :param logger: mesh_logger object
@@ -611,7 +691,7 @@ class FreeMesh:
         """
         Get neighbours of the cell at pos[idx].
 
-        :param self: GridMesh
+        :param self: FreeMesh
         :param idx: index of cell within pos[idx]
         """
         l1_norm = jnp.linalg.norm(pos - self.positions, axis=1, ord=norm_ord)
@@ -619,6 +699,17 @@ class FreeMesh:
         return neigh_idxs
 
     def get_radial_limits(self, pos, radius=1, norm_ord=1):
+        """
+        Get cells closest to _pos_ and within _radius_
+
+        :param self: FreeMesh
+        :param pos: Position of the cell to compute neighbours in the radial limit.
+        :param radius: Radius to check for neighbours.
+        :param norm_ord: Order of the norm to be used to compute distance.
+        """
         l1_norm = jnp.linalg.norm(pos - self.positions, axis=1, ord=norm_ord)
         radial_neighs = jnp.where((l1_norm < radius) & (l1_norm > 0))
+        radial_neighs = jnp.where(
+            (l1_norm < radius) & (l1_norm > 0) & (self.live_cells_mask.reshape(-1))
+        )
         return radial_neighs, l1_norm[radial_neighs]
