@@ -567,7 +567,7 @@ class FreeMesh:
                 parent_growth_rate=self.cell_vol_growth_rate[cell_id],
                 parent_interphase_len=self.interphase_chkpt[cell_id],
                 parent_mitosis_len=self.mitosis_chkpt[cell_id],
-                target_vol=self.cell_target_vol[cell_id],
+                parent_target_vol=self.cell_target_vol[cell_id],
             )
 
         ## Check interphase

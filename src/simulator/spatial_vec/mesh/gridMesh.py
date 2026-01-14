@@ -187,7 +187,6 @@ class GridMesh:
         :param logger: mesh_logger object
         """
         # TODO: Vectorize steps
-
         # Perform diffusion
         if self.diffusion_bool:
             self.calc_conc_change(delta)

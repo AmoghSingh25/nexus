@@ -16,6 +16,7 @@ class TestSpatial:
     def test_diffusion_freemesh(self):
         base_config = get_config("freemesh_config")
         base_config.spatial_sim.reaction_bool = False
+        base_config.spatial_sim.cycle_bool = False
 
         try:
             s = SpatialSimVec(base_config.spatial_sim)
@@ -51,6 +52,7 @@ class TestSpatial:
     def test_reaction_freemesh(self):
         base_config = get_config("freemesh_config")
         base_config.spatial_sim.diffusion_bool = False
+        base_config.spatial_sim.cycle_bool = False
 
         s = SpatialSimVec(base_config.spatial_sim)
         s.run_sim()

@@ -38,7 +38,7 @@ spatial_sim:
   
   ## Simulation Related
   delta: 0.01
-  n_steps: 10
+  n_steps: 20
   random_key: 42
   logging: true
   debug_plot: false
