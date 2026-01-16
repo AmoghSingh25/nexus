@@ -16,6 +16,7 @@ from simulator.spatial_vec.layers.chemical import (
     calc_reaction_change,
 )
 from simulator.spatial_vec.layers.force import calc_vel
+from simulator.spatial_vec.utils.verify_data import check_cell_type_data
 
 
 class FreeMesh:
@@ -44,6 +45,7 @@ class FreeMesh:
         self.dims = [self.width, self.height, self.depth]
         self.D = cfg.D
         self.n_chemicals = len(cfg["chemical"]["name"])
+        self.n_cell_types = cfg["n_cell_type"]
 
         self.key, self.sub_key = random.split(random.key(random_key))
 
@@ -71,20 +73,35 @@ class FreeMesh:
         self.positions = jnp.round(self.positions, decimals=2)
 
         ## Cellular-level attributes
-
-        self.param_interphase_len = cfg.get("interphase_len", 0.9)
-        self.param_mitosis_len = 1 - self.param_interphase_len
+        self.cycle_bool = cfg.get("cycle_bool", False)
+        self.param_interphase_len, self.param_mitosis_len, self.param_cycle_len = (
+            [],
+            [],
+            [],
+        )
+        (
+            self.key,
+            self.sub_key,
+            self.cell_type_mask,
+            self.interphase_len,
+            self.mitosis_len,
+            self.cell_death_prob,
+            self.cell_density,
+            self.cell_target_vol_param,
+            self.cell_vol_growth_rate_param,
+            self.cell_attraction_coeff,
+            self.cell_repulsion_coeff,
+            self.cell_drift_vel_coeff,
+            self.cell_random_vel_coeff,
+        ) = check_cell_type_data(
+            key=self.key, sub_key=self.sub_key, n_cells=self.n_cells, cfg=cfg
+        )
 
         self.cell_vel = jnp.zeros(shape=(self.n_cells, 3))
         self.cell_states = jnp.zeros(shape=(self.n_cells, 1), dtype=jnp.int8)
         self.cell_time = jnp.zeros(shape=(self.n_cells, 1), dtype=jnp.int16)
 
         self.live_cells_mask = self.cell_states != -1
-
-        self.cycle_len = cfg.cycle_len
-        self.interphase_len = self.cycle_len * self.param_interphase_len
-        self.mitosis_len = self.cycle_len * self.param_mitosis_len
-        self.cell_death_prob = cfg.cell_death_prob
 
         self.key, self.sub_key, self.interphase_chkpt = generate_normal(
             key=self.key,
@@ -110,46 +127,44 @@ class FreeMesh:
             jnp.round(self.mitosis_chkpt).astype(jnp.int16) + self.interphase_chkpt
         )
 
-        self.cell_density = cfg.get("cell_density", 1.0)
-
-        self.cell_target_vol_param = cfg.get("cell_target_vol", 1.0)
-        self.cell_vol_growth_rate_param = cfg.get("cell_vol_growth_rate", 1.0)
-
         self.key, self.sub_key, self.cell_target_vol = generate_uniform(
             key=self.key,
             sub_key=self.sub_key,
             shape=(self.n_cells, 1),
-            minval=max(1e-4, self.cell_target_vol_param * 0.9),
+            minval=jnp.maximum(
+                jnp.max(self.cell_target_vol_param * 0.9, axis=1), 1e-4
+            ).reshape(-1, 1),
             maxval=self.cell_target_vol_param * 1.1,
         )
+
         self.key, self.sub_key, self.cell_vol_growth_rate = generate_uniform(
             key=self.key,
             sub_key=self.sub_key,
             shape=(self.n_cells, 1),
-            minval=max(1e-4, self.cell_vol_growth_rate_param * 0.9),
+            minval=jnp.maximum(
+                jnp.max(self.cell_vol_growth_rate_param * 0.9, axis=1), 1e-4
+            ).reshape(-1, 1),
             maxval=self.cell_vol_growth_rate_param * 1.1,
         )
+
         self.key, self.sub_key, self.cell_vol = generate_uniform(
             key=self.key,
             sub_key=self.sub_key,
             shape=(self.n_cells, 1),
-            minval=max(1e-4, self.cell_target_vol_param * 0.1),
+            minval=jnp.maximum(
+                jnp.max(self.cell_target_vol_param * 0.9, axis=1), 1e-4
+            ).reshape(-1, 1),
             maxval=self.cell_target_vol_param,
         )
+
         self.cell_radius = jnp.pow((self.cell_vol * 3) / (4.0 * math.pi), 1 / 3)
 
         self.cell_mass = self.cell_density * self.cell_vol
 
         self.reaction_bool = cfg.reaction_bool
-        self.diffusion_bool = cfg.diffusion_bool
+
+        ## Movement
         self.movement_bool = cfg.movement_bool
-        self.cycle_bool = cfg.cycle_bool
-
-        self.repulsion_coeff = cfg.repulsion_coeff
-        self.attraction_coeff = cfg.attraction_coeff
-        self.drift_vel_coeff = cfg.drift_vel_coeff
-        self.random_vel_coeff = cfg.random_vel_coeff
-
         self.debug_plot = cfg.debug_plot
 
         curr_id = 0
@@ -158,6 +173,7 @@ class FreeMesh:
         self.n_neighbours = cfg.get("n_neighbours", 3)
 
         ## Diffusion
+        self.diffusion_bool = cfg.diffusion_bool
         self.field_pos = []
         self.field_D = []
         self.field_vol = []
@@ -402,9 +418,9 @@ class FreeMesh:
                 self.positions[cell_id],
                 self.positions[radial_neighs],
                 self.cell_vel[cell_id],
-                attraction_coeff=self.attraction_coeff,
-                repulsion_coeff=self.repulsion_coeff,
-                drift_vel_coeff=self.drift_vel_coeff,
+                attraction_coeff=self.cell_attraction_coeff[cell_id],
+                repulsion_coeff=self.cell_repulsion_coeff[cell_id],
+                drift_vel_coeff=self.cell_drift_vel_coeff[cell_id],
                 delta=self.delta,
             )
 
@@ -412,7 +428,7 @@ class FreeMesh:
             self.key, self.sub_key, random_vel = generate_uniform(
                 key=self.key, sub_key=self.sub_key, shape=(3)
             )
-            random_vel = self.random_vel_coeff * random_vel
+            random_vel = self.cell_random_vel_coeff[cell_id] * random_vel
             ret_vel = ret_vel + random_vel
 
             self.cell_vel = self.cell_vel.at[cell_id].set(ret_vel)
@@ -428,10 +444,16 @@ class FreeMesh:
         pos,
         cell_state,
         new_radius,
-        parent_growth_rate,
-        parent_interphase_len,
-        parent_mitosis_len,
-        parent_target_vol,
+        parent_cell_id,
+        # parent_growth_rate,
+        # parent_interphase_len,
+        # parent_mitosis_len,
+        # parent_target_vol,
+        # parent_cell_death_prob,
+        # parent_cell_type,
+        # parent_cell_density,
+        # parent_cell_attraction_coeff,
+        # parent_cell_repulsion_coeff
     ):
         """
         Add a cell with the given parameters to the simulation. Derive growth rate, interphase and mitosis lengths and target volume
@@ -455,27 +477,50 @@ class FreeMesh:
         self.cell_radius = jnp.append(self.cell_radius, new_radius, axis=0)
         self.cell_vol = jnp.append(self.cell_vol, new_vol, axis=0)
         self.cell_mass = jnp.append(
-            self.cell_mass, jnp.array([self.cell_density * new_vol])
+            self.cell_mass, jnp.array([self.cell_density[parent_cell_id] * new_vol])
         ).reshape(-1, 1)
+        self.cell_density = jnp.append(
+            self.cell_density, jnp.array([self.cell_density[parent_cell_id]]), axis=0
+        )
+        self.cell_attraction_coeff = jnp.append(
+            self.cell_attraction_coeff,
+            jnp.array([self.cell_attraction_coeff[parent_cell_id]]),
+            axis=0,
+        )
+        self.cell_repulsion_coeff = jnp.append(
+            self.cell_repulsion_coeff,
+            jnp.array([self.cell_repulsion_coeff[parent_cell_id]]),
+            axis=0,
+        )
+        self.cell_drift_vel_coeff = jnp.append(
+            self.cell_drift_vel_coeff,
+            jnp.array([self.cell_drift_vel_coeff[parent_cell_id]]),
+            axis=0,
+        )
+        self.cell_random_vel_coeff = jnp.append(
+            self.cell_random_vel_coeff,
+            jnp.array([self.cell_random_vel_coeff[parent_cell_id]]),
+            axis=0,
+        )
 
         self.key, self.sub_key, new_growth_rate = generate_uniform(
             key=self.key,
             sub_key=self.sub_key,
             shape=(1, 1),
-            minval=max(1e-4, 0.9 * parent_growth_rate),
-            maxval=1.1 * parent_growth_rate,
+            minval=max(1e-4, 0.9 * self.cell_vol_growth_rate[parent_cell_id]),
+            maxval=1.1 * self.cell_vol_growth_rate[parent_cell_id],
         )
         self.key, self.sub_key, new_target_vol = generate_uniform(
             key=self.key,
             sub_key=self.sub_key,
             shape=(1, 1),
-            minval=max(1e-4, 0.9 * parent_target_vol),
-            maxval=1.1 * parent_target_vol,
+            minval=max(1e-4, 0.9 * self.cell_target_vol[parent_cell_id]),
+            maxval=1.1 * self.cell_target_vol[parent_cell_id],
         )
         self.key, self.sub_key, new_interphase_chkpt = generate_normal(
             key=self.key,
             sub_key=self.sub_key,
-            mean=parent_interphase_len,
+            mean=self.interphase_len[parent_cell_id],
             shape=(1, 1),
             dtype=jnp.float16,
         )
@@ -485,9 +530,15 @@ class FreeMesh:
         self.key, self.sub_key, new_mitosis_chkpt = generate_normal(
             key=self.key,
             sub_key=self.sub_key,
-            mean=parent_mitosis_len,
+            mean=self.mitosis_len[parent_cell_id],
             shape=(1, 1),
             dtype=jnp.float16,
+        )
+        self.key, self.sub_key, new_cell_death_prob = generate_normal(
+            key=self.key,
+            sub_key=self.sub_key,
+            mean=self.cell_death_prob[parent_cell_id],
+            shape=(1, 1),
         )
         if new_mitosis_chkpt < 0:
             new_mitosis_chkpt = 1
@@ -502,6 +553,14 @@ class FreeMesh:
         self.cell_target_vol = jnp.append(self.cell_target_vol, new_target_vol, axis=0)
         self.cell_vol_growth_rate = jnp.append(
             self.cell_vol_growth_rate, new_growth_rate, axis=0
+        )
+        self.cell_death_prob = jnp.append(
+            self.cell_death_prob, new_cell_death_prob, axis=0
+        )
+        self.cell_type_mask = jnp.append(
+            self.cell_type_mask,
+            jnp.array([self.cell_type_mask[parent_cell_id]]),
+            axis=0,
         )
         self.n_cells += 1
 
@@ -556,7 +615,7 @@ class FreeMesh:
                 (4.0 * math.pi * new_radius**3) / 3.0
             )
             self.cell_mass = self.cell_mass.at[cell_id].set(
-                self.cell_density * self.cell_vol[cell_id]
+                self.cell_density[cell_id] * self.cell_vol[cell_id]
             )
             self.cell_time = self.cell_time.at[cell_id].set(0)
 
@@ -564,10 +623,16 @@ class FreeMesh:
                 pos=cell_boundary_pt_2,
                 cell_state=jnp.array([[0]]),
                 new_radius=(new_radius).reshape(1, 1),
-                parent_growth_rate=self.cell_vol_growth_rate[cell_id],
-                parent_interphase_len=self.interphase_chkpt[cell_id],
-                parent_mitosis_len=self.mitosis_chkpt[cell_id],
-                parent_target_vol=self.cell_target_vol[cell_id],
+                parent_cell_id=cell_id,
+                # parent_growth_rate=self.cell_vol_growth_rate[cell_id],
+                # parent_interphase_len=self.interphase_chkpt[cell_id],
+                # parent_mitosis_len=self.mitosis_chkpt[cell_id],
+                # parent_target_vol=self.cell_target_vol[cell_id],
+                # parent_cell_death_prob=self.cell_death_prob[cell_id],
+                # parent_cell_type=self.cell_type_mask[cell_id],
+                # parent_cell_density=self.cell_density[cell_id],
+                # parent_cell_attraction_coeff=self.cell_attraction_coeff[cell_id],
+                # parent_cell_repulsion_coeff=self.cell_repulsion_coeff[cell_id],
             )
 
         ## Check interphase
@@ -584,7 +649,7 @@ class FreeMesh:
 
         ## Update cell death
         self.key, self.sub_key, cell_death_prob = generate_uniform(
-            key=self.key, sub_key=self.sub_key, shape=(self.n_cells)
+            key=self.key, sub_key=self.sub_key, shape=(self.n_cells, 1)
         )
         cell_death_mask = jnp.any(
             (self.cell_states == 2) | (self.cell_states == 1) | (self.cell_states == 0)
@@ -616,9 +681,13 @@ class FreeMesh:
         self.cell_radius = self.cell_radius.at[self.live_cells_mask].set(
             jnp.pow((new_vol * 3) / (4.0 * math.pi), 1 / 3)
         )
+        print(self.live_cells_mask.shape)
+        print(self.cell_density.shape)
+        print(self.cell_density[self.live_cells_mask])
         self.cell_mass = self.cell_mass.at[self.live_cells_mask].set(
-            new_vol * self.cell_density
+            new_vol * self.cell_density[self.live_cells_mask].reshape(-1)
         )
+        print(self.cell_mass)
 
     def step(self, step_i, delta, logger: DataLogger):
         """
