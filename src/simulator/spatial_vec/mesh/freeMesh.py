@@ -281,7 +281,7 @@ class FreeMesh:
             in_axes=(None, 0, None, 0, None, 0, None, None, None, None, None),
         )
 
-    def calc_flux(self, cell_id):
+    def calc_flux(self, field_id):
         """
         Calculate flux for the field at position _pos_.
         Also checks if part of the flux is already calculated by another field before.
@@ -289,51 +289,51 @@ class FreeMesh:
         :param pos: Position of field to calculate the flux
         """
         ## TODO: Rename cell_* to field_*
-        curr_cell_id = cell_id.item()
+        curr_field_id = field_id.item()
         neighbour_cells = []
         neigh_pos = []
-        cell_mass = []
-        cell_vol = []
+        field_mass = []
+        field_vol = []
         flux = jnp.zeros((self.n_chemicals, 1))
-        for cell_i_id in self.field_neighbours[curr_cell_id]:
-            cell_i = self.field_id[int(cell_i_id)].item()
-            if self.field_flux[curr_cell_id].get(cell_i) is not None:
-                flux += self.field_flux[curr_cell_id].get(cell_i)
+        for field_i_id in self.field_neighbours[curr_field_id]:
+            field_i = self.field_id[int(field_i_id)].item()
+            if self.field_flux[curr_field_id].get(field_i) is not None:
+                flux += self.field_flux[curr_field_id].get(field_i)
                 continue
-            neighbour_cells.append(cell_i)
-            cell_mass.append(self.field_chem[cell_i])
-            cell_vol.append(self.field_vol[cell_i])
-            neigh_pos.append(jnp.array(self.field_pos[cell_i]))
+            neighbour_cells.append(field_i)
+            field_mass.append(self.field_chem[field_i])
+            field_vol.append(self.field_vol[field_i])
+            neigh_pos.append(jnp.array(self.field_pos[field_i]))
 
         if len(neigh_pos) == 0:
             return flux
 
         neigh_pos = jnp.vstack(neigh_pos)
-        cell_mass = jnp.array(cell_mass)
-        cell_vol = jnp.array(cell_vol)
+        field_mass = jnp.array(field_mass)
+        field_vol = jnp.array(field_vol)
         distances = jnp.linalg.norm(
-            neigh_pos - jnp.array(self.field_pos[curr_cell_id]), axis=1
+            neigh_pos - jnp.array(self.field_pos[curr_field_id]), axis=1
         )
 
-        def calc_flux_i(D, cell1_mass, cell1_vol, cell2_mass, cell2_vol, dist_i):
+        def calc_flux_i(D, field1_mass, field1_vol, field2_mass, field2_vol, dist_i):
             """Helper function for auto vectorization for flux calculation"""
-            flux_i = -D * (cell2_mass * cell2_vol - cell1_mass * cell1_vol) / dist_i
+            flux_i = -D * (field2_mass * field2_vol - field1_mass * field1_vol) / dist_i
             return flux_i
 
         auto_vec_flux = jax.vmap(calc_flux_i, in_axes=(None, 0, 0, None, None, 0))
 
         flux_list = auto_vec_flux(
-            self.field_D[curr_cell_id],
-            cell_mass,
-            cell_vol,
-            self.field_chem[curr_cell_id],
-            self.field_vol[curr_cell_id],
+            self.field_D[curr_field_id],
+            field_mass,
+            field_vol,
+            self.field_chem[curr_field_id],
+            self.field_vol[curr_field_id],
             distances,
         )
 
         for i in range(len(flux_list)):
-            self.field_flux[neighbour_cells[i]][curr_cell_id] = -1 * flux_list[i]
-            self.field_flux[curr_cell_id][neighbour_cells[i]] = flux_list[i]
+            self.field_flux[neighbour_cells[i]][curr_field_id] = -1 * flux_list[i]
+            self.field_flux[curr_field_id][neighbour_cells[i]] = flux_list[i]
 
         flux_list = jnp.append(flux_list, flux.reshape(-1, self.n_chemicals, 1), axis=0)
         total_flux = jnp.sum(flux_list, axis=0)
@@ -348,25 +348,25 @@ class FreeMesh:
         """
 
         # TODO: Assuming area of boundary is 1. Change to dynamic
-        def compute_delta_m(cell_id):
-            flux = self.calc_flux(cell_id)
+        def compute_delta_m(field_id):
+            flux = self.calc_flux(field_id=field_id)
             area = 1
             delta_m = flux * area * delta
-            if jnp.any(self.field_chem[cell_id] + delta_m < 0):
-                fix_flux(cell_id, self.field_chem[cell_id] + delta_m)
+            if jnp.any(self.field_chem[field_id] + delta_m < 0):
+                fix_flux(field_id, self.field_chem[field_id] + delta_m)
             return delta_m
 
-        def fix_flux(cell_id, diff_mass):
-            neighbours = self.field_neighbours[cell_id]
+        def fix_flux(field_id, diff_mass):
+            neighbours = self.field_neighbours[field_id]
             neg_idx = jnp.where(diff_mass < 0)
             diff_i = (diff_mass[neg_idx] / neighbours.shape[0]).reshape(-1)
             for i in neighbours:
-                flux_i = self.field_flux[i.item()][cell_id][neg_idx] - diff_i
-                self.field_flux[i.item()][cell_id] = (
-                    self.field_flux[i.item()][cell_id].at[neg_idx].set(flux_i)
+                flux_i = self.field_flux[i.item()][field_id][neg_idx] - diff_i
+                self.field_flux[i.item()][field_id] = (
+                    self.field_flux[i.item()][field_id].at[neg_idx].set(flux_i)
                 )
-                self.field_flux[cell_id][i.item()] = (
-                    self.field_flux[cell_id][i.item()].at[neg_idx].set(-1 * flux_i)
+                self.field_flux[field_id][i.item()] = (
+                    self.field_flux[field_id][i.item()].at[neg_idx].set(-1 * flux_i)
                 )
 
         delta_m_l = []
@@ -376,12 +376,12 @@ class FreeMesh:
         self.vec_compute_delta_m = jax.vmap(compute_delta_m, in_axes=(0))
         # self.vec_compute_delta_m(self.field_id)
         for i in self.field_id:
-            compute_delta_m(cell_id=i)
+            compute_delta_m(field_id=i)
 
         ## Final loop to set fixed masses
         ## TODO: Complete vectorization
         for i in self.field_id:
-            delta_m_l.append(compute_delta_m(cell_id=i))
+            delta_m_l.append(compute_delta_m(field_id=i))
 
         prev_mass = 0
         new_mass = 0
