@@ -6,7 +6,7 @@ from typing import List
 from simulator.spatial.field.gridField import GridField
 
 
-class DataLogger:
+class FieldLogger:
     """
     Logger class for storing data to tiledb
     """
@@ -22,9 +22,9 @@ class DataLogger:
         read_only=False,
     ):
         """
-        Initialize Data Logger
+        Initialize Field Logger
 
-        :param self: DataLogger
+        :param self: FieldLogger
         :param log_dir: Directory of the logs
         :param file_name: Name of the tiledb array to be saved to
         :param n_steps: Number of simulation steps
@@ -79,7 +79,7 @@ class DataLogger:
         """
         Initialize the diffusion array filestore with the schema.
 
-        :param self: DataLogger
+        :param self: FieldLogger
         """
         d1 = tiledb.Dim(
             name="t", domain=(0, self.n_steps), tile=self.time_tile, dtype=np.int32
@@ -107,7 +107,7 @@ class DataLogger:
         """
         Initialize the chemical array filestore with the schema.
 
-        :param self: DataLogger
+        :param self: FieldLogger
         """
         d1 = tiledb.Dim(
             name="t", domain=(0, self.n_steps), tile=self.time_tile, dtype=np.int32
@@ -135,7 +135,7 @@ class DataLogger:
         """
         Initialize the reaction array filestore with the schema.
 
-        :param self: DataLogger
+        :param self: FieldLogger
         """
         d1 = tiledb.Dim(
             name="t", domain=(0, self.n_steps), tile=self.time_tile, dtype=np.int32
@@ -169,7 +169,7 @@ class DataLogger:
         """
         Helper function to get chemical concentrations of cells.
 
-        :param self: DataLogger
+        :param self: FieldLogger
         :param cells: List of cells
         :type cells: np.ndarray[GridField]
         """
@@ -186,7 +186,7 @@ class DataLogger:
         """
         Logs the chemical concentrations.
 
-        :param self: DataLogger
+        :param self: FieldLogger
         :param step: Simulation step index
         :param cells: List of cells to store chemical concentration
         :type cells: np.ndarray[GridField]
@@ -207,7 +207,7 @@ class DataLogger:
         """
         Logs the chemical concentrations post diffusion.
 
-        :param self: DataLogger
+        :param self: FieldLogger
         :param step: Simulation step index
         :param cells: List of cells to store chemical concentration
         :type cells: np.ndarray[GridField]
@@ -217,60 +217,60 @@ class DataLogger:
             _A[step, :, :] = chem_conc
             _A.close()
 
-    def log_reaction_state(self, step, cell_id, reaction_ids, chem_concs):
+    def log_reaction_state(self, step, field_id, reaction_ids, chem_concs):
         """
         Logs the reactions performed along with chemical concentrations post the reactions.
 
-        :param self: DataLogger
+        :param self: FieldLogger
         :param step: Simulation step index
-        :param cell_id: Index of the cell
+        :param field_id: Index of the cell
         :param reaction_ids: List of reaction IDs that have have taken place
         :param chem_concs: Concentration of chemicals post reactions
         """
         if type(step) is not List:
             step = list([step]) * len(reaction_ids)
-        if type(cell_id) is not List:
-            cell_id = list([cell_id]) * len(reaction_ids)
+        if type(field_id) is not List:
+            field_id = list([field_id]) * len(reaction_ids)
         chem_concs = chem_concs.view(self.chem_dtype)
         with tiledb.open(self.reaction_arr, "w") as _A:
-            _A[step, cell_id, reaction_ids] = chem_concs
+            _A[step, field_id, reaction_ids] = chem_concs
             _A.close()
 
-    def log_reaction_order(self, step, cell_id, reaction_order):
+    def log_reaction_order(self, step, field_id, reaction_order):
         """
         Log the reaction order at step_i and cell_i
 
-        :param self: DataLogger
+        :param self: FieldLogger
         :param step: Simulation step index
-        :param cell_id: Index of the cell
+        :param field_id: Index of the cell
         :param reaction_ids: List of reaction IDs in order of execution
         """
         reaction_order = reaction_order.view(self.reaction_order_dtype)
 
         with tiledb.open(self.reaction_order_arr, "w") as _A:
-            _A[step, cell_id] = reaction_order
+            _A[step, field_id] = reaction_order
             _A.close()
 
     """ Retrieval functions """
 
-    def retrieve_chem_data(self, step=None, cell_id=None, chem_id=None):
+    def retrieve_chem_data(self, step=None, field_id=None, chem_id=None):
         """
         Return chemical concentrations from the tiledb array. If any of the parameters are not set, data is returned across the entire possible range for this parameter.
 
-        :param self: DataLogger
+        :param self: FieldLogger
         :param step: Simulation step index being queried
-        :param cell_id: ID of the cell being queried
+        :param field_id: ID of the cell being queried
         :param chem_id: ID of the chemical being queried
         """
         if step is None:
             step = list(range(self.n_steps))
-        if cell_id is None:
-            cell_id = list(range(self.n_cells))
+        if field_id is None:
+            field_id = list(range(self.n_cells))
         if chem_id is None:
             chem_id = list(range(self.n_chems))
 
         with tiledb.open(self.chem_arr, "r") as _A:
-            ret = _A[step, cell_id, chem_id]
+            ret = _A[step, field_id, chem_id]
             _A.close()
 
         return ret
@@ -279,7 +279,7 @@ class DataLogger:
         """
         Return post diffusion concentrations from the tiledb array. If any of the parameters are not set, data is returned across the entire possible range for this parameter.
 
-        :param self: DataLogger
+        :param self: FieldLogger
         :param step: Simulation step index being queried
         """
         if step is None:
@@ -291,43 +291,43 @@ class DataLogger:
 
         return ret
 
-    def retrieve_reaction_data(self, step=None, reaction_id=None, cell_id=None):
+    def retrieve_reaction_data(self, step=None, reaction_id=None, field_id=None):
         """
         Returns reaction-related data from the tiledb array. If any of the parameters are not set, data is returned across the entire possible range for this parameter.
 
-        :param self: DataLogger
+        :param self: FieldLogger
         :param step: Simulation step index being queried
         :param reaction_id: ID of the reaction being queried
-        :param cell_id: ID of the cell being queried
+        :param field_id: ID of the cell being queried
         """
         if step is None:
             step = list(range(self.n_steps))
         if reaction_id is None:
             reaction_id = list(range(self.n_reactions))
-        if cell_id is None:
-            cell_id = list(range(self.n_cells))
+        if field_id is None:
+            field_id = list(range(self.n_cells))
 
         with tiledb.open(self.reaction_arr, "r") as _A:
-            ret = _A[step, cell_id, reaction_id]
+            ret = _A[step, field_id, reaction_id]
             _A.close()
 
         return ret
 
-    def retrieve_reaction_order(self, step=None, cell_id=None):
+    def retrieve_reaction_order(self, step=None, field_id=None):
         """
         Returns the reaction order from the tiledb array.If any of the parameters are not set, data is returned across the entire possible range for this parameter.
 
-        :param self: DataLogger
+        :param self: FieldLogger
         :param step: Simulation step index being queried
-        :param cell_id: ID of the cell being queried
+        :param field_id: ID of the cell being queried
         """
         if step is None:
             step = list(range(self.n_steps))
-        if cell_id is None:
-            cell_id = list(range(self.n_cells))
+        if field_id is None:
+            field_id = list(range(self.n_cells))
 
         with tiledb.open(self.reaction_order_arr, "r") as _A:
-            ret = _A[step, cell_id]
+            ret = _A[step, field_id]
             _A.close()
 
         return ret
@@ -335,11 +335,3 @@ class DataLogger:
     def cleanup(self):
         if os.path.exists(self.base_path):
             shutil.rmtree(self.base_path)
-        # if os.path.exists(self.chem_arr):
-        #     shutil.rmtree(self.chem_arr)
-        # if os.path.exists(self.reaction_arr):
-        #     shutil.rmtree(self.reaction_arr)
-        # if os.path.exists(self.diffusion_arr):
-        #     shutil.rmtree(self.diffusion_arr)
-        # if os.path.exists(self.reaction_order_arr):
-        #     shutil.rmtree(self.reaction_order_arr)

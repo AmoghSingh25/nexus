@@ -21,21 +21,24 @@ class TestSpatial:
         try:
             s = SpatialSimVec(base_config.spatial_sim)
             s.run_sim()
-            cell_id_1 = random.randint(a=0, b=s.mesh.n_cells - 1)
-            cell_id_2 = random.randint(a=0, b=s.mesh.n_cells - 1)
-            while cell_id_2 == cell_id_1:
-                cell_id_1 = random.randint(a=0, b=s.mesh.n_cells - 1)
-                cell_id_2 = random.randint(a=0, b=s.mesh.n_cells - 1)
+            if s.mesh.n_fields < 2:
+                s.cleanup()
+                assert False
+            field_id_1 = random.randint(a=0, b=s.mesh.n_fields - 1)
+            field_id_2 = random.randint(a=0, b=s.mesh.n_fields - 1)
+            while field_id_2 == field_id_1:
+                field_id_1 = random.randint(a=0, b=s.mesh.n_fields - 1)
+                field_id_2 = random.randint(a=0, b=s.mesh.n_fields - 1)
 
             chem_before = s.logger.retrieve_chem_data(
-                step=0, cell_id=[cell_id_1, cell_id_2]
+                step=0, field_id=[field_id_1, field_id_2]
             )["conc"]
             chem_after = s.logger.retrieve_chem_data(
-                step=-1, cell_id=[cell_id_1, cell_id_2]
+                step=-1, field_id=[field_id_1, field_id_2]
             )["conc"]
 
             min_chem_idx = np.argmin(chem_before)
-            max_chem_idx = np.argmax(chem_before)
+            max_chem_idx = np.argmax(chem_after)
             s.cleanup()
 
             if (
@@ -57,14 +60,17 @@ class TestSpatial:
         s = SpatialSimVec(base_config.spatial_sim)
         s.run_sim()
         chem_id = [1, 2]
-        cell_id = random.randint(a=0, b=s.mesh.n_cells - 1)
+        field_id = random.randint(a=0, b=s.mesh.n_fields - 1)
         chem_before = s.logger.retrieve_chem_data(
-            step=0, cell_id=cell_id, chem_id=chem_id
+            step=0, field_id=field_id, chem_id=chem_id
         )["conc"]
         chem_after = s.logger.retrieve_chem_data(
-            step=-1, cell_id=cell_id, chem_id=chem_id
+            step=-1, field_id=field_id, chem_id=chem_id
         )["conc"]
         s.cleanup()
+
+        print(chem_before)
+        print(chem_after)
         if chem_before[0] >= chem_after[0] and chem_before[1] <= chem_after[1]:
             assert True
         else:

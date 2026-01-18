@@ -1,4 +1,4 @@
-import matplotlib.pyplot as plt
+import numpy as np
 import jax.numpy as jnp
 import jax
 from jax import random
@@ -7,7 +7,7 @@ from simulator.spatial_vec.utils.random_generators import (
     generate_uniform,
     generate_normal,
 )
-from simulator.spatial_vec.logger.mesh_logger import DataLogger
+from simulator.spatial_vec.logger.mesh_logger import FieldLogger
 from simulator.spatial_vec.models.reaction import Reaction
 from simulator.spatial_vec.layers.chemical import (
     calc_zero_order,
@@ -17,6 +17,7 @@ from simulator.spatial_vec.layers.chemical import (
 )
 from simulator.spatial_vec.layers.force import calc_vel
 from simulator.spatial_vec.utils.verify_data import check_cell_type_data
+import pyvista as pv
 
 
 class FreeMesh:
@@ -49,8 +50,20 @@ class FreeMesh:
 
         self.key, self.sub_key = random.split(random.key(random_key))
 
-        x, y, z = jnp.mgrid[0 : self.width, 0 : self.height, 0 : self.depth]
-        self.positions = jnp.vstack([x.ravel(), y.ravel(), z.ravel()]).T
+        self.param_field_resolution = cfg.get("field_resolution", 2)
+        x, y, z = jnp.meshgrid(
+            jnp.linspace(
+                -self.width / 2.0, self.width / 2.0, self.param_field_resolution
+            ),
+            jnp.linspace(
+                -self.height / 2.0, self.height / 2.0, self.param_field_resolution
+            ),
+            jnp.linspace(
+                -self.depth / 2.0, self.depth / 2.0, self.param_field_resolution
+            ),
+        )
+        self.field_positions = jnp.vstack([x.ravel(), y.ravel(), z.ravel()]).T
+        self.n_fields = self.field_positions.shape[0]
 
         self.cell_concentration = cfg.get("cell_concentration", 10)
 
@@ -61,7 +74,7 @@ class FreeMesh:
         ## Cell positions, sizes, mass
 
         ## Random positions within the limits of Height, Width, Depth
-        self.key, self.sub_key, self.positions = generate_uniform(
+        self.key, self.sub_key, self.cell_positions = generate_uniform(
             key=self.key,
             sub_key=self.sub_key,
             shape=(self.n_cells, 3),
@@ -70,7 +83,7 @@ class FreeMesh:
             ),
             maxval=jnp.array([[self.width / 2.0, self.height / 2.0, self.depth / 2.0]]),
         )
-        self.positions = jnp.round(self.positions, decimals=2)
+        self.cell_positions = jnp.round(self.cell_positions, decimals=2)
 
         ## Cellular-level attributes
         self.cycle_bool = cfg.get("cycle_bool", False)
@@ -174,7 +187,6 @@ class FreeMesh:
 
         ## Diffusion
         self.diffusion_bool = cfg.diffusion_bool
-        self.field_pos = []
         self.field_D = []
         self.field_vol = []
         self.field_id = []
@@ -184,16 +196,17 @@ class FreeMesh:
         self.key, self.sub_key, self.field_chem = generate_uniform(
             key=self.key,
             sub_key=self.sub_key,
-            shape=(len(self.positions), self.n_chemicals, 1),
+            shape=(len(self.field_positions), self.n_chemicals, 1),
         )
 
-        for [i, j, k] in self.positions:
+        for [i, j, k] in self.field_positions:
             self.field_D.append(self.D)
-            self.field_pos.append(tuple([i, j, k]))
             self.field_vol.append(self.field_vol_singular)
             self.field_keys.append(random.split(random.key(curr_id)))
             self.field_id.append(curr_id)
-            self.field_neighbours.append(self.get_neighbours(jnp.array([i, j, k])))
+            self.field_neighbours.append(
+                self.get_field_neighbours(jnp.array([i, j, k]))
+            )
             self.field_flux.append({})
             curr_id += 1
 
@@ -281,6 +294,9 @@ class FreeMesh:
             in_axes=(None, 0, None, 0, None, 0, None, None, None, None, None),
         )
 
+        self.pl = pv.Plotter()
+        self.pl.open_gif("cells.gif", framerate=30)
+
     def calc_flux(self, field_id):
         """
         Calculate flux for the field at position _pos_.
@@ -288,9 +304,8 @@ class FreeMesh:
 
         :param pos: Position of field to calculate the flux
         """
-        ## TODO: Rename cell_* to field_*
         curr_field_id = field_id.item()
-        neighbour_cells = []
+        neighbour_fields = []
         neigh_pos = []
         field_mass = []
         field_vol = []
@@ -300,10 +315,10 @@ class FreeMesh:
             if self.field_flux[curr_field_id].get(field_i) is not None:
                 flux += self.field_flux[curr_field_id].get(field_i)
                 continue
-            neighbour_cells.append(field_i)
+            neighbour_fields.append(field_i)
             field_mass.append(self.field_chem[field_i])
             field_vol.append(self.field_vol[field_i])
-            neigh_pos.append(jnp.array(self.field_pos[field_i]))
+            neigh_pos.append(jnp.array(self.field_positions[field_i]))
 
         if len(neigh_pos) == 0:
             return flux
@@ -312,7 +327,7 @@ class FreeMesh:
         field_mass = jnp.array(field_mass)
         field_vol = jnp.array(field_vol)
         distances = jnp.linalg.norm(
-            neigh_pos - jnp.array(self.field_pos[curr_field_id]), axis=1
+            neigh_pos - jnp.array(self.field_positions[curr_field_id]), axis=1
         )
 
         def calc_flux_i(D, field1_mass, field1_vol, field2_mass, field2_vol, dist_i):
@@ -332,8 +347,8 @@ class FreeMesh:
         )
 
         for i in range(len(flux_list)):
-            self.field_flux[neighbour_cells[i]][curr_field_id] = -1 * flux_list[i]
-            self.field_flux[curr_field_id][neighbour_cells[i]] = flux_list[i]
+            self.field_flux[neighbour_fields[i]][curr_field_id] = -1 * flux_list[i]
+            self.field_flux[curr_field_id][neighbour_fields[i]] = flux_list[i]
 
         flux_list = jnp.append(flux_list, flux.reshape(-1, self.n_chemicals, 1), axis=0)
         total_flux = jnp.sum(flux_list, axis=0)
@@ -394,7 +409,7 @@ class FreeMesh:
             new_mass += jnp.sum(chem_mass_i)
             self.field_flux[i] = {}
 
-        self.delta_m = (prev_mass - new_mass) / self.n_cells
+        self.delta_m = (prev_mass - new_mass) / self.n_fields
 
     def calc_movement(self):
         """
@@ -407,7 +422,7 @@ class FreeMesh:
         # Calculate velocities
         for cell_id in jnp.arange(self.n_cells)[self.live_cells_mask.reshape(-1)]:
             radial_neighs, radial_neigh_dists = self.get_radial_limits(
-                self.positions[cell_id], radius=3
+                self.cell_positions[cell_id], radius=3
             )
             ret_vel = calc_vel(
                 radial_neigh_dists,
@@ -415,8 +430,8 @@ class FreeMesh:
                 self.cell_radius[radial_neighs],
                 self.cell_mass[cell_id],
                 self.cell_mass[radial_neighs],
-                self.positions[cell_id],
-                self.positions[radial_neighs],
+                self.cell_positions[cell_id],
+                self.cell_positions[radial_neighs],
                 self.cell_vel[cell_id],
                 attraction_coeff=self.cell_attraction_coeff[cell_id],
                 repulsion_coeff=self.cell_repulsion_coeff[cell_id],
@@ -435,8 +450,8 @@ class FreeMesh:
 
         # Compute cell movement
         for cell_id in range(self.n_cells):
-            self.positions = self.positions.at[cell_id].set(
-                self.positions[cell_id] + self.cell_vel[cell_id] * self.delta
+            self.cell_positions = self.cell_positions.at[cell_id].set(
+                self.cell_positions[cell_id] + self.cell_vel[cell_id] * self.delta
             )
 
     def add_cell(
@@ -445,15 +460,6 @@ class FreeMesh:
         cell_state,
         new_radius,
         parent_cell_id,
-        # parent_growth_rate,
-        # parent_interphase_len,
-        # parent_mitosis_len,
-        # parent_target_vol,
-        # parent_cell_death_prob,
-        # parent_cell_type,
-        # parent_cell_density,
-        # parent_cell_attraction_coeff,
-        # parent_cell_repulsion_coeff
     ):
         """
         Add a cell with the given parameters to the simulation. Derive growth rate, interphase and mitosis lengths and target volume
@@ -470,7 +476,7 @@ class FreeMesh:
         """
 
         ## Arrays updated - Positions, state, time, radius, vol, mass
-        self.positions = jnp.append(self.positions, pos, axis=0)
+        self.cell_positions = jnp.append(self.cell_positions, pos, axis=0)
         self.cell_states = jnp.append(self.cell_states, cell_state, axis=0)
         self.cell_time = jnp.append(self.cell_time, jnp.array([[0]]), axis=0)
         new_vol = (4.0 * math.pi * new_radius**3) / 3.0
@@ -524,6 +530,11 @@ class FreeMesh:
             shape=(1, 1),
             dtype=jnp.float16,
         )
+        self.interphase_len = jnp.append(
+            self.interphase_len,
+            jnp.array([self.interphase_len[parent_cell_id]]),
+            axis=0,
+        )
         new_interphase_chkpt = jnp.round(new_interphase_chkpt).astype(jnp.int16)
         if new_interphase_chkpt < 1:
             new_interphase_chkpt = 1
@@ -533,6 +544,9 @@ class FreeMesh:
             mean=self.mitosis_len[parent_cell_id],
             shape=(1, 1),
             dtype=jnp.float16,
+        )
+        self.mitosis_len = jnp.append(
+            self.mitosis_len, jnp.array([self.mitosis_len[parent_cell_id]]), axis=0
         )
         self.key, self.sub_key, new_cell_death_prob = generate_normal(
             key=self.key,
@@ -586,7 +600,7 @@ class FreeMesh:
             (self.cell_states == 2).reshape(-1)
         ]
         for cell_id in split_cells_mask:
-            cell_pos_i = self.positions[cell_id]
+            cell_pos_i = self.cell_positions[cell_id]
 
             self.key, self.sub_key, rand_point = generate_uniform(
                 key=self.key, sub_key=self.sub_key, shape=(3)
@@ -607,7 +621,9 @@ class FreeMesh:
             ## Parameters being updated - Radius, position, cell_state, cell_vol, cell_mass, cell_time
 
             new_radius = self.cell_radius[cell_id][0] / math.sqrt(2)
-            self.positions = self.positions.at[cell_id].set(cell_boundary_pt_1)
+            self.cell_positions = self.cell_positions.at[cell_id].set(
+                cell_boundary_pt_1
+            )
             self.cell_states = self.cell_states.at[cell_id].set(0)
 
             self.cell_radius = self.cell_radius.at[cell_id].set(new_radius)
@@ -624,15 +640,6 @@ class FreeMesh:
                 cell_state=jnp.array([[0]]),
                 new_radius=(new_radius).reshape(1, 1),
                 parent_cell_id=cell_id,
-                # parent_growth_rate=self.cell_vol_growth_rate[cell_id],
-                # parent_interphase_len=self.interphase_chkpt[cell_id],
-                # parent_mitosis_len=self.mitosis_chkpt[cell_id],
-                # parent_target_vol=self.cell_target_vol[cell_id],
-                # parent_cell_death_prob=self.cell_death_prob[cell_id],
-                # parent_cell_type=self.cell_type_mask[cell_id],
-                # parent_cell_density=self.cell_density[cell_id],
-                # parent_cell_attraction_coeff=self.cell_attraction_coeff[cell_id],
-                # parent_cell_repulsion_coeff=self.cell_repulsion_coeff[cell_id],
             )
 
         ## Check interphase
@@ -681,15 +688,11 @@ class FreeMesh:
         self.cell_radius = self.cell_radius.at[self.live_cells_mask].set(
             jnp.pow((new_vol * 3) / (4.0 * math.pi), 1 / 3)
         )
-        print(self.live_cells_mask.shape)
-        print(self.cell_density.shape)
-        print(self.cell_density[self.live_cells_mask])
         self.cell_mass = self.cell_mass.at[self.live_cells_mask].set(
             new_vol * self.cell_density[self.live_cells_mask].reshape(-1)
         )
-        print(self.cell_mass)
 
-    def step(self, step_i, delta, logger: DataLogger):
+    def step(self, step_i, delta, logger: FieldLogger):
         """
         Perform simulation step for the mesh and the cells within.
 
@@ -741,10 +744,21 @@ class FreeMesh:
         self.calc_cell_growth()
 
         if self.debug_plot:
-            plt.figure()
-            ax = plt.subplot(projection="3d")
-            ax.scatter(self.positions[:, 0], self.positions[:, 1], self.positions[:, 2])
-            plt.show()
+            cloud = pv.PolyData(np.array(self.cell_positions))
+            cloud["r"] = np.array(self.cell_radius)
+            cloud = cloud.glyph(scale="r", geom=pv.Sphere())
+            self.pl.clear()
+            self.pl.add_mesh(cloud)
+            self.pl.show_axes()
+            self.pl.reset_camera()
+            self.pl.camera.Azimuth(3.0)
+            self.pl.write_frame()
+
+            # plt.figure()
+            # ax = plt.subplot(projection="3d")
+            # ax.scatter(self.cell_positions[:, 0], self.cell_positions[:, 1], self.cell_positions[:, 2], s=20000 * self.cell_radius, marker='.')
+            # ax.scatter(self.field_positions[:, 0], self.field_positions[:, 1], self.field_positions[:, 2], marker='^', c='r')
+            # plt.show()
             print("\n\n")
         return self.cell_vol
 
@@ -756,14 +770,14 @@ class FreeMesh:
         """
         return pos[0] + self.height * pos[1] + (self.height * self.depth) * pos[2]
 
-    def get_neighbours(self, pos, norm_ord=1):
+    def get_field_neighbours(self, pos, norm_ord=1):
         """
-        Get neighbours of the cell at pos[idx].
+        Get neighbours of the field at pos[idx].
 
         :param self: FreeMesh
         :param idx: index of cell within pos[idx]
         """
-        l1_norm = jnp.linalg.norm(pos - self.positions, axis=1, ord=norm_ord)
+        l1_norm = jnp.linalg.norm(pos - self.field_positions, axis=1, ord=norm_ord)
         neigh_idxs = jnp.argsort(l1_norm)[1 : self.n_neighbours + 1]
         return neigh_idxs
 
@@ -776,7 +790,7 @@ class FreeMesh:
         :param radius: Radius to check for neighbours.
         :param norm_ord: Order of the norm to be used to compute distance.
         """
-        l1_norm = jnp.linalg.norm(pos - self.positions, axis=1, ord=norm_ord)
+        l1_norm = jnp.linalg.norm(pos - self.cell_positions, axis=1, ord=norm_ord)
         radial_neighs = jnp.where((l1_norm < radius) & (l1_norm > 0))
         radial_neighs = jnp.where(
             (l1_norm < radius) & (l1_norm > 0) & (self.live_cells_mask.reshape(-1))

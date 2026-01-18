@@ -9,7 +9,6 @@ def check_cell_type_data(key, sub_key, n_cells, cfg):
     # Check all the required sub-keys
     # Return a mask indicating the types in terms of n_cells - Ex, n_cells=10, n_types=2, prop=0.8,0.2, mask = [1,2,1,2,1,1,1,1,1,1]
 
-    ## TODO: Perform checks
     req_keys_movement = [
         "qty_ratio",
         "attraction_coeff",

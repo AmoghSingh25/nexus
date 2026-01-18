@@ -33,6 +33,7 @@ class TestSpatial:
         ) == np.argmax(chem_after):
             assert True
         else:
+            s.cleanup()
             assert False
 
     def test_reaction(self):
@@ -53,6 +54,7 @@ class TestSpatial:
         if chem_before[0] >= chem_after[0] and chem_before[1] <= chem_after[1]:
             assert True
         else:
+            s.cleanup()
             assert False
 
     def test_diffusion_freemesh(self):
@@ -69,11 +71,12 @@ class TestSpatial:
         s.cleanup()
 
         if (
-            chem_before[min_chem_idx] < chem_after[min_chem_idx]
-            and chem_after[max_chem_idx] >= chem_after[max_chem_idx]
+            chem_before[min_chem_idx] <= chem_after[min_chem_idx]
+            and chem_after[max_chem_idx] <= chem_before[max_chem_idx]
         ):
             assert True
         else:
+            s.cleanup()
             assert False
 
     def test_reaction_freemesh(self):
@@ -94,4 +97,5 @@ class TestSpatial:
         if chem_before[0] >= chem_after[0] and chem_before[1] <= chem_after[1]:
             assert True
         else:
+            s.cleanup()
             assert False

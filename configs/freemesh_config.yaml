@@ -22,11 +22,12 @@ grn:
 # Lattice free setup
 spatial_sim:
   ## Mesh related
-  height: 2
-  width: 2
+  height: 1
+  width: 1
   depth: 1
   mesh_type: "lattice-free"
   sparse_cells: true
+  field_resolution: 2 # Divide into X divisions along each axis
   cell_concentration: 1 # Default value is 10
   field_vol: 1.0
   n_cell_type: 2
@@ -52,13 +53,13 @@ spatial_sim:
     cell1:
       qty_ratio: 0.8
       attraction_coeff: 1
-      repulsion_coeff: 1
+      repulsion_coeff: 0.1
       drift_vel_coeff: 0.01
       random_vel_coeff: 0.01
     cell2:
       qty_ratio: 0.2
       attraction_coeff: 2
-      repulsion_coeff: 0.8
+      repulsion_coeff: 0.2
       drift_vel_coeff: 0.1
       random_vel_coeff: 0.05
 

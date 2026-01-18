@@ -2,7 +2,8 @@ from simulator.spatial_vec.mesh.gridMesh import GridMesh
 from simulator.spatial_vec.mesh.freeMesh import FreeMesh
 from omegaconf import DictConfig
 from tqdm import tqdm
-from simulator.spatial_vec.logger.mesh_logger import DataLogger
+from simulator.spatial_vec.logger.mesh_logger import FieldLogger
+from simulator.spatial_vec.logger.spatial_logger import SpatialLogger
 import time
 import os
 
@@ -40,18 +41,27 @@ class SpatialSimVec:
         self.n_steps = cfg.n_steps
         self.logging = cfg.get("logging", True)
         if self.logging:
-            self.logger = DataLogger(
+            self.logger = FieldLogger(
+                log_dir=os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)), "logs"
+                ),
+                file_name=self.timestamp,
+                n_steps=cfg.n_steps,
+                n_cells=self.mesh.n_fields,
+                n_chems=len(cfg["chemical"].name),
+                n_reactions=len(cfg.reaction),
+            )
+            self.pos_logger = SpatialLogger(
                 log_dir=os.path.join(
                     os.path.dirname(os.path.abspath(__file__)), "logs"
                 ),
                 file_name=self.timestamp,
                 n_steps=cfg.n_steps,
                 n_cells=self.mesh.n_cells,
-                n_chems=len(cfg["chemical"].name),
-                n_reactions=len(cfg.reaction),
             )
         else:
             self.logger = None
+            self.pos_logger = None
 
     def run_sim(self):
         """
@@ -68,6 +78,10 @@ class SpatialSimVec:
             cell_vols.append(
                 self.mesh.step(step_i=i + 1, delta=self.delta, logger=self.logger)
             )
+            self.pos_logger.log_cell_pos(
+                i, self.mesh.cell_positions, self.mesh.cell_radius
+            )
+        self.mesh.pl.close()
 
         ##DEBUG: Error in mesh.field_chem for GridMesh
         self.logging and self.logger.log_chem_state(
