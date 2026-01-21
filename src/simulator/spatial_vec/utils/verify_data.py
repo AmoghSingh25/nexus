@@ -5,25 +5,35 @@ from simulator.spatial_vec.utils.random_generators import (
 
 
 def check_cell_type_data(key, sub_key, n_cells, cfg):
-    # Add qty ratios and should sum to 1
-    # Check all the required sub-keys
-    # Return a mask indicating the types in terms of n_cells - Ex, n_cells=10, n_types=2, prop=0.8,0.2, mask = [1,2,1,2,1,1,1,1,1,1]
+    """
+    Checks the configuration for required keys and formats and generates the required arrays.
 
-    req_keys_movement = [
-        "qty_ratio",
-        "attraction_coeff",
-        "repulsion_coeff",
-        "drift_vel_coeff",
-        "random_vel_coeff",
-    ]
-    req_keys_cycle = [
-        "cycle_len",
-        "interphase_len",
-        "cell_death_prob",
-        "cell_target_vol",
-        "cell_density",
-        "cell_vol_growth_rate",
-    ]
+    :param key: PRNG Key
+    :param sub_key: PRNG SubKey
+    :param n_cells: No. of cells
+    :param cfg: Hyra Config
+    """
+
+    req_keys_movement = set(
+        [
+            "qty_ratio",
+            "attraction_coeff",
+            "repulsion_coeff",
+            "drift_vel_coeff",
+            "random_vel_coeff",
+        ]
+    )
+    req_keys_cycle = set(
+        [
+            "cycle_len",
+            "interphase_len",
+            "apoptosis_death_prob",
+            "necrosis_death_prob",
+            "cell_target_vol",
+            "cell_density",
+            "cell_vol_growth_rate",
+        ]
+    )
     n_cell_types = cfg.n_cell_type
 
     if len(cfg.movement) != n_cell_types or len(cfg.cycle) != n_cell_types:
@@ -31,36 +41,39 @@ def check_cell_type_data(key, sub_key, n_cells, cfg):
             "Incorrect number of entries for movement/cell config. Must be equal to number of cell types."
         )
 
-    check_movement_flag = False
-    check_cycle_flag = False
+    check_movement_flag = -1
+    check_cycle_flag = -1
     cell_types = []
     param_dict = {}
     for i in range(len(cfg.movement)):
         cell_types.append(list(cfg.movement.keys())[i])
-        if list(cfg.movement[cell_types[-1]].keys()) != req_keys_movement:
-            check_movement_flag = True
+        if not req_keys_movement.issubset(
+            set(list(cfg.movement[cell_types[-1]].keys()))
+        ):
+            check_movement_flag = cell_types[-1]
             break
-        if list(cfg.cycle[cell_types[-1]].keys()) != req_keys_cycle:
-            check_cycle_flag = True
+        if not req_keys_cycle.issubset(set(list(cfg.cycle[cell_types[-1]].keys()))):
+            check_cycle_flag = cell_types[-1]
             break
         _cell_params = dict(cfg.cycle.get(cell_types[-1]))
         _cell_params.update(cfg.movement.get(cell_types[-1]))
         param_dict[cell_types[-1]] = _cell_params
 
-    for i in cfg.cycle:
-        if list(cfg.cycle.get(i).keys()) != req_keys_cycle:
-            check_cycle_flag = True
-            break
-    if check_movement_flag:
-        raise ValueError("Incorrect keys for movement config.")
-    if check_cycle_flag:
-        raise ValueError("Incorrect keys for cycle config.")
+    if check_movement_flag != -1:
+        raise ValueError(
+            f"Incorrect keys for movement config. Missing {set(req_keys_cycle) - set(cfg.cycle.get(check_movement_flag))}"
+        )
+    if check_cycle_flag != -1:
+        raise ValueError(
+            f"Incorrect keys for cycle config. Missing {set(req_keys_cycle) - set(cfg.cycle.get(check_cycle_flag))}"
+        )
 
     ## Generate mask and arrays
     proportions = []
     interphase_len = np.ones((n_cells, 1))
     mitosis_len = np.ones((n_cells, 1))
     cell_death_prob = np.zeros((n_cells, 1))
+    cell_prg_death_prob = np.zeros((n_cells, 1))
     cell_density = np.zeros((n_cells, 1))
     cell_vol_growth_rate = np.zeros((n_cells, 1))
     cell_target_vol = np.zeros((n_cells, 1))
@@ -87,7 +100,8 @@ def check_cell_type_data(key, sub_key, n_cells, cfg):
         mitosis_len[start:end] = (1 - param_dict[i]["interphase_len"]) * param_dict[i][
             "cycle_len"
         ]
-        cell_death_prob[start:end] = param_dict[i]["cell_death_prob"]
+        cell_death_prob[start:end] = param_dict[i]["necrosis_death_prob"]
+        cell_prg_death_prob[start:end] = param_dict[i]["apoptosis_death_prob"]
         cell_density[start:end] = param_dict[i]["cell_density"]
         cell_target_vol[start:end] = param_dict[i]["cell_target_vol"]
         cell_vol_growth_rate[start:end] = param_dict[i]["cell_vol_growth_rate"]
@@ -115,6 +129,7 @@ def check_cell_type_data(key, sub_key, n_cells, cfg):
         interphase_len,
         mitosis_len,
         cell_death_prob,
+        cell_prg_death_prob,
         cell_target_vol,
         cell_density,
         cell_vol_growth_rate,

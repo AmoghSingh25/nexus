@@ -99,6 +99,7 @@ class FreeMesh:
             self.interphase_len,
             self.mitosis_len,
             self.cell_death_prob,
+            self.cell_prg_death_prob,
             self.cell_density,
             self.cell_target_vol_param,
             self.cell_vol_growth_rate_param,
@@ -554,6 +555,12 @@ class FreeMesh:
             mean=self.cell_death_prob[parent_cell_id],
             shape=(1, 1),
         )
+        self.key, self.sub_key, new_cell_prg_death_prob = generate_normal(
+            key=self.key,
+            sub_key=self.sub_key,
+            mean=self.cell_prg_death_prob[parent_cell_id],
+            shape=(1, 1),
+        )
         if new_mitosis_chkpt < 0:
             new_mitosis_chkpt = 1
         new_mitosis_chkpt = new_interphase_chkpt + jnp.round(new_mitosis_chkpt).astype(
@@ -571,6 +578,9 @@ class FreeMesh:
         self.cell_death_prob = jnp.append(
             self.cell_death_prob, new_cell_death_prob, axis=0
         )
+        self.cell_prg_death_prob = jnp.append(
+            self.cell_prg_death_prob, new_cell_prg_death_prob, axis=0
+        )
         self.cell_type_mask = jnp.append(
             self.cell_type_mask,
             jnp.array([self.cell_type_mask[parent_cell_id]]),
@@ -580,7 +590,7 @@ class FreeMesh:
 
     def kill_cells(self, killed_cells_mask):
         """
-        Modify parameters of the cells to be killed.
+        Modify parameters of the cells to be killed - Collapses values to 0 - Sudden death(Necrosis)
 
         :param self: Description
         :param killed_cells_mask: Boolean mask indicating cells to be killed
@@ -589,6 +599,20 @@ class FreeMesh:
         self.cell_mass = self.cell_mass.at[killed_cells_mask].set(0)
         self.cell_radius = self.cell_radius.at[killed_cells_mask].set(0)
         self.cell_vol = self.cell_vol.at[killed_cells_mask].set(0)
+
+    def prg_death_cell(self, selected_cell_mask):
+        """
+        Modify parameters of the cell to perform programmed cell death. Slowly collapse values to 0, (Apoptosis).
+
+        :param self: Description
+        :param selected_cell_mask: Boolean mask indicating the cells that have to undergo programmed cell death
+        """
+
+        ##TODO: Complete setup for programmed cell death
+        self.cell_states = self.cell_states.at[selected_cell_mask].set(-1)
+        self.cell_mass = self.cell_mass.at[selected_cell_mask].set(0)
+        self.cell_radius = self.cell_radius.at[selected_cell_mask].set(0)
+        self.cell_vol = self.cell_vol.at[selected_cell_mask].set(0)
 
     def calc_cycle(self):
         """

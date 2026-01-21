@@ -63,6 +63,10 @@ spatial_sim:
       cycle_len: 10
       interphase_len: 0.9
       cell_death_prob: 0.01
+
+      necrosis_death_prob: 0.0001
+      apoptosis_death_prob: 0.001
+      
       cell_target_vol: 10.0
       cell_density: 1.0
       cell_vol_growth_rate: 1.0
