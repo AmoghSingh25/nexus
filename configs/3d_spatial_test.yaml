@@ -22,18 +22,17 @@ grn:
 # Lattice free setup
 spatial_sim:
   ## Mesh related
-  height: 2
-  width: 2
-  depth: 1
+  height: 5
+  width: 5
+  depth: 5
   mesh_type: "lattice-free"
   sparse_cells: true
   field_resolution: 2 # Divide into X divisions along each axis
   cell_concentration: 1 # Default value is 10
   field_vol: 1.0
-  n_cell_type: 2
+  n_cell_type: 1
   cell_qty:
-    cell1: 0.8
-    cell2: 0.2
+    cell1: 1.0
 
   ## Diffusion related
   D: 0.5
@@ -51,17 +50,11 @@ spatial_sim:
   movement_bool: true
   movement:
     cell1:
-      qty_ratio: 0.8
+      qty_ratio: 1.0
       attraction_coeff: 1
       repulsion_coeff: 0.1
       drift_vel_coeff: 0.01
       random_vel_coeff: 0.01
-    cell2:
-      qty_ratio: 0.2
-      attraction_coeff: 2
-      repulsion_coeff: 0.2
-      drift_vel_coeff: 0.1
-      random_vel_coeff: 0.05
 
   ## Cycle related
   cycle_bool: true
@@ -70,16 +63,9 @@ spatial_sim:
       cycle_len: 10
       interphase_len: 0.9
       cell_death_prob: 0.01
-      cell_target_vol: 1.0
+      cell_target_vol: 10.0
       cell_density: 1.0
       cell_vol_growth_rate: 1.0
-    cell2:
-      cycle_len: 20
-      interphase_len: 0.8
-      cell_death_prob: 0.03
-      cell_target_vol: 2.0
-      cell_density: 2.0
-      cell_vol_growth_rate: 1.5
   
   ## Chemicals
   chemical:

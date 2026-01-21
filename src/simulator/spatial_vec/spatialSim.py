@@ -79,7 +79,10 @@ class SpatialSimVec:
                 self.mesh.step(step_i=i + 1, delta=self.delta, logger=self.logger)
             )
             self.pos_logger.log_cell_pos(
-                i, self.mesh.cell_positions, self.mesh.cell_radius
+                i,
+                self.mesh.cell_positions,
+                self.mesh.cell_radius,
+                self.mesh.cell_states,
             )
         self.mesh.pl.close()
 

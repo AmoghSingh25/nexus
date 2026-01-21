@@ -229,19 +229,19 @@ def _(mo):
 
 @app.cell
 def _(SpatialSimVec, get_config):
-    _config = get_config("freemesh_config")
+    _config = get_config("3d_spatial_test")
     _config.spatial_sim.n_steps = 20
     _config.spatial_sim.diffusion_bool = True
     _config.spatial_sim.reaction_bool = False
     _config.spatial_sim.movement_bool = True
     _config.spatial_sim.cycle_bool = True
     _config.spatial_sim.logging = True
-    _config.spatial_sim.debug_plot = True
+    _config.spatial_sim.debug_plot = False
     _s1 = SpatialSimVec(_config.spatial_sim)
     _s1.run_sim()
 
-    print(_s1.pos_logger.retrieve_pos_data(_s1.mesh, step=1))
-    _s1.cleanup()
+    print(_s1.pos_logger.retrieve_pos_data())
+    # _s1.cleanup()
     return
 
 

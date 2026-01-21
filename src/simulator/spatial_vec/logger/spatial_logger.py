@@ -51,7 +51,7 @@ class SpatialLogger:
 
     def initialize_values(self):
         with tiledb.open(self.pos_arr, "r") as _A:
-            ret = _A[:, :, :]
+            ret = _A[:, :]
             _A.close()
         self.n_cells = len(set(ret["cells"]))
         self.n_steps = len(set(ret["t"]))
@@ -75,13 +75,14 @@ class SpatialLogger:
 
         att1 = tiledb.Attr(name="pos", dtype=self.pos_dtype)
         att2 = tiledb.Attr(name="radius", dtype=np.float32)
-        sch = tiledb.ArraySchema(domain=dom, sparse=True, attrs=[att1, att2])
+        att3 = tiledb.Attr(name="state", dtype=np.int32)
+        sch = tiledb.ArraySchema(domain=dom, sparse=True, attrs=[att1, att2, att3])
 
         tiledb.Array.create(self.pos_arr, sch)
 
     """ Logger functions """
 
-    def log_cell_pos(self, step, pos, radius):
+    def log_cell_pos(self, step, pos, radius, state):
         """
         Logs the cell position
 
@@ -94,10 +95,10 @@ class SpatialLogger:
         cell_idx = np.indices(pos.shape[0:-1], sparse=False).ravel()
         pos = np.array(pos).view(self.pos_dtype)
         with tiledb.open(self.pos_arr, "w") as _A:
-            _A[step_idx, cell_idx] = {"pos": pos, "radius": radius}
+            _A[step_idx, cell_idx] = {"pos": pos, "radius": radius, "state": state}
             _A.close()
 
-    def retrieve_pos_data(self, mesh, step=None, cell=None):
+    def retrieve_pos_data(self, step=None, cell=None):
         """
         Return post diffusion concentrations from the tiledb array. If any of the parameters are not set, data is returned across the entire possible range for this parameter.
 
@@ -107,7 +108,7 @@ class SpatialLogger:
         if step is None:
             step = list(range(self.n_steps))
         if cell is None:
-            cell = list(range(mesh.n_cells))
+            cell = list(range(self.n_cells))
 
         with tiledb.open(self.pos_arr, "r") as _A:
             ret = _A[step, cell]

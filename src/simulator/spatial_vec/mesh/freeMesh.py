@@ -449,7 +449,7 @@ class FreeMesh:
             self.cell_vel = self.cell_vel.at[cell_id].set(ret_vel)
 
         # Compute cell movement
-        for cell_id in range(self.n_cells):
+        for cell_id in jnp.arange(self.n_cells)[self.live_cells_mask.reshape(-1)]:
             self.cell_positions = self.cell_positions.at[cell_id].set(
                 self.cell_positions[cell_id] + self.cell_vel[cell_id] * self.delta
             )
