@@ -240,6 +240,7 @@ def _(SpatialSimVec, get_config):
     _s1 = SpatialSimVec(_config.spatial_sim)
     _s1.run_sim()
     print(_s1.mesh.field_positions)
+    print(_s1.logger.retrieve_field_pos_data())
     _s1.cleanup()
     return
 

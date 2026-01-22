@@ -50,6 +50,7 @@ class SpatialSimVec:
                 n_cells=self.mesh.n_fields,
                 n_chems=len(cfg["chemical"].name),
                 n_reactions=len(cfg.reaction),
+                n_fields=self.mesh.n_fields,
             )
             self.pos_logger = SpatialLogger(
                 log_dir=os.path.join(
@@ -59,6 +60,7 @@ class SpatialSimVec:
                 n_steps=cfg.n_steps,
                 n_cells=self.mesh.n_cells,
             )
+            self.logger.log_fields_pos(self.mesh.field_positions)
         else:
             self.logger = None
             self.pos_logger = None

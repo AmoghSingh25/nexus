@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 from dash import Input, Output, callback
 from simulator.spatial.logger.mesh_logger import DataLogger
+from simulator.spatial_vec.logger.mesh_logger import FieldLogger as DataLoggerVec
 from simulator.spatial_vec.logger.spatial_logger import SpatialLogger
 import plotly.express as px
 import plotly.graph_objects as go
@@ -28,7 +29,7 @@ def structure_positions_data(pos):
         state_i = int(pos["state"][i])
         radius_i = float(pos["radius"][i])
         pos_i = np.array(np.array(pos["pos"][i]).tolist())
-        pos_i = pos_i * 10.0
+        pos_i = pos_i
         pos_i = pos_i.tolist()
 
         if len(pos_arr) < no_steps:
@@ -42,6 +43,13 @@ def structure_positions_data(pos):
             }
         )
     return {"data": pos_arr}
+
+
+def structure_field_pos(resp, n_fields):
+    struct_pos = []
+    for i in range(n_fields):
+        struct_pos.append(resp["position"][i].tolist())
+    return struct_pos
 
 
 @app.route("/")
@@ -60,6 +68,20 @@ def get_positions():
     )
     pos = spatial_logger_inst.retrieve_pos_data()
     resp_pos = make_response(structure_positions_data(pos))
+    return resp_pos
+
+
+@app.route("/field_positions", methods=["GET"])
+def get_field_positions():
+    file_name = request.args.get("file_name")
+    if file_name is None:
+        return "<p>File name parameter invalid</p>"
+
+    logger_inst = DataLoggerVec(
+        log_dir=spatial_base_dir, file_name=file_name, read_only=True
+    )
+    field_pos = logger_inst.retrieve_field_pos_data()
+    resp_pos = make_response(structure_field_pos(field_pos, logger_inst.n_fields))
     return resp_pos
 
 

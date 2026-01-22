@@ -18,6 +18,7 @@ class FieldLogger:
         n_steps=None,
         n_cells=None,
         n_chems=None,
+        n_fields=None,
         n_reactions=None,
         read_only=False,
     ):
@@ -40,16 +41,20 @@ class FieldLogger:
         self.reaction_arr = os.path.join(self.base_path, "reaction.tldb")
         self.reaction_order_arr = os.path.join(self.base_path, "reaction_order.tldb")
         self.diffusion_arr = os.path.join(self.base_path, "diffusion.tldb")
+        self.pos_arr = os.path.join(self.base_path, "position.tldb")
 
         if not read_only:
             self.n_steps = n_steps
             self.n_cells = n_cells
             self.n_chems = n_chems
+            self.n_fields = n_fields
             self.n_reactions = n_reactions
             self.chem_dtype = np.dtype(",".join(["float32"] * self.n_chems))
             self.reaction_order_dtype = np.dtype(",".join(["i4"] * self.n_reactions))
+            self.pos_dtype = np.dtype(",".join(["float32"] * 3))
 
             self.time_tile = min(2, self.n_steps)
+            self.pos_tile = 1
             self.cell_tile = min(2, self.n_cells)
             self.chem_tile = min(2, self.n_chems)
             self.reaction_tile = min(2, self.n_reactions)
@@ -57,6 +62,7 @@ class FieldLogger:
             self._create_chem_arr()
             self._create_diffusion_arr()
             self._create_reaction_arr()
+            self._create_pos_arr()
         else:
             self.initialize_values()
 
@@ -70,10 +76,34 @@ class FieldLogger:
         self.n_steps = len(set(ret["t"]))
         self.n_reactions = len(set(ret["reaction_id"]))
 
+        with tiledb.open(self.pos_arr, "r") as _A:
+            ret = _A[:]
+            _A.close()
+        self.n_fields = ret["position"].shape[0]
+
         with tiledb.open(self.chem_arr, "r") as _A:
             ret = _A[:, :, :]
             _A.close()
         self.n_chems = len(set(ret["chem"]))
+
+    def _create_pos_arr(self):
+        """
+        Initialize the position array filestore with the schema.
+
+        :param self: FieldLogger
+        """
+        d1 = tiledb.Dim(
+            name="field_id",
+            domain=(0, self.n_fields),
+            tile=self.pos_tile,
+            dtype=np.int32,
+        )
+        dom = tiledb.Domain(d1)
+
+        att1 = tiledb.Attr(name="position", dtype=self.pos_dtype)
+        sch = tiledb.ArraySchema(domain=dom, sparse=True, attrs=[att1])
+
+        tiledb.Array.create(self.pos_arr, sch)
 
     def _create_diffusion_arr(self):
         """
@@ -182,6 +212,23 @@ class FieldLogger:
 
     """ Logger functions """
 
+    def log_fields_pos(self, field_positions):
+        """
+        Logs the field positions.
+
+        :param self: FieldLogger
+        """
+        field_ids = list(range(self.n_fields))
+        field_positions = (
+            np.array(field_positions, dtype=np.float32)
+            .reshape(self.n_fields, 3)
+            .view(self.pos_dtype)
+        )
+
+        with tiledb.open(self.pos_arr, "w") as _A:
+            _A[field_ids] = field_positions
+            _A.close()
+
     def log_chem_state(self, step, field_chem):
         """
         Logs the chemical concentrations.
@@ -252,6 +299,22 @@ class FieldLogger:
             _A.close()
 
     """ Retrieval functions """
+
+    def retrieve_field_pos_data(self, field_id=None):
+        """
+        Return field positions from the tiledb array.
+
+        :param self: FieldLogger
+        :param field_id: ID of the field being queried
+        """
+        if field_id is None:
+            field_id = list(range(self.n_fields))
+
+        with tiledb.open(self.pos_arr, "r") as _A:
+            ret = _A[field_id]
+            _A.close()
+
+        return ret
 
     def retrieve_chem_data(self, step=None, field_id=None, chem_id=None):
         """
