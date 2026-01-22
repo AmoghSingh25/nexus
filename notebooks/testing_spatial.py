@@ -57,7 +57,7 @@ def _(plt):
             labels=list(range(len(_chem_data_before))),
         )
         plt.legend()
-        plt.xlabel("Cell ID")
+        plt.xlabel("Field ID")
         plt.ylabel("Chemical Mass")
 
     def plot_chemical_progress(sim, chem_id, cell_id=0):
@@ -241,15 +241,20 @@ def _(SpatialSimVec, get_config):
     _s1.run_sim()
     print(_s1.mesh.field_positions)
     print(_s1.logger.retrieve_field_pos_data())
-    _s1.cleanup()
+    # _s1.cleanup()
+    return
+
+
+@app.cell
+def _():
     return
 
 
 @app.cell
 def _(SpatialSimVec, get_config, plot_cell_chemicals, plt):
-    _config = get_config("freemesh_config")
+    _config = get_config("3d_spatial_test")
     _config.spatial_sim.diffusion_bool = True
-    _config.spatial_sim.reaction_bool = False
+    _config.spatial_sim.reaction_bool = True
     _config.spatial_sim.reaction_prob = False
     # _config.spatial_sim.logging = False
     _s1 = SpatialSimVec(_config.spatial_sim)
@@ -257,7 +262,7 @@ def _(SpatialSimVec, get_config, plot_cell_chemicals, plt):
 
     _chemid = 2
     plot_cell_chemicals(_s1, chem_id=_chemid)
-    _s1.cleanup()
+    # _s1.cleanup()
     plt.title(f"chem{str(_chemid + 1)}")
     plt.show()
     return

@@ -51,6 +51,8 @@ class SpatialSimVec:
                 n_chems=len(cfg["chemical"].name),
                 n_reactions=len(cfg.reaction),
                 n_fields=self.mesh.n_fields,
+                axis_divs=[self.width, self.height, self.depth],
+                field_res=cfg.field_resolution,
             )
             self.pos_logger = SpatialLogger(
                 log_dir=os.path.join(

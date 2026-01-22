@@ -5,7 +5,8 @@ import argparse
 import pandas as pd
 import numpy as np
 from dash import Input, Output, callback
-from simulator.spatial.logger.mesh_logger import DataLogger
+
+# from simulator.spatial.logger.mesh_logger import DataLogger
 from simulator.spatial_vec.logger.mesh_logger import FieldLogger as DataLoggerVec
 from simulator.spatial_vec.logger.spatial_logger import SpatialLogger
 import plotly.express as px
@@ -19,6 +20,15 @@ data_base_dir = os.path.join(
 spatial_base_dir = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "../simulator/spatial_vec/logs"
 )
+logger_inst = None
+spatial_logger_inst = None
+
+
+def structure_field_chem_data(resp):
+    ret = np.zeros((logger_inst.n_chems, logger_inst.n_steps))
+    for i in range(len(resp["t"])):
+        ret[int(resp["chem"][i])][int(resp["t"][i])] = resp["conc"][i]
+    return ret
 
 
 def structure_positions_data(pos):
@@ -49,7 +59,8 @@ def structure_field_pos(resp, n_fields):
     struct_pos = []
     for i in range(n_fields):
         struct_pos.append(resp["position"][i].tolist())
-    return struct_pos
+    ret = (np.array(logger_inst.axis_divs) / logger_inst.field_res).tolist()
+    return {"pos_data": struct_pos, "field_divs": ret}
 
 
 @app.route("/")
@@ -59,6 +70,7 @@ def hello_world():
 
 @app.route("/positions", methods=["GET"])
 def get_positions():
+    global spatial_logger_inst
     file_name = request.args.get("file_name")
     if file_name is None:
         return "<p>File name parameter invalid</p>"
@@ -73,6 +85,7 @@ def get_positions():
 
 @app.route("/field_positions", methods=["GET"])
 def get_field_positions():
+    global logger_inst
     file_name = request.args.get("file_name")
     if file_name is None:
         return "<p>File name parameter invalid</p>"
@@ -83,6 +96,25 @@ def get_field_positions():
     field_pos = logger_inst.retrieve_field_pos_data()
     resp_pos = make_response(structure_field_pos(field_pos, logger_inst.n_fields))
     return resp_pos
+
+
+@app.route("/get_field_conc", methods=["GET"])
+def get_field_conc():
+    global logger_inst
+
+    file_name = request.args.get("file_name")
+    field_id = int(request.args.get("field_id"))
+
+    if file_name is None:
+        return "<p>File name parameter invalid</p>"
+    if logger_inst is None:
+        logger_inst = DataLoggerVec(
+            log_dir=spatial_base_dir, file_name=file_name, read_only=True
+        )
+    field_conc = logger_inst.retrieve_chem_data(field_id=field_id)
+    resp = structure_field_chem_data(field_conc)
+    resp = make_response(resp.tolist())
+    return resp
 
 
 if __name__ == "__main__":
@@ -98,9 +130,9 @@ if __name__ == "__main__":
 
     if not os.path.exists(os.path.join(data_base_dir, inp_file_name)):
         raise FileNotFoundError("Log file does not exist")
-    logger_inst = DataLogger(
-        log_dir=data_base_dir, file_name=inp_file_name, read_only=True
-    )
+    # logger_inst = DataLogger(
+    #     log_dir=data_base_dir, file_name=inp_file_name, read_only=True
+    # )
 
     app.run(port=8080, debug=True)
 

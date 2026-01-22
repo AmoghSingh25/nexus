@@ -1,3 +1,4 @@
+import pickle
 import shutil
 import os
 import tiledb
@@ -20,6 +21,8 @@ class FieldLogger:
         n_chems=None,
         n_fields=None,
         n_reactions=None,
+        axis_divs=None,
+        field_res=None,
         read_only=False,
     ):
         """
@@ -37,6 +40,7 @@ class FieldLogger:
         if not os.path.exists(os.path.join(self.log_dir, file_name)) and not read_only:
             os.makedirs(os.path.join(self.log_dir, file_name), exist_ok=True)
         self.base_path = os.path.join(self.log_dir, file_name)
+        self.prop_pkl = os.path.join(self.base_path, "properties.pkl")
         self.chem_arr = os.path.join(self.base_path, "chem.tldb")
         self.reaction_arr = os.path.join(self.base_path, "reaction.tldb")
         self.reaction_order_arr = os.path.join(self.base_path, "reaction_order.tldb")
@@ -49,9 +53,11 @@ class FieldLogger:
             self.n_chems = n_chems
             self.n_fields = n_fields
             self.n_reactions = n_reactions
+            self.axis_divs = axis_divs
             self.chem_dtype = np.dtype(",".join(["float32"] * self.n_chems))
             self.reaction_order_dtype = np.dtype(",".join(["i4"] * self.n_reactions))
             self.pos_dtype = np.dtype(",".join(["float32"] * 3))
+            self.field_res = field_res
 
             self.time_tile = min(2, self.n_steps)
             self.pos_tile = 1
@@ -63,28 +69,46 @@ class FieldLogger:
             self._create_diffusion_arr()
             self._create_reaction_arr()
             self._create_pos_arr()
+            self._create_prop_file()
         else:
             self.initialize_values()
 
     """ Helper functions """
 
     def initialize_values(self):
-        with tiledb.open(self.reaction_arr, "r") as _A:
-            ret = _A[:, :, :]
-            _A.close()
-        self.n_cells = len(set(ret["cells"]))
-        self.n_steps = len(set(ret["t"]))
-        self.n_reactions = len(set(ret["reaction_id"]))
+        # self.n_cells = len(set(ret["cells"]))
+        # self.n_reactions = len(set(ret["reaction_id"]))
+        # self.n_fields = ret["position"].shape[0]
+        # self.n_steps = len(set(ret["t"]))
+        # self.n_chems = len(set(ret["chem"]))
 
-        with tiledb.open(self.pos_arr, "r") as _A:
-            ret = _A[:]
-            _A.close()
-        self.n_fields = ret["position"].shape[0]
+        with open(self.prop_pkl, "rb") as file:
+            metadata_dict = pickle.load(file)
 
-        with tiledb.open(self.chem_arr, "r") as _A:
-            ret = _A[:, :, :]
-            _A.close()
-        self.n_chems = len(set(ret["chem"]))
+        self.n_steps = metadata_dict["n_cells"]
+        self.n_reactions = metadata_dict["n_reactions"]
+        self.n_fields = metadata_dict["n_fields"]
+        self.n_chems = metadata_dict["n_chems"]
+        self.axis_divs = metadata_dict["axis_divs"]
+        self.field_res = metadata_dict["field_res"]
+
+    def _create_prop_file(self):
+        """
+        Creates the pickle file containing the metadata of the logs.
+
+        :param self: Description
+        """
+        metadata_dict = {
+            "n_cells": self.n_cells,
+            "n_chems": self.n_chems,
+            "n_fields": self.n_fields,
+            "n_reactions": self.n_reactions,
+            "n_steps": self.n_steps,
+            "axis_divs": self.axis_divs,
+            "field_res": self.field_res,
+        }
+        with open(self.prop_pkl, "wb") as file:
+            pickle.dump(metadata_dict, file)
 
     def _create_pos_arr(self):
         """

@@ -29,6 +29,7 @@ const options = { method: "GET" };
 
 var data = [];
 var field_pos = [];
+var field_divs = [];
 
 var sphere_timesteps = [];
 var field_cubes = [];
@@ -61,6 +62,8 @@ async function get_data(indicateReady, currVis) {
     .then((response) => response.json())
     .catch((err) => console.error(err));
   compute_ds(currVis);
+  field_divs = field_pos["field_divs"];
+  field_pos = field_pos["pos_data"];
   indicateReady(true);
 }
 
@@ -85,9 +88,7 @@ function compute_ds(currVis) {
           coordinateOrigin: [0, 0, 0],
           coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
           pickable: currVis == 1,
-          onClick: (d) => {
-            console.log("Picked sphere - ", d);
-          },
+          onClick: (d) => {},
         }),
       );
     }
@@ -105,7 +106,7 @@ function compute_ds(currVis) {
     coordinateOrigin: [0, 0, 0],
     coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
     pickable: currVis == 0,
-    onClick: (d) => console.log("Picked field - ", d),
+    onClick: (d) => {},
   });
   field_cubes = field_cube_layer;
 }
@@ -118,14 +119,10 @@ export default function App() {
   const [fieldConcLoading, setFieldConcLoading] = new React.useState(false);
   const [fieldConcData, setFieldConcData] = new React.useState(null);
   const [traces, setTraces] = new React.useState(null);
-  const [searchParams, setSearchParams] = useSearchParams()
-
-  console.log(searchParams)
-
-  file_name = searchParams.get("file_name")
-  if(file_name == null)
-  {
-    return <></>
+  const searchParams = useSearchParams();
+  file_name = searchParams.get("file_name");
+  if (file_name == null) {
+    return <></>;
   }
 
   const layers = React.useMemo(() => {
@@ -148,7 +145,7 @@ export default function App() {
         coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
         pickable: currVis == 1,
         onClick: (d) => {
-          console.log("Picked sphere - ", d);
+          setSelectedId(d.index);
         },
       });
     });
@@ -158,16 +155,14 @@ export default function App() {
       data: field_pos,
       mesh: new CubeGeometry({}),
       getPosition: (d) => d,
-      getScale: [1, 1, 0.5],
+      getScale: field_divs,
       getColor: [255, 0, 0, 50],
       coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
       pickable: currVis === 0,
       onClick: (d) => {
-        console.log("Picked field", d);
         setSelectedId(d.index);
       },
     });
-
     return [...sphereLayers, fieldLayer];
   }, [currVis, step_id, dataReady]);
 
@@ -182,8 +177,6 @@ export default function App() {
     async function fetchFieldConc() {
       setFieldConcLoading(true);
       const resp = await get_field_conc(selectedID);
-      console.log(selectedID);
-      console.log(resp);
 
       setFieldConcData(resp);
       setFieldConcLoading(false);
@@ -199,7 +192,6 @@ export default function App() {
       setTraces(traceArr);
     }
     fetchFieldConc();
-
   }, [currVis, selectedID]);
 
   if (!dataReady) {
@@ -242,7 +234,7 @@ export default function App() {
       <div
         style={{
           position: "relative",
-          height: "80vh"
+          height: "80vh",
         }}
       >
         <DeckGL
