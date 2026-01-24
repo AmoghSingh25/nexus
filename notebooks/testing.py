@@ -13,14 +13,20 @@ def _():
     import jax.numpy as jnp
     from hydra import initialize_config_dir, compose
     import os
-    from simulator import grnSim
 
     matplotlib.style.use("default")
     import logging
 
     logger = logging.getLogger("sample_logger")
     logger.setLevel(logging.ERROR)
-    return compose, grnSim, initialize_config_dir, jnp, np, os, plt, time
+    return compose, initialize_config_dir, jnp, np, os, plt, time
+
+
+@app.cell
+def _():
+    from simulator.grn.grnSim import GRNSim as NewGRNSim
+
+    return (NewGRNSim,)
 
 
 @app.cell
@@ -35,16 +41,15 @@ def _(compose, initialize_config_dir, os):
 
 
 @app.cell
-def _(get_config):
-    cfg = get_config(config_name="test_config")
-    return (cfg,)
+def _():
+    ## Testing
+    return
 
 
 @app.cell
-def _(cfg, grnSim):
-    _s = grnSim.GRNSim(cfg=cfg.grn)
-    _s.run_sim()
-    return
+def _(get_config):
+    cfg = get_config(config_name="config")
+    return (cfg,)
 
 
 @app.cell
@@ -64,25 +69,13 @@ def _(np, plt):
 
 
 @app.cell
-def _(gpsim, time):
-    n_cells_1 = 2700
-    n_genes_1 = 100
+def _(NewGRNSim, cfg, time):
+    cfg.grn.n_cells = 2700
     _start = time.time()
-    sim1 = gpsim.simulator(
-        gene_data="configs/sample_data/Interaction_cID_4.txt",
-        mr_data="configs/sample_data/Regs_cID_4.txt",
-        n_cells=n_cells_1,
-        protein_sim=False,
-        decay=[0.8],
-        noise=False,
-    )
-    _start2 = time.time()
-    # a, b = sim1.run_sim(1)
+    sim1 = NewGRNSim(cfg.grn)
     _end = time.time()
     print("Time taken = ", _end - _start)
-    print("Steady state calculation time = ", _start2 - _start)
-    print("Simulation time = ", _end - _start2)
-    return n_cells_1, n_genes_1, sim1
+    return (sim1,)
 
 
 @app.cell
@@ -204,8 +197,8 @@ def _():
 
 
 @app.cell
-def _(jnp, n_cells_1, n_genes_1, node_mapping, sim1):
-    sim_output_1 = sim1.gene_conc.reshape((n_genes_1, n_cells_1))
+def _(jnp, node_mapping, sim1):
+    sim_output_1 = sim1.gene_conc.reshape((100, 2700))
     reordered_output_1 = jnp.zeros_like(sim_output_1)
     for i in node_mapping:
         reordered_output_1 = reordered_output_1.at[i].set(sim_output_1[node_mapping[i]])
@@ -219,28 +212,18 @@ def _(jnp, reordered_output_1, sergio_output_1):
 
 
 @app.cell
-def _(gpsim, time):
-    n_cells_2 = 9
-    n_genes_2 = 100
+def _(NewGRNSim, cfg, time):
+    cfg.grn.n_cells = 9
     _start = time.time()
-    sim3 = gpsim.simulator(
-        gene_data="configs/sample_data/Interaction_cID_4.txt",
-        mr_data="configs/sample_data/Regs_cID_4.txt",
-        n_cells=n_cells_2,
-        protein_sim=False,
-    )
-    _start2 = time.time()
-    _a, _b = sim3.run_sim(1)
+    sim2 = NewGRNSim(cfg.grn)
     _end = time.time()
-    print("Total time taken = ", _end - _start)
-    print("Steady state calculation time = ", _start2 - _start)
-    print("Simulation time = ", _end - _start2)
-    return n_cells_2, n_genes_2, sim3
+    print("Time taken = ", _end - _start)
+    return (sim2,)
 
 
 @app.cell
-def _(jnp, n_cells_2, n_genes_2, node_mapping, sim3):
-    sim_output_2 = sim3.steady_states.reshape((n_genes_2, n_cells_2))
+def _(jnp, node_mapping, sim2):
+    sim_output_2 = sim2.steady_states.reshape((100, 9))
     reordered_output_2 = jnp.zeros_like(sim_output_2)
     for _i in node_mapping:
         reordered_output_2 = reordered_output_2.at[_i].set(
@@ -252,6 +235,11 @@ def _(jnp, n_cells_2, n_genes_2, node_mapping, sim3):
 @app.cell
 def _(jnp, reordered_output_2, sergio_output_2):
     print(jnp.allclose(reordered_output_2, sergio_output_2, rtol=1e-6, atol=1e-32))
+    return
+
+
+@app.cell
+def _():
     return
 
 

@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.17.7"
+__generated_with = "0.18.4"
 app = marimo.App(width="medium")
 
 
@@ -17,9 +17,37 @@ def _():
     import numpy as np
     import matplotlib.pyplot as plt
     import time
+    import os
+    from hydra import initialize_config_dir, compose
 
     matplotlib.style.use("default")
-    return asizeof, jnp, mo, nn, np, nx, pl, plt, random, time, tqdm
+    return (
+        asizeof,
+        compose,
+        initialize_config_dir,
+        jnp,
+        mo,
+        nn,
+        np,
+        nx,
+        os,
+        pl,
+        plt,
+        random,
+        time,
+        tqdm,
+    )
+
+
+@app.cell
+def _(compose, initialize_config_dir, os):
+    def get_config(config_name="config"):
+        conf_path = os.path.join(os.getcwd(), "configs")
+        with initialize_config_dir(version_base=None, config_dir=conf_path):
+            cfg = compose(config_name=config_name)
+        return cfg
+
+    return (get_config,)
 
 
 @app.cell
@@ -277,27 +305,48 @@ def _(edges_list, n_cells, nodes_names, nx, random, simulator_config):
 
 
 @app.cell
-def _(asizeof, edges_set, n_cells, node_set, random, time):
-    from simulator import gpsim
+def _(n_cells):
+    n_cells
+    return
+
+
+@app.cell
+def _(edges_set, nodes_set):
+    print("Number of edges - ", edges_set)
+    print("Number of nodes - ", nodes_set)
+    return
+
+
+@app.cell
+def _(asizeof, edges_set, get_config, n_cells, node_set, random, time):
+    from simulator.grn.grnSimNew import GRNSim
 
     _key, _sub_key = random.split(random.key(42))
     _decay = random.uniform(minval=0, maxval=1, shape=(n_cells, 1913, 1), key=_sub_key)
+    cfg = get_config(config_name="config")
+    cfg.grn.n_cells = 100
+    cfg.grn.protein_sim = True
+    cfg.grn.non_mr_basal = True
+    cfg.grn.decay = _decay.tolist()
+    cfg.grn.logging = False
 
     _t1 = time.time()
-    sim = gpsim.simulator(
+    sim = GRNSim(
         node_set=node_set,
         edges_set=edges_set,
-        n_cells=n_cells,
-        protein_sim=True,
-        non_mr_basal=True,
-        decay=_decay,
+        cfg=cfg.grn,
+        # n_cells=100,
+        # protein_sim=True,
+        # non_mr_basal=True,
+        # decay=_decay
     )
     _t2 = time.time()
-    sim.run_sim(10)
+    sim.run_sim()
     gene_conc_1 = sim.gene_conc
     prot_conc_1 = sim.prot_conc
     _t3 = time.time()
-    sim.run_sim(100)
+    sim.n_steps = 100
+    sim.run_sim()
     _t4 = time.time()
     print("Time taken for initialization = ", (_t2 - _t1))
     print("Time taken for 10 iterations = ", (_t3 - _t2))

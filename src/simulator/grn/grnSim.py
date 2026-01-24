@@ -2,6 +2,8 @@
 # - Simulation starts from steady state calculation
 # - Basal rates of non-MR is 0 (from SERGIO)
 
+import os
+import time
 import networkx as nx
 import jax.numpy as jnp
 from jax import vmap, random, lax, jit, clear_caches
@@ -12,6 +14,7 @@ from simulator.noise_models.wiener_noise import WienerNoise
 import numpy as np
 from simulator.utils.verify_network import _copy_param_vals
 from omegaconf import DictConfig
+from simulator.grn.logger.grnLogger import GRNLogger
 
 
 class GRNSim:
@@ -60,6 +63,20 @@ class GRNSim:
             )
 
         self.n_genes = len(node_set)
+
+        ## Setting up logger
+        self.is_logging = cfg.logging
+        if self.is_logging:
+            self.timestamp = cfg.get("log_file_name", str(int(time.time())))
+            self.logger = GRNLogger(
+                log_dir=os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)), "logs"
+                ),
+                file_name=self.timestamp,
+                n_steps=self.n_steps,
+                n_cells=self.n_cells,
+                n_genes=self.n_genes,
+            )
 
         self.decay = _copy_param_vals(
             var=self.decay, var_name="Decay", n_cells=self.n_cells, n_genes=self.n_genes
@@ -129,13 +146,12 @@ class GRNSim:
                     )
                 else:
                     self.basal_rates.append(basal_rate_i)
-
                 if ki_vals.ndim == 2:
                     # ki_vals = ki_vals.reshape(self.n_cells, len(regulators), 1)
                     # ki_vals = jnp.repeat(ki_vals, repeats=self.n_cells, axis=0)
                     self.ki_matrix[:, i, regulators] = ki_vals
-
-                # self.ki_matrix = self.ki_matrix.at[:, i, regulators].set(ki_vals)
+                else:
+                    self.ki_matrix[:, i, regulators] = ki_vals[0][:, 0].reshape(1, -1)
 
                 if self.protein_sim:
                     self.prot_half_lives = self.prot_half_lives.at[i].set(
@@ -451,8 +467,15 @@ class GRNSim:
         logging.info("Running simulator...")
         gene_conc_history = []
         prot_conc_history = []
-        for _ in tqdm(range(self.n_steps)):
+        for t_i in tqdm(range(self.n_steps)):
             self.gene_conc, self.prot_conc = self.jit_x_t()
+            if self.is_logging:
+                self.logger.log_conc(
+                    step=t_i,
+                    cell=None,
+                    gene_conc=self.gene_conc,
+                    prot_conc=self.prot_conc,
+                )
             gene_conc_history.append(self.gene_conc)
             prot_conc_history.append(self.prot_conc)
         logging.info("Simulation ended...")

@@ -28,7 +28,10 @@ uv sync
     - `dynamics/` - Mathematical models for simulator dynamics
     - `noise_models/` - Noise processes, random seeds
     - `utils/` - Utility functions for simulator
-    - `dynSim.py` - Simulator code
+    - `grn/` - Code and logs of the GRN simulator
+    - `spatial/` -  Code, model definitions and logs of the Spatial Sim
+    - `spatial_vec/` -  Code, model definitions and logs of the vectorized version of Spatial Sim
+    - `run_sim.py` - Run the GRN and Spatial Sim
   - `causal/` - Causal discovery and inference modules
     - `identification/` - Algorithms for structure/parameter learning
     - `evaluation/` - Evaluation scripts
@@ -45,22 +48,22 @@ uv sync
 
 ### Simulator
 
-```py
-## Gene-Protein Sim
-uv run src/simulator/run_gpsim.py
-
-## Spatial Sim
-uv run src/simulator/spatial/main.py
+```bash
+## Runs the GRN Sim and the spatial sim with the default config 'freemesh_config.yaml'
+uv run src/simulator/run_sim.py
 ```
 ### Visualization
 
-Currently the visualization server, `src/visualization/testing_visualization.py` only supports GridMesh data visualization. To run the visualization, pass the log file name of a previously run simulation run with the `-f` flag. A sample log file is provided under `src/simulator/spatial/logs/1767656604` and the server defaults to using the sample log file.
+The visualization can be run by the running the two commands in seperate terminal windows.
 
-Performing a simulation run and running the visualization
+```bash
+## Runs the API for fetching the data from TileDB
+uv run src/visualization/retrieve_logger_api.py
 
-```py
-# From DynamicSim/
-uv run src/simulator/spatial/main.py # Runs the spatial sim with default `test_config.yaml` configuration
-
-uv run src/visualization/testing_visualization.py -f FILE_NAME # FILE_NAME is the timestamp under src/simulator/spatial/logs/
+## Runs the website to visualize the data
+cd src/visualization/visualization_web/
+npm install # If the packages are not installed
+npm run dev
 ```
+
+After running these two commands, open the link `http://localhost:3000/vis?file_name={FILE_NAME}` and inserting the name of the log file to be visualized at `{FILE_NAME}`. This log file should be present inside `src/simulator/grn/logs/` and `src/simulator/spatial_vec/logs/`.

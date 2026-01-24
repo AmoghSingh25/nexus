@@ -7,6 +7,7 @@ grn:
   n_steps: 10
   config_file: "configs/sample_data/sample_network_2cell.yaml"
   random_key: 42
+  logging: false
   
   ## Gene related
   non_mr_basal: false

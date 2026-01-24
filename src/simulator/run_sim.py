@@ -1,7 +1,8 @@
+import time
 from simulator.grn.grnSim import GRNSim
 from simulator.spatial_vec.spatialSim import SpatialSimVec
 import hydra
-from omegaconf import DictConfig
+from omegaconf import DictConfig, open_dict
 
 
 @hydra.main(
@@ -9,9 +10,13 @@ from omegaconf import DictConfig
 )
 def run_sim(cfg: DictConfig) -> None:
     ## Checking configs
+    timestep = str(int(time.time()))
+    with open_dict(cfg):
+        cfg.spatial_sim["log_file_name"] = timestep
+        cfg.grn["log_file_name"] = timestep
     spatial_sim = SpatialSimVec(cfg.spatial_sim)
     grn_sim = GRNSim(cfg.grn)
-    # check_config(spatial_sim=spatial_sim, cfg=cfg)
+    check_config(spatial_sim=spatial_sim, cfg=cfg)
 
     ## Running sim
     print("Running spatial sim")

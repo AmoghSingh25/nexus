@@ -27,7 +27,7 @@ class SpatialSimVec:
         self.mesh_type = cfg.mesh_type
         self.D = cfg.D
 
-        self.timestamp = str(int(time.time()))
+        self.timestamp = cfg.get("log_file_name", str(int(time.time())))
 
         if self.mesh_type == "grid":
             self.mesh = GridMesh(

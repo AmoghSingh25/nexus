@@ -1,12 +1,13 @@
 # Config for GRN set to simulate SERGIO configuration
 grn:
   ## Simulation related
-  n_cells: 100
+  n_cells: 2700
   delta: 0.01
   n_steps: 10
   gene_data: "configs/sample_data/Interaction_cID_4.txt"
   mr_data: "configs/sample_data/Regs_cID_4.txt"
   config_file: ""
+  logging: true
   
   ## Gene related
   non_mr_basal: false

@@ -1,4 +1,4 @@
-from simulator import grnSim
+from simulator.grn.grnSim import GRNSim
 import numpy as np
 import jax.numpy as jnp
 import os
@@ -26,7 +26,7 @@ class TestFile:
         for i in range(len(self.config_files)):
             base_config.grn.config_file = self.config_files[i]
             base_config.grn.n_cells = self.cell_no[i]
-            sim = grnSim.GRNSim(base_config.grn)
+            sim = GRNSim(base_config.grn)
             gene_conc, prot_conc = sim.run_sim()
             gene_conc, prot_conc = np.array(gene_conc), np.array(prot_conc)
             assert gene_conc.shape == (10, 4, self.cell_no[i])
@@ -38,7 +38,7 @@ class TestFile:
         for i in range(len(self.config_files)):
             base_config.grn.config_file = self.config_files[i]
             base_config.grn.n_cells = self.cell_no[i]
-            sim = grnSim.GRNSim(cfg=base_config.grn)
+            sim = GRNSim(cfg=base_config.grn)
             gene_conc, prot_conc = sim.run_sim()
             gene_conc, prot_conc = jnp.array(gene_conc), jnp.array(prot_conc)
             assert gene_conc.shape == (10, 4, self.cell_no[i])

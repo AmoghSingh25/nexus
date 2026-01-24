@@ -6,6 +6,7 @@ grn:
   n_steps: 10
   config_file: "configs/sample_data/sample_network_1cell.yaml"
   random_key: 42
+  logging: true
   
   ## Gene related
   non_mr_basal: false
@@ -17,7 +18,7 @@ grn:
     - 1.0
 
   ## Protein related
-  protein_sim: false
+  protein_sim: true
   
 # Lattice free setup
 spatial_sim:

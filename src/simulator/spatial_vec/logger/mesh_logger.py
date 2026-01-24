@@ -85,7 +85,8 @@ class FieldLogger:
         with open(self.prop_pkl, "rb") as file:
             metadata_dict = pickle.load(file)
 
-        self.n_steps = metadata_dict["n_cells"]
+        self.n_cells = metadata_dict["n_cells"]
+        self.n_steps = metadata_dict["n_steps"]
         self.n_reactions = metadata_dict["n_reactions"]
         self.n_fields = metadata_dict["n_fields"]
         self.n_chems = metadata_dict["n_chems"]
