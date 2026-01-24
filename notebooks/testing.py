@@ -24,9 +24,9 @@ def _():
 
 @app.cell
 def _():
-    from simulator.grn.grnSim import GRNSim as NewGRNSim
+    from simulator.grn.grnSim import GRNSim
 
-    return (NewGRNSim,)
+    return (GRNSim,)
 
 
 @app.cell
@@ -69,12 +69,19 @@ def _(np, plt):
 
 
 @app.cell
-def _(NewGRNSim, cfg, time):
-    cfg.grn.n_cells = 2700
-    _start = time.time()
-    sim1 = NewGRNSim(cfg.grn)
-    _end = time.time()
-    print("Time taken = ", _end - _start)
+def _(GRNSim, cfg, time):
+    ## Calculating run times
+
+    cfg.grn.n_cells = 9
+    _time_taken = []
+    for _i in range(5):
+        _start = time.time()
+        sim1 = GRNSim(cfg.grn)
+        _end = time.time()
+        print("Time taken = ", _end - _start)
+        _time_taken.append(_end - _start)
+    for _i in _time_taken:
+        print(_i)
     return (sim1,)
 
 
@@ -186,6 +193,13 @@ def _():
 
 
 @app.cell
+def _(node_mapping, pickle):
+    with open("src/tests/saved_outputs/node_mapping.pkl", "wb") as _f:
+        pickle.dump(node_mapping, _f)
+    return
+
+
+@app.cell
 def _():
     import pickle
 
@@ -193,7 +207,7 @@ def _():
         sergio_output_1 = pickle.load(f)
     with open("src/tests/saved_outputs/saved_output_9cells.pkl", "rb") as f:
         sergio_output_2 = pickle.load(f)
-    return sergio_output_1, sergio_output_2
+    return pickle, sergio_output_1, sergio_output_2
 
 
 @app.cell

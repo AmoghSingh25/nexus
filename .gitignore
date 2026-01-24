@@ -13,4 +13,6 @@ notebooks/protein_rna_test_data/
 outputs/
 src/simulator/spatial/logs/
 src/simulator/spatial_vec/logs/
+src/simulator/grn/logs/
+
 notebooks/testing_triangulation.py
