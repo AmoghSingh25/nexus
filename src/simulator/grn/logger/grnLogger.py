@@ -7,7 +7,7 @@ import numpy as np
 
 class GRNLogger:
     """
-    Logger class for storing data to tiledb
+    Logger class for storing GRN simulator data to tiledb
     """
 
     def __init__(
@@ -20,9 +20,9 @@ class GRNLogger:
         read_only=False,
     ):
         """
-        Initialize Field Logger
+        Initialize GRN Logger
 
-        :param self: FieldLogger
+        :param self: GRNLogger
         :param log_dir: Directory of the logs
         :param file_name: Name of the tiledb array to be saved to
         :param n_steps: Number of simulation steps
@@ -63,7 +63,7 @@ class GRNLogger:
         """
         Creates the pickle file containing the metadata of the logs.
 
-        :param self: Description
+        :param self: GRNLogger
         """
         metadata_dict = {
             "n_cells": self.n_cells,
@@ -76,7 +76,7 @@ class GRNLogger:
         """
         Initialize the concentration array filestore with the schema.
 
-        :param self: FieldLogger
+        :param self: GRNLogger
         """
         d1 = tiledb.Dim(
             name="t",
@@ -105,7 +105,7 @@ class GRNLogger:
         """
         Logs the concentrations of protein and gene.
 
-        :param self: Description
+        :param self: GRNLogger
         :param step: Current step index
         :param cell: Cell ID
         :param gene_id: Gene ID
@@ -127,7 +127,7 @@ class GRNLogger:
         """
         Returns the reaction order from the tiledb array.If any of the parameters are not set, data is returned across the entire possible range for this parameter.
 
-        :param self: FieldLogger
+        :param self: GRNLogger
         :param step: Simulation step index being queried
         :param field_id: ID of the cell being queried
         """

@@ -117,5 +117,10 @@ class SpatialLogger:
         return ret
 
     def cleanup(self):
+        """
+        Deletes the log files generated.
+
+        :param self: Description
+        """
         if os.path.exists(self.base_path):
             shutil.rmtree(self.base_path)

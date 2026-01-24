@@ -6,7 +6,6 @@ import pandas as pd
 import numpy as np
 from dash import Input, Output, callback
 
-# from simulator.spatial.logger.mesh_logger import DataLogger
 from simulator.spatial_vec.logger.mesh_logger import FieldLogger as DataLoggerVec
 from simulator.spatial_vec.logger.spatial_logger import SpatialLogger
 import plotly.express as px

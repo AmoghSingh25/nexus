@@ -17,6 +17,20 @@ def calc_inter_cell_force(
     repulsion_coeff,
     delta,
 ):
+    """
+    Calculate the forces between two cells. The force is repulsive if there is overlap and attractive otherwise.
+
+    :param dists: Distances of neighbours
+    :param source_cell_size: Sizes of the source cell
+    :param neighbour_cell_sizes: Sizes of the neighbour cells
+    :param source_cell_mass: Mass of the source cell
+    :param neighbour_cell_masses: Mass of the neighbour cells
+    :param source_cell_pos: Positions of the source cell
+    :param neigh_cell_pos: Positions of the neighbour cells
+    :param attraction_coeff: Attraction coefficient in the configuration
+    :param repulsion_coeff: Repulsion coefficient in the configuration
+    :param delta: Delta value
+    """
     combined_cell_sizes = (neighbour_cell_sizes + source_cell_size).reshape(-1)
     combined_cell_masses = (source_cell_mass + neighbour_cell_masses).reshape(-1)
 
@@ -48,6 +62,12 @@ def calc_inter_cell_force(
 
 
 def calc_drift_velocity(prev_vel, drift_vel_coeff):
+    """
+    Compute the drift velocity
+
+    :param prev_vel: Previous velocity of the cell
+    :param drift_vel_coeff: Drift velocity coefficient
+    """
     return prev_vel * drift_vel_coeff
 
 
@@ -65,6 +85,22 @@ def calc_vel(
     drift_vel_coeff=0.1,
     delta=0.01,
 ):
+    """
+    Compute the new velocity of the cell
+
+    :param dists: Distances of neighbours
+    :param source_cell_size: Sizes of the source cell
+    :param neighbour_cell_sizes: Sizes of the neighbour cells
+    :param source_cell_mass: Mass of the source cell
+    :param neighbour_cell_masses: Mass of the neighbour cells
+    :param source_cell_pos: Positions of the source cell
+    :param neigh_cell_pos: Positions of the neighbour cells
+    :param prev_vel: Previous velocity of the cell
+    :param attraction_coeff: Attraction coefficient in the configuration
+    :param repulsion_coeff: Repulsion coefficient in the configuration
+    :param drift_vel_coeff: Drift velocity coefficient in the configuration
+    :param delta: Delta value
+    """
     inter_cell_vel = calc_inter_cell_force(
         dists,
         source_cell_size,

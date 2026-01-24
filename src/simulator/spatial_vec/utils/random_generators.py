@@ -1,5 +1,9 @@
 from jax import random
 
+"""
+Manage the random generation function of JAX, performs key split and returns new key and subkey
+"""
+
 
 def generate_poisson(key, sub_key, **kwargs):
     ret = random.poisson(key=sub_key, **kwargs)

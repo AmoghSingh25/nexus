@@ -97,5 +97,10 @@ class SpatialSimVec:
         return cell_vols
 
     def cleanup(self):
+        """
+        Deletes the log files generated during the run
+
+        :param self: SpatialSimVec
+        """
         if self.logger is not None:
             self.logger.cleanup()
