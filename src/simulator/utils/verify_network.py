@@ -64,6 +64,19 @@ def _copy_param_vals(var, var_name, n_cells, n_genes, cell_dim=0, gene_dim=1):
     return var
 
 
+def _copy_param_single_gene(var, var_name, n_cells, cell_dim=0):
+    req_dim = [0, 1]
+    req_dim[cell_dim] = n_cells
+    req_dim = tuple(req_dim)
+
+    if var.ndim == 2:
+        var = jnp.repeat(var, req_dim[0], axis=0)
+    elif var.ndim == 1:
+        var = var.reshape(1, 1)
+        var = jnp.repeat(var, req_dim[0], axis=0)
+    return var
+
+
 def _verify_network(node_set, edges_set, n_cells, protein_sim, copy_data=False):
     """
     Checks performed:
@@ -106,9 +119,11 @@ def _verify_network(node_set, edges_set, n_cells, protein_sim, copy_data=False):
         if node["type"] == "mr":
             try:
                 basal_i = jnp.array(node["basal_rate"]).reshape(-1, 1)
-                copy_cells = copy_cells or _check_dims(
-                    idx, "Basal rates", basal_i, (n_cells, 1), n_cells
-                )
+                if _check_dims(idx, "Basal rates", basal_i, (n_cells, 1), n_cells):
+                    basal_i = _copy_param_single_gene(
+                        basal_i, "Basal rate", n_cells=n_cells
+                    )
+                node_set[idx]["basal_rate"] = basal_i
             except ValueError as e:
                 raise IncorrectDimensions(
                     "Likely incorrect dimensions. Recheck the dimensions. \n" + str(e)
@@ -117,28 +132,41 @@ def _verify_network(node_set, edges_set, n_cells, protein_sim, copy_data=False):
             n_regs = len(list(g.predecessors(idx)))
             try:
                 ki = jnp.array(node["ki"]).reshape(-1, n_regs, 1)
+                if _check_dims(idx, "ki", ki, (n_cells, n_regs, 1), n_cells):
+                    ki = _copy_param_single_gene(ki, "ki", n_cells=n_cells)
 
-                copy_cells = copy_cells or _check_dims(
-                    idx, "ki", ki, (n_cells, n_regs, 1), n_cells
-                )
+                node_set[idx]["ki"] = ki
 
                 if protein_sim:
                     p_half_life_i = jnp.array(node["prot_half_life"]).reshape(-1, 1)
                     prot_trans_rate_i = jnp.array(
                         node["prot_transcription_rate"]
                     ).reshape(-1, 1)
-                    copy_cells = copy_cells or _check_dims(
+                    if _check_dims(
                         idx, "Prot half life", p_half_life_i, (n_cells, 1), n_cells
-                    )
-                    copy_cells = copy_cells or _check_dims(
+                    ):
+                        p_half_life_i = _copy_param_single_gene(
+                            p_half_life_i, "prot_half_life", n_cells=n_cells
+                        )
+
+                    if _check_dims(
                         idx,
                         "Prot transcription rate",
                         prot_trans_rate_i,
                         (n_cells, 1),
                         n_cells,
-                    )
+                    ):
+                        prot_trans_rate_i = _copy_param_single_gene(
+                            prot_trans_rate_i,
+                            "prot_transcription_rate",
+                            n_cells=n_cells,
+                        )
+
+                    node_set[idx]["prot_half_life"] = p_half_life_i
+                    node_set[idx]["prot_transcription_rate"] = prot_trans_rate_i
+
             except ValueError as e:
                 raise IncorrectDimensions(
                     "Likely incorrect dimensions. Recheck the dimensions. \n" + str(e)
                 )
-    return True, copy_cells
+    return node_set, edges_set, copy_cells

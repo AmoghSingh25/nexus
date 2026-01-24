@@ -1,10 +1,10 @@
 # Config for GRN set to simulate SERGIO configuration
 grn:
   ## Simulation related
-  n_cells: 2
+  n_cells: 4
   delta: 0.01
   n_steps: 10
-  config_file: "configs/sample_data/sample_network_2cell.yaml"
+  config_file: "configs/sample_data/sample_network_1cell.yaml"
   random_key: 42
   
   ## Gene related
