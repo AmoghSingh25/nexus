@@ -90,7 +90,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.File:
-        ## TODO: Allow user to select log file to run from webpage
         inp_file_name = args.File
     else:
         inp_file_name = "1767656604"

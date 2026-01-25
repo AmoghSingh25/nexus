@@ -230,7 +230,7 @@ def _(mo):
 @app.cell
 def _(SpatialSimVec, get_config):
     _config = get_config("freemesh_config")
-    _config.spatial_sim.n_steps = 10
+    _config.spatial_sim.n_steps = 50
     _config.spatial_sim.diffusion_bool = True
     _config.spatial_sim.reaction_bool = False
     _config.spatial_sim.movement_bool = True
@@ -239,9 +239,7 @@ def _(SpatialSimVec, get_config):
     _config.spatial_sim.debug_plot = False
     _s1 = SpatialSimVec(_config.spatial_sim)
     _s1.run_sim()
-    print(_s1.mesh.field_positions)
-    print(_s1.logger.retrieve_field_pos_data())
-    # _s1.cleanup()
+    _s1.cleanup()
     return
 
 

@@ -107,15 +107,19 @@ class FreeMesh:
             self.cell_repulsion_coeff,
             self.cell_drift_vel_coeff,
             self.cell_random_vel_coeff,
+            self.cell_death_decay_coeff,
         ) = check_cell_type_data(
             key=self.key, sub_key=self.sub_key, n_cells=self.n_cells, cfg=cfg
         )
 
         self.cell_vel = jnp.zeros(shape=(self.n_cells, 3))
         self.cell_states = jnp.zeros(shape=(self.n_cells, 1), dtype=jnp.int8)
+        ## 0- Transition, 1- Interphase, 2- mitosis, -1 - Killed,
+
         self.cell_time = jnp.zeros(shape=(self.n_cells, 1), dtype=jnp.int16)
 
         self.live_cells_mask = self.cell_states != -1
+        self.prg_cells_mask = self.cell_states == -2
 
         self.key, self.sub_key, self.interphase_chkpt = generate_normal(
             key=self.key,
@@ -509,6 +513,11 @@ class FreeMesh:
             jnp.array([self.cell_random_vel_coeff[parent_cell_id]]),
             axis=0,
         )
+        self.cell_death_decay_coeff = jnp.append(
+            self.cell_death_decay_coeff,
+            jnp.array([self.cell_death_decay_coeff[parent_cell_id]]),
+            axis=0,
+        )
 
         self.key, self.sub_key, new_growth_rate = generate_uniform(
             key=self.key,
@@ -608,11 +617,8 @@ class FreeMesh:
         :param selected_cell_mask: Boolean mask indicating the cells that have to undergo programmed cell death
         """
 
-        ##TODO: Complete setup for programmed cell death
-        self.cell_states = self.cell_states.at[selected_cell_mask].set(-1)
-        self.cell_mass = self.cell_mass.at[selected_cell_mask].set(0)
-        self.cell_radius = self.cell_radius.at[selected_cell_mask].set(0)
-        self.cell_vol = self.cell_vol.at[selected_cell_mask].set(0)
+        self.cell_states = self.cell_states.at[selected_cell_mask].set(-2)
+        self.cell_target_vol = self.cell_target_vol.at[selected_cell_mask].set(0)
 
     def calc_cycle(self):
         """
@@ -682,13 +688,26 @@ class FreeMesh:
         self.key, self.sub_key, cell_death_prob = generate_uniform(
             key=self.key, sub_key=self.sub_key, shape=(self.n_cells, 1)
         )
-        cell_death_mask = jnp.any(
+        killed_cells_mask = jnp.any(
             (self.cell_states == 2) | (self.cell_states == 1) | (self.cell_states == 0)
         ) & (cell_death_prob <= self.cell_death_prob)
-        self.kill_cells(killed_cells_mask=cell_death_mask)
+        prg_kill_cells_mask = jnp.any(
+            (self.cell_states == 2) | (self.cell_states == 1) | (self.cell_states == 0)
+        ) & (cell_death_prob >= self.cell_prg_death_prob)
+
+        self.kill_cells(killed_cells_mask=killed_cells_mask)
+        self.prg_death_cell(selected_cell_mask=prg_kill_cells_mask)
 
         # Update live cells mask parameter
-        self.live_cells_mask = self.cell_states != -1
+        self.prg_cells_mask = self.cell_states == -2
+        self.live_cells_mask = (self.cell_states != -1) & ~self.prg_cells_mask
+
+        self.shrunk_cell_mask = (
+            jnp.abs(self.cell_vol - self.cell_target_vol) <= 1e-8
+        ) & self.prg_cells_mask
+
+        if jnp.any(self.shrunk_cell_mask):
+            self.kill_cells(self.shrunk_cell_mask)
 
         # Update cell times
         self.cell_time = self.cell_time.at[:].set(self.cell_time + 1)
@@ -699,21 +718,37 @@ class FreeMesh:
 
         :param self: Description
         """
-        diff_target = (
-            self.cell_target_vol[self.live_cells_mask]
-            - self.cell_vol[self.live_cells_mask]
-        )
+        diff_target = self.cell_target_vol - self.cell_vol
+        diff_live_cells = diff_target[self.live_cells_mask]
+        diff_prg_death_cells = diff_target[self.prg_cells_mask]
+
         new_vol = (
             self.cell_vol[self.live_cells_mask]
-            + self.cell_vol_growth_rate[self.live_cells_mask] * diff_target * self.delta
+            + self.cell_vol_growth_rate[self.live_cells_mask]
+            * diff_live_cells
+            * self.delta
         )
-
+        new_prg_cell_vol = (
+            self.cell_vol[self.prg_cells_mask]
+            + diff_prg_death_cells * self.cell_death_decay_coeff[self.prg_cells_mask]
+        )
         self.cell_vol = self.cell_vol.at[self.live_cells_mask].set(new_vol)
-        self.cell_radius = self.cell_radius.at[self.live_cells_mask].set(
-            jnp.pow((new_vol * 3) / (4.0 * math.pi), 1 / 3)
+        self.cell_vol = self.cell_vol.at[self.prg_cells_mask].set(new_prg_cell_vol)
+
+        self.cell_radius = self.cell_radius.at[
+            self.live_cells_mask | self.prg_cells_mask
+        ].set(
+            jnp.pow(
+                (self.cell_vol[self.live_cells_mask | self.prg_cells_mask] * 3)
+                / (4.0 * math.pi),
+                1 / 3,
+            )
         )
-        self.cell_mass = self.cell_mass.at[self.live_cells_mask].set(
-            new_vol * self.cell_density[self.live_cells_mask].reshape(-1)
+        self.cell_mass = self.cell_mass.at[
+            self.live_cells_mask | self.prg_cells_mask
+        ].set(
+            self.cell_vol[self.live_cells_mask | self.prg_cells_mask]
+            * self.cell_density[self.live_cells_mask | self.prg_cells_mask].reshape(-1)
         )
 
     def step(self, step_i, delta, logger: FieldLogger):
@@ -778,13 +813,7 @@ class FreeMesh:
             self.pl.camera.Azimuth(3.0)
             self.pl.write_frame()
 
-            # plt.figure()
-            # ax = plt.subplot(projection="3d")
-            # ax.scatter(self.cell_positions[:, 0], self.cell_positions[:, 1], self.cell_positions[:, 2], s=20000 * self.cell_radius, marker='.')
-            # ax.scatter(self.field_positions[:, 0], self.field_positions[:, 1], self.field_positions[:, 2], marker='^', c='r')
-            # plt.show()
             print("\n\n")
-        return self.cell_vol
 
     def get_cell_id(self, pos):
         """

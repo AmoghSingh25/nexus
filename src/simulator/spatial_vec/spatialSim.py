@@ -77,11 +77,8 @@ class SpatialSimVec:
         self.logging and self.logger.log_chem_state(
             step=0, field_chem=self.mesh.field_chem
         )
-        cell_vols = []
         for i in tqdm(range(self.n_steps)):
-            cell_vols.append(
-                self.mesh.step(step_i=i + 1, delta=self.delta, logger=self.logger)
-            )
+            self.mesh.step(step_i=i + 1, delta=self.delta, logger=self.logger)
             self.pos_logger.log_cell_pos(
                 i,
                 self.mesh.cell_positions,
@@ -94,7 +91,6 @@ class SpatialSimVec:
         self.logging and self.logger.log_chem_state(
             self.n_steps, field_chem=self.mesh.field_chem
         )
-        return cell_vols
 
     def cleanup(self):
         """

@@ -1,3 +1,4 @@
+// TODO: Allow user to select log file to run from webpage
 "use client";
 import React, { useEffect } from "react";
 import dynamic from "next/dynamic";

@@ -82,6 +82,7 @@ def check_cell_type_data(key, sub_key, n_cells, cfg):
     cell_repulsion_coeff = np.zeros((n_cells, 1))
     cell_drift_vel_coeff = np.zeros((n_cells, 1))
     cell_random_vel_coeff = np.zeros((n_cells, 1))
+    cell_death_decay_coeff = np.zeros((n_cells, 1))
 
     cell_mask = np.zeros((n_cells, 1), dtype=np.int16)
     total_qty = 0.0
@@ -110,6 +111,7 @@ def check_cell_type_data(key, sub_key, n_cells, cfg):
         cell_repulsion_coeff[start:end] = param_dict[i]["repulsion_coeff"]
         cell_drift_vel_coeff[start:end] = param_dict[i]["drift_vel_coeff"]
         cell_random_vel_coeff[start:end] = param_dict[i]["random_vel_coeff"]
+        cell_death_decay_coeff[start:end] = param_dict[i]["cell_decay_rate"]
 
         cell_type += 1
         total_qty = proportions[-1]
@@ -121,6 +123,7 @@ def check_cell_type_data(key, sub_key, n_cells, cfg):
     key, sub_key, cell_mask = generate_permutation(
         key=key, sub_key=sub_key, x=cell_mask
     )
+    cell_prg_death_prob = 1 - cell_prg_death_prob
 
     return (
         key,
@@ -137,4 +140,5 @@ def check_cell_type_data(key, sub_key, n_cells, cfg):
         cell_repulsion_coeff,
         cell_drift_vel_coeff,
         cell_random_vel_coeff,
+        cell_death_decay_coeff,
     )
