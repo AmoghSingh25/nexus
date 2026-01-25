@@ -62,6 +62,7 @@ class FreeMesh:
                 -self.depth / 2.0, self.depth / 2.0, self.param_field_resolution
             ),
         )
+
         self.field_positions = jnp.vstack([x.ravel(), y.ravel(), z.ravel()]).T
         self.n_fields = self.field_positions.shape[0]
 

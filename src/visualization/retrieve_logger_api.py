@@ -40,6 +40,11 @@ def structure_positions_data(pos):
         pos_i = np.array(np.array(pos["pos"][i]).tolist())
         pos_i = pos_i
         pos_i = pos_i.tolist()
+        color_i = [255, 255, 0]
+        if state_i == -1:
+            color_i = [255, 0, 0]
+        elif state_i == -2:
+            color_i = [0, 0, 255]
 
         if len(pos_arr) < no_steps:
             pos_arr.append([])
@@ -47,7 +52,7 @@ def structure_positions_data(pos):
         pos_arr[step_i].append(
             {
                 "position": pos_i,
-                "color": [255, 255, 0] if state_i != -1 else [255, 0, 0],
+                "color": color_i,
                 "radius": radius_i if radius_i > 0 else 0.2,
             }
         )

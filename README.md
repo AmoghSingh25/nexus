@@ -67,3 +67,5 @@ npm run dev
 ```
 
 After running these two commands, open the link `http://localhost:3000/vis?file_name={FILE_NAME}` and inserting the name of the log file to be visualized at `{FILE_NAME}`. This log file should be present inside `src/simulator/grn/logs/` and `src/simulator/spatial_vec/logs/`.
+
+The colors indicate the states of the cell, yellow indicating live cells, blue indicating cells undergoing programmed cell death and red are the cells undergoing sudden cell death.

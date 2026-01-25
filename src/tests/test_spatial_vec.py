@@ -69,8 +69,6 @@ class TestSpatial:
         )["conc"]
         s.cleanup()
 
-        print(chem_before)
-        print(chem_after)
         if chem_before[0] >= chem_after[0] and chem_before[1] <= chem_after[1]:
             assert True
         else:

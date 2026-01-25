@@ -61,7 +61,7 @@ spatial_sim:
       qty_ratio: 0.2
       attraction_coeff: 2
       repulsion_coeff: 0.2
-      drift_vel_coeff: 0.1
+      drift_vel_coeff: 0.02
       random_vel_coeff: 0.05
 
   ## Cycle related
@@ -71,7 +71,7 @@ spatial_sim:
       cycle_len: 10
       interphase_len: 0.9
       necrosis_death_prob: 0.0001
-      apoptosis_death_prob: 0.1
+      apoptosis_death_prob: 0.001
       cell_target_vol: 1.0
       cell_density: 1.0
       cell_vol_growth_rate: 1.0
@@ -80,7 +80,7 @@ spatial_sim:
       cycle_len: 20
       interphase_len: 0.8
       necrosis_death_prob: 0.0001
-      apoptosis_death_prob: 0.1
+      apoptosis_death_prob: 0.001
       cell_target_vol: 2.0
       cell_density: 2.0
       cell_vol_growth_rate: 1.5
