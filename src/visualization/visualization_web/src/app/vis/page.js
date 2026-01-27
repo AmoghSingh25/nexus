@@ -48,6 +48,19 @@ async function get_field_conc(field_id) {
   };
 }
 
+async function get_cell_conc(cell_id) {
+  var cell_conc = await fetch(
+    `http://localhost:8080/get_cell_conc?cell_id=${cell_id}&file_name=${file_name}`,
+    options,
+  ).then((response) => response.json());
+  var time_steps = [];
+  for (let i = 0; i < cell_conc[0].length; i++) time_steps.push(i);
+  return {
+    conc: cell_conc,
+    time_steps: time_steps,
+  };
+}
+
 async function get_data(indicateReady, currVis) {
   data = await fetch(
     `http://127.0.0.1:8080/positions?file_name=${file_name}`,
@@ -89,7 +102,9 @@ function compute_ds(currVis) {
           coordinateOrigin: [0, 0, 0],
           coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
           pickable: currVis == 1,
-          onClick: (d) => {},
+          onClick: (d) => {
+            console.log("PICKED SPHERE");
+          },
         }),
       );
     }
@@ -121,6 +136,9 @@ export default function App() {
   const [fieldConcData, setFieldConcData] = new React.useState(null);
   const [traces, setTraces] = new React.useState(null);
   const searchParams = useSearchParams();
+  const [cellConcLoading, setCellConcLoading] = new React.useState(false);
+  const [cellConcData, setCellConcData] = new React.useState(null);
+
   file_name = searchParams.get("file_name");
   if (file_name == null) {
     return <></>;
@@ -133,7 +151,7 @@ export default function App() {
 
     const sphereLayers = sphere_timesteps[step_id]?.map((sphere, i) => {
       return new SimpleMeshLayer({
-        id: `sphere-${step_id}-${i}`,
+        id: `${i}`,
         data: [0],
         mesh: new SphereGeometry({
           radius: data[step_id][i].radius,
@@ -146,7 +164,7 @@ export default function App() {
         coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
         pickable: currVis == 1,
         onClick: (d) => {
-          setSelectedId(d.index);
+          setSelectedId(d.layer.id);
         },
       });
     });
@@ -164,13 +182,29 @@ export default function App() {
         setSelectedId(d.index);
       },
     });
+
+    const cubeLayer = new SimpleMeshLayer({
+      id: "bg",
+      data: {
+        position: [0, 0, 0],
+      },
+      mesh: new CubeGeometry({}),
+      getPosition: (d) => d,
+      getScale: [5, 5, 5],
+      getColor: [255, 255, 255, 50],
+      coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
+      pickable: false,
+    });
+    console.log(sphereLayers)
     return [...sphereLayers, fieldLayer];
   }, [currVis, step_id, dataReady]);
 
   useEffect(() => {
     if (currVis !== 0) {
       setFieldConcLoading(false);
-      return;
+    }
+    if (currVis !== 1) {
+      setCellConcLoading(false);
     }
 
     if (selectedID == null) return;
@@ -192,7 +226,29 @@ export default function App() {
       }
       setTraces(traceArr);
     }
-    fetchFieldConc();
+
+    async function fetchCellConc() {
+      setCellConcLoading(true);
+      const resp = await get_cell_conc(selectedID);
+
+      setFieldConcData(resp);
+      setCellConcLoading(false);
+      var traceArr = [];
+      for (let i = 0; i < resp["conc"].length; i++) {
+        traceArr.push({
+          x: resp["time_steps"],
+          y: resp["conc"][i],
+          mode: "lines",
+          name: `RNA id - ${i + 1}`,
+        });
+      }
+      setTraces(traceArr);
+    }
+
+    if (currVis == 0) fetchFieldConc();
+    else {
+      fetchCellConc();
+    }
   }, [currVis, selectedID]);
 
   if (!dataReady) {
@@ -200,11 +256,11 @@ export default function App() {
     return <CircularProgress />;
   }
 
-  const ambient_light = new AmbientLight({
-    color: [255, 255, 255],
-    intensity: 10.0,
-  });
-  const lighting_effect = new LightingEffect({ ambient_light });
+  // const ambient_light = new AmbientLight({
+  //   color: [255, 255, 255],
+  //   intensity: 10.0,
+  // });
+  // const lighting_effect = new LightingEffect({ ambient_light });
 
   const view = new OrbitView({
     orbitAxis: "Y",
@@ -241,7 +297,7 @@ export default function App() {
         <DeckGL
           layers={layers}
           widgets={[new ZoomWidget(), new ResetViewWidget()]}
-          effects={[lighting_effect]}
+          // effects={[lighting_effect]}
           initialViewState={{
             target: [0, 0, 0],
             zoom: 5,
@@ -289,7 +345,21 @@ export default function App() {
           <Plot
             data={traces}
             layout={{
-              title: { text: currVis == 0 ? `Field - ${selectedID}` : "Cell" },
+              title: { text: `Field - ${selectedID}` },
+              autosize: true,
+            }}
+            style={{ height: "100%", width: "100%" }}
+          />
+        </div>
+      ) : (
+        <></>
+      )}
+      {currVis == 1 && !cellConcLoading ? (
+        <div style={{ height: "50vh" }}>
+          <Plot
+            data={traces}
+            layout={{
+              title: { text: `Cell - ${selectedID}` },
               autosize: true,
             }}
             style={{ height: "100%", width: "100%" }}

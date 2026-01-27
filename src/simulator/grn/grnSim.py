@@ -65,7 +65,7 @@ class GRNSim:
         self.n_genes = len(node_set)
 
         ## Setting up logger
-        self.is_logging = cfg.logging
+        self.is_logging = cfg.get("logging", False)
         if self.is_logging:
             self.timestamp = cfg.get("log_file_name", str(int(time.time())))
             self.logger = GRNLogger(
@@ -372,7 +372,20 @@ class GRNSim:
             operand=None,
         )
 
-    def calc_x_t(self):
+    def calc_x_t(
+        self,
+        gene_conc,
+        prot_conc,
+        delta,
+        decay,
+        basal_rates,
+        k_i,
+        is_mr,
+        noise_amp,
+        hill_coeff,
+        prot_kt,
+        prot_kd,
+    ):
         """Estimate the concentration of each gene and protein at the next time step.
 
         For gene concentration, the simulator uses Equation 3 given in
@@ -400,17 +413,14 @@ class GRNSim:
             prot_kd,
         ):
             # gene_conc, delta, decay, steady_state, is_mr - Entire arrays passed for all genes in a cell
-            p_i = (
-                self.jit_pij(
-                    is_mr=is_mr,
-                    idx=idx,
-                    basal_rates=basal_rates,
-                    gene_conc=gene_conc,
-                    gene_cell_mean=gene_cell_mean,
-                    k_i=k_i,
-                    _hill=hill_coeff,
-                )
-                + basal_rates
+            p_i = self.jit_pij(
+                is_mr=is_mr,
+                idx=idx,
+                basal_rates=basal_rates,
+                gene_conc=gene_conc,
+                gene_cell_mean=gene_cell_mean,
+                k_i=k_i,
+                _hill=hill_coeff,
             )
             x_t_gene = gene_conc[idx] + (p_i - decay * gene_conc[idx]) * delta
 
@@ -438,23 +448,22 @@ class GRNSim:
         )
         x_t, p_t = auto_vec_cells(
             jnp.arange(self.n_genes),
-            self.gene_conc,
-            self.delta,
-            self.decay,
-            self.basal_rates,
-            self.ki_matrix,
-            self.is_mr,
-            jnp.mean(self.gene_conc, axis=1),
-            self.noise_amp,
-            self.hill_coeffs,
-            self.prot_conc,
-            self.prot_tran_rates,
-            self.prot_decay,
+            gene_conc,
+            delta,
+            decay,
+            basal_rates,
+            k_i,
+            is_mr,
+            jnp.mean(gene_conc, axis=1),
+            noise_amp,
+            hill_coeff,
+            prot_conc,
+            prot_kt,
+            prot_kd,
         )
 
         x_t = x_t.reshape((self.n_cells, self.n_genes)).T
         p_t = p_t.reshape((self.n_cells, self.n_genes)).T
-
         return x_t, p_t
 
     def run_sim(self):
@@ -468,7 +477,19 @@ class GRNSim:
         gene_conc_history = []
         prot_conc_history = []
         for t_i in tqdm(range(self.n_steps)):
-            self.gene_conc, self.prot_conc = self.jit_x_t()
+            self.gene_conc, self.prot_conc = self.jit_x_t(
+                self.gene_conc,
+                self.prot_conc,
+                self.delta,
+                self.decay,
+                self.basal_rates,
+                self.ki_matrix,
+                self.is_mr,
+                self.noise_amp,
+                self.hill_coeffs,
+                self.prot_tran_rates,
+                self.prot_decay,
+            )
             if self.is_logging:
                 self.logger.log_conc(
                     step=t_i,

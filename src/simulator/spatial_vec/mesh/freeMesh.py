@@ -369,17 +369,10 @@ class FreeMesh:
         """
 
         # TODO: Assuming area of boundary is 1. Change to dynamic
-        def compute_delta_m(field_id):
-            flux = self.calc_flux(field_id=field_id)
-            area = 1
-            delta_m = flux * area * delta
-            if jnp.any(self.field_chem[field_id] + delta_m < 0):
-                fix_flux(field_id, self.field_chem[field_id] + delta_m)
-            return delta_m
-
         def fix_flux(field_id, diff_mass):
+            field_id = field_id.item()
             neighbours = self.field_neighbours[field_id]
-            neg_idx = jnp.where(diff_mass < 0)
+            neg_idx = jnp.where(diff_mass.reshape(-1) < 0)[0]
             diff_i = (diff_mass[neg_idx] / neighbours.shape[0]).reshape(-1)
             for i in neighbours:
                 flux_i = self.field_flux[i.item()][field_id][neg_idx] - diff_i
@@ -390,12 +383,22 @@ class FreeMesh:
                     self.field_flux[field_id][i.item()].at[neg_idx].set(-1 * flux_i)
                 )
 
+        def compute_delta_m(field_id):
+            flux = self.calc_flux(field_id=field_id)
+            area = 1
+            delta_m = flux * area * delta
+
+            ## Not adjusting the masses - Net mass remains same in the simulator
+            if jnp.any(self.field_chem[field_id] + delta_m < 0):
+                fix_flux(field_id, self.field_chem[field_id] + delta_m)
+            return delta_m
+
         delta_m_l = []
 
         ## Initial loop to fix negative masses
         ## TODO: Complete vectorization
         self.vec_compute_delta_m = jax.vmap(compute_delta_m, in_axes=(0))
-        # self.vec_compute_delta_m(self.field_id)
+        # # self.vec_compute_delta_m(self.field_id)
         for i in self.field_id:
             compute_delta_m(field_id=i)
 
@@ -771,7 +774,7 @@ class FreeMesh:
                 step=step_i, field_chem=self.field_chem
             )
             logger is not None and print(
-                f"Step - {step_i}, Delta M - {self.delta_m:.4e}"
+                f"Step - {step_i}, Delta M = {self.delta_m:.4e}"
             )
 
         # Perform reactions

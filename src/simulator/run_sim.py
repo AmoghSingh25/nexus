@@ -11,6 +11,7 @@ from omegaconf import DictConfig, open_dict
 def run_sim(cfg: DictConfig) -> None:
     ## Checking configs
     timestep = str(int(time.time()))
+    print("Time step - ", timestep)
     with open_dict(cfg):
         cfg.spatial_sim["log_file_name"] = timestep
         cfg.grn["log_file_name"] = timestep
@@ -29,7 +30,7 @@ def run_sim(cfg: DictConfig) -> None:
 def check_config(spatial_sim, cfg):
     if not cfg.grn.n_cells == spatial_sim.mesh.n_cells:
         raise ValueError(
-            "Config values incorrect, no. of cells in spatial sim and GRN sim must be equal"
+            "Config values incorrect, no. of cells in spatial sim and GRN sim to be run together"
         )
 
 

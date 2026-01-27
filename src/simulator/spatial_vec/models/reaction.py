@@ -58,11 +58,9 @@ class Reaction:
 
         for idx in range(len(self.reactant_id)):
             id_i = self.reactant_id[idx]
-            # exp_i = self.reactant_exp[idx]
             react_matrix = react_matrix.at[id_i].set(-self.k)
 
         for idx in range(len(self.prod_id)):
             id_i = self.prod_id[idx]
-            # exp_i = self.reactant_exp[idx]
             react_matrix = react_matrix.at[id_i].set(self.k)
         return react_matrix

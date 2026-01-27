@@ -23,13 +23,6 @@ def _():
 
 
 @app.cell
-def _():
-    from simulator.grn.grnSim import GRNSim
-
-    return (GRNSim,)
-
-
-@app.cell
 def _(compose, initialize_config_dir, os):
     def get_config(config_name="config"):
         conf_path = os.path.join(os.getcwd(), "configs")
@@ -48,7 +41,7 @@ def _():
 
 @app.cell
 def _(get_config):
-    cfg = get_config(config_name="config")
+    cfg = get_config(config_name="3d_spatial_test")
     return (cfg,)
 
 
@@ -65,6 +58,39 @@ def _(np, plt):
         plt.grid(True)
         plt.show()
 
+    return (plot_conc,)
+
+
+@app.cell
+def _():
+    from simulator.grn.grnSim import GRNSim
+
+    return (GRNSim,)
+
+
+@app.cell
+def _(cfg):
+    cfg.grn.n_cells = 1
+    return
+
+
+@app.cell
+def _():
+    # sim1 = GRNSim_v1(gene_data="configs/sample_data/Interaction_cID_4.txt",mr_data="configs/sample_data/Regs_cID_4.txt", protein_sim=False, n_cells=100)
+    # ret1=sim1.run_sim(20)
+    return
+
+
+@app.cell
+def _(GRNSim, cfg):
+    sim2 = GRNSim(cfg.grn)
+    ret2 = sim2.run_sim()
+    return ret2, sim2
+
+
+@app.cell
+def _(plot_conc, ret2):
+    plot_conc(ret2[0], 0)
     return
 
 

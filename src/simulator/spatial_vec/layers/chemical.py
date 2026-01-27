@@ -35,7 +35,6 @@ def calc_reaction_change(
 
     conc_t_0 = chem_mass
     reaction_ids = []
-    # chem_concs = []
 
     for i in reaction_order:
         prob_i = reaction_prob[i]
@@ -54,8 +53,17 @@ def calc_reaction_change(
                 reaction_order[i], reaction_table, (conc_t_0, react_matrix_i)
             )
 
-            reaction_ids.append(i)
-            return conc_t_1
+            ## Skip reaction if resultant concentrations are negative - Assuming sufficient amount of reactant is not available
+            def update_reaction():
+                reaction_ids.append(i)
+                return conc_t_1
+
+            return jax.lax.cond(
+                jnp.any(jnp.abs(react_matrix_i) * conc_t_1 < 0),
+                lambda _: conc_t_0,
+                lambda _: update_reaction(),
+                None,
+            )
 
         conc_t_0 = jax.lax.cond(
             random_prob <= prob_i,

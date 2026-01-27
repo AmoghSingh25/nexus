@@ -1,11 +1,12 @@
 # Config for GRN set to simulate SERGIO configuration
 grn:
   ## Simulation related
-  n_cells: 2
+  n_cells: 250
   delta: 0.01
-  n_steps: 10
-  config_file: "configs/sample_data/sample_network_2cell.yaml"
+  n_steps: 40
+  config_file: "configs/sample_data/sample_network_1cell.yaml"
   random_key: 42
+  logging: true
   
   ## Gene related
   non_mr_basal: false
@@ -28,7 +29,7 @@ spatial_sim:
   mesh_type: "lattice-free"
   sparse_cells: true
   field_resolution: 2 # Divide into X divisions along each axis
-  cell_concentration: 1 # Default value is 10
+  cell_concentration: 2 # Default value is 10
   field_vol: 1.0
   n_cell_type: 1
   cell_qty:
@@ -41,7 +42,7 @@ spatial_sim:
   
   ## Simulation Related
   delta: 0.01
-  n_steps: 20
+  n_steps: 100
   random_key: 42
   logging: true
   debug_plot: false
@@ -51,8 +52,8 @@ spatial_sim:
   movement:
     cell1:
       qty_ratio: 1.0
-      attraction_coeff: 1
-      repulsion_coeff: 0.1
+      attraction_coeff: 0.5
+      repulsion_coeff: 1
       drift_vel_coeff: 0.01
       random_vel_coeff: 0.01
 
@@ -60,12 +61,12 @@ spatial_sim:
   cycle_bool: true
   cycle:
     cell1:
-      cycle_len: 10
-      interphase_len: 0.9
-      cell_death_prob: 0.01
+      cycle_len: 1000
+      interphase_len: 1.0
 
-      necrosis_death_prob: 0.0001
-      apoptosis_death_prob: 0.001
+      necrosis_death_prob: 0
+      apoptosis_death_prob: 0
+      cell_decay_rate: 0.5
       
       cell_target_vol: 10.0
       cell_density: 1.0
@@ -95,12 +96,16 @@ spatial_sim:
         - "chem3"
       products_exponent:
         - 3
-    reac_3: # Decay of chemical
-      order: 0
-      rate_coeff: 1
+    reac_3: # Reaction of chemicals
+      order: 2
+      rate_coeff: 0.2
       reactants:
-        - "chem2"
+        - "chem3"
+        - "chem1"
       reactants_exponent:
-        - 3
+        - 1
+        - 1
       products:
+        - "chem2"
       products_exponent:
+        - 1

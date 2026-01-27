@@ -58,6 +58,7 @@ class GRNLogger:
 
         self.n_steps = metadata_dict["n_steps"]
         self.n_cells = metadata_dict["n_cells"]
+        self.n_genes = metadata_dict["n_genes"]
 
     def _create_prop_file(self):
         """
@@ -68,6 +69,7 @@ class GRNLogger:
         metadata_dict = {
             "n_cells": self.n_cells,
             "n_steps": self.n_steps,
+            "n_genes": self.n_genes,
         }
         with open(self.prop_pkl, "wb") as file:
             pickle.dump(metadata_dict, file)

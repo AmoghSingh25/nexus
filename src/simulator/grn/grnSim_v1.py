@@ -31,11 +31,7 @@ class GRNSim_v1:
         """
 
         node_set, edges_set, _ = _read_data(
-            gene_data=gene_data,
-            mr_data=mr_data,
-            config_file=config_file,
-            n_cells=n_cells,
-            protein_sim=protein_sim,
+            gene_data, mr_data, config_file, n_cells, protein_sim
         )
 
         self.key, self.sub_key = random.split(random.key(42))
@@ -129,7 +125,7 @@ class GRNSim_v1:
                         for idx in range(len(regs)):
                             self.ki_matrix = self.ki_matrix.at[
                                 cell, i[0], regs[idx]
-                            ].set(self.ki_values[i[0]][cell][idx][0])
+                            ].set(self.ki_values[i[0]][cell].reshape(-1)[idx])
                 else:
                     cell = 0
                     for idx in range(len(regs)):
@@ -151,7 +147,6 @@ class GRNSim_v1:
         self.jit_pij = jit(self.calc_pij)
         self.jit_x_t = jit(self.calc_x_t)
 
-        print("Calculating steady states...")
         self.gene_conc, self.prot_conc = self.calc_steady_states()
         self.steady_states = self.gene_conc
         self.prot_steady_state = self.prot_conc
@@ -167,14 +162,7 @@ class GRNSim_v1:
     ):
         """Steady state calculation for genes and proteins"""
         e_x = (
-            self.jit_pij(
-                is_mr=is_mr,
-                idx=idx,
-                basal_rates=basal_rates,
-                gene_conc=gene_conc,
-                gene_cell_mean=gene_cell_mean,
-                k_i=k_i,
-            )
+            self.jit_pij(is_mr, idx, basal_rates, gene_conc, gene_cell_mean, k_i)
             / decay
         )
         if self.protein_sim:
@@ -222,15 +210,15 @@ class GRNSim_v1:
                 prot_ss,
             ):
                 return self.calc_steady_state_g(
-                    is_mr=is_mr,
-                    idx=gene_idx,
-                    basal_rates=basal_rate,
-                    decay=decay,
-                    gene_conc=gene_conc[:, cell_idx],
-                    gene_cell_mean=all_cell_conc,
-                    k_i=ki_matrix,
-                    p_kt=prot_trans,
-                    p_kd=prot_decay,
+                    is_mr,
+                    gene_idx,
+                    basal_rate,
+                    decay,
+                    gene_conc[:, cell_idx],
+                    all_cell_conc,
+                    ki_matrix,
+                    prot_trans,
+                    prot_decay,
                 )
 
             vmap_single_cell = vmap(
@@ -262,20 +250,20 @@ class GRNSim_v1:
         gene_conc, prot_conc = self.gene_conc, self.prot_conc
         for i in range(self.n_genes):
             g_conc, p_conc = _single_gene_steady_state(
-                n_cells=self.n_cells,
-                idx=i,
-                is_mr=self.is_mr[i],
-                basal_rate=self.basal_rates[i],
-                decay=self.decay,
-                ki_matrix=self.ki_matrix[:, i, :],
-                gene_conc=gene_conc,
-                all_cell_conc=jnp.mean(
+                self.n_cells,
+                i,
+                self.is_mr[i],
+                self.basal_rates[i],
+                self.decay,
+                self.ki_matrix[:, i, :],
+                gene_conc,
+                jnp.mean(
                     gene_conc, axis=1
                 ),  # To calculate half response as mean conc across all cells
-                prot_trans=self.prot_tran_rates[:, i],
-                prot_decay=self.prot_decay[:, i],
-                prot_conc=self.prot_conc,
-                prot_ss=self.prot_steady_state,
+                self.prot_tran_rates[:, i],
+                self.prot_decay[:, i],
+                self.prot_conc,
+                self.prot_steady_state,
             )
             gene_conc = gene_conc.at[i].set(g_conc)
             prot_conc = prot_conc.at[i].set(p_conc)
@@ -313,9 +301,7 @@ class GRNSim_v1:
         return lax.cond(
             is_mr,
             lambda x: jnp.zeros_like(basal_rates),
-            lambda x: _calc_pij_g(
-                gene_conc=gene_conc, gene_cell_mean=gene_cell_mean, k_i=k_i, _hill=_hill
-            ),
+            lambda x: _calc_pij_g(gene_conc, gene_cell_mean, k_i, _hill=_hill),
             operand=None,
         )
 
@@ -339,21 +325,14 @@ class GRNSim_v1:
             basal_rates,
             k_i,
             is_mr,
-            gene_cell_mean,
+            steady_state,
             prot_conc,
             prot_kt,
             prot_kd,
         ):
             # gene_conc, delta, decay, steady_state, is_mr - Entire arrays passed for all genes in a cell
             p_i = (
-                self.jit_pij(
-                    is_mr=is_mr,
-                    idx=idx,
-                    basal_rates=basal_rates,
-                    gene_conc=gene_conc,
-                    gene_cell_mean=gene_cell_mean,
-                    k_i=k_i,
-                )
+                self.jit_pij(is_mr, idx, basal_rates, steady_state, gene_conc, k_i)
                 + basal_rates
             )
             x_t_gene = gene_conc[idx] + (p_i - decay * gene_conc[idx]) * delta
@@ -370,7 +349,7 @@ class GRNSim_v1:
 
         # Auto vectorization over auto_vec_genes for all cells
         auto_vec_cells = vmap(
-            auto_vec_genes, in_axes=(None, 1, None, None, 1, 0, None, None, 1, 0, 0)
+            auto_vec_genes, in_axes=(None, 1, None, None, 1, 0, None, 1, 1, 0, 0)
         )
 
         x_t, p_t = auto_vec_cells(
@@ -381,7 +360,7 @@ class GRNSim_v1:
             self.basal_rates,
             self.ki_matrix,
             self.is_mr,
-            jnp.mean(self.gene_conc, axis=1),
+            self.steady_states,
             self.prot_conc,
             self.prot_tran_rates,
             self.prot_decay,

@@ -773,7 +773,7 @@ class GridMesh:
                 step=step_i, field_chem=self.field_chem
             )
             logger is not None and print(
-                f"Step - {step_i}, Delta M - {self.delta_m:.4e}"
+                f"Step - {step_i}, Delta M = {self.delta_m:.4e}"
             )
 
         # Perform reactions

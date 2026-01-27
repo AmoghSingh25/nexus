@@ -311,9 +311,15 @@ def _(n_cells):
 
 
 @app.cell
-def _(edges_set, nodes_set):
-    print("Number of edges - ", edges_set)
-    print("Number of nodes - ", nodes_set)
+def _(node_set):
+    node_set[:10]
+    return
+
+
+@app.cell
+def _(edges_set, node_set):
+    print("Number of edges - ", len(edges_set))
+    print("Number of nodes - ", len(node_set))
     return
 
 

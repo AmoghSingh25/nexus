@@ -77,7 +77,6 @@ def reaction_order(cell_id):
         reaction_order_data["cells"],
         list(range(len(reaction_order_data["reaction_order"]))),
     ):
-        # print(type(reaction_order_data['reaction_order'][idx]))
         reaction_order_i = [str(x) for x in reaction_order_data["reaction_order"][idx]]
         reaction_order_struct.append([int(t_i), ",".join(reaction_order_i)])
     ret_df = pd.DataFrame(reaction_order_struct, columns=["Step", "Reaction Order"])
