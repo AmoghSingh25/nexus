@@ -45,7 +45,10 @@ class FreeMesh:
         )
         self.dims = [self.width, self.height, self.depth]
         self.D = cfg.D
-        self.n_chemicals = len(cfg["chemical"]["name"])
+        if cfg.chemical is not None:
+            self.n_chemicals = len(cfg["chemical"]["name"])
+        else:
+            self.n_chemicals = 0
         self.n_cell_types = cfg["n_cell_type"]
 
         self.key, self.sub_key = random.split(random.key(random_key))
@@ -222,86 +225,85 @@ class FreeMesh:
         ## Reaction
 
         self.chemicals = []
-        self.chem_names = cfg["chemical"]["name"]
-        self.reactions = []
-        self.mol_masses = cfg["chemical"]["mol_mass"]
+        if cfg.chemical is not None:
+            self.chem_names = cfg["chemical"]["name"]
+            self.reactions = []
+            self.mol_masses = cfg["chemical"]["mol_mass"]
+
         self.delta = cfg["delta"]
         self.key, self.sub_key = random.split(self.key)
         self.use_prob = cfg["reaction_prob"]
 
-        reaction_names = list(cfg["reaction"].keys())
+        if self.reaction_bool:
+            reaction_names = list(cfg["reaction"].keys())
+            self.reaction_order = []
+            self.reaction_order_sum = jnp.zeros((3,))
+            self.reaction_matrix = []
+            self.reactant_ids = []
+            self.prod_ids = []
 
-        self.reaction_order = []
-        self.reaction_order_sum = jnp.zeros((3,))
-        self.reaction_matrix = []
-        self.reactant_ids = []
-        self.prod_ids = []
-
-        for i in range(len(cfg["reaction"])):
-            reaction_i = cfg["reaction"][reaction_names[i]]
-            reaction_i_obj = Reaction(
-                name=reaction_names[i],
-                id=i,
-                k=reaction_i.rate_coeff,
-                order=reaction_i.order,
-                products=[x for x in reaction_i.products]
-                if reaction_i.products is not None
-                else [],
-                products_exp=reaction_i.products_exponent
-                if reaction_i.products is not None
-                else [],
-                reactants=[x for x in reaction_i.reactants]
-                if reaction_i.reactants is not None
-                else [],
-                reactants_exp=reaction_i.reactants_exponent
-                if reaction_i.reactants is not None
-                else [],
-                chemicals=self.chem_names,
-            )
-            self.reaction_order.append(reaction_i_obj.order)
-            self.reactions.append(reaction_i_obj)
-            self.reaction_matrix.append(reaction_i_obj._generate_reaction_matrix())
-            self.reaction_order_sum = self.reaction_order_sum.at[reaction_i.order].set(
-                self.reaction_order_sum[reaction_i.order] + reaction_i.rate_coeff
-            )
-        self.n_reactions = len(self.reactions)
-        self.reaction_order = jnp.array(self.reaction_order)
-        self.reaction_matrix = jnp.array(self.reaction_matrix)
-        self.reaction_prob = jnp.zeros((self.n_reactions,))
-        for i in range(len(self.reactions)):
-            if self.use_prob:
-                if self.reaction_order_sum[self.reactions[i].order] > 0.0:
-                    prob_i = (
-                        self.reactions[i].k
-                        * (
-                            1
-                            - jnp.exp(
-                                -self.delta
-                                * self.reaction_order_sum[self.reactions[i].order]
+            for i in range(len(cfg["reaction"])):
+                reaction_i = cfg["reaction"][reaction_names[i]]
+                reaction_i_obj = Reaction(
+                    name=reaction_names[i],
+                    id=i,
+                    k=reaction_i.rate_coeff,
+                    order=reaction_i.order,
+                    products=[x for x in reaction_i.products]
+                    if reaction_i.products is not None
+                    else [],
+                    products_exp=reaction_i.products_exponent
+                    if reaction_i.products is not None
+                    else [],
+                    reactants=[x for x in reaction_i.reactants]
+                    if reaction_i.reactants is not None
+                    else [],
+                    reactants_exp=reaction_i.reactants_exponent
+                    if reaction_i.reactants is not None
+                    else [],
+                    chemicals=self.chem_names,
+                )
+                self.reaction_order.append(reaction_i_obj.order)
+                self.reactions.append(reaction_i_obj)
+                self.reaction_matrix.append(reaction_i_obj._generate_reaction_matrix())
+                self.reaction_order_sum = self.reaction_order_sum.at[
+                    reaction_i.order
+                ].set(self.reaction_order_sum[reaction_i.order] + reaction_i.rate_coeff)
+            self.n_reactions = len(self.reactions)
+            self.reaction_order = jnp.array(self.reaction_order)
+            self.reaction_matrix = jnp.array(self.reaction_matrix)
+            self.reaction_prob = jnp.zeros((self.n_reactions,))
+            for i in range(len(self.reactions)):
+                if self.use_prob:
+                    if self.reaction_order_sum[self.reactions[i].order] > 0.0:
+                        prob_i = (
+                            self.reactions[i].k
+                            * (
+                                1
+                                - jnp.exp(
+                                    -self.delta
+                                    * self.reaction_order_sum[self.reactions[i].order]
+                                )
                             )
-                        )
-                    ) / self.reaction_order_sum[self.reactions[i].order]
+                        ) / self.reaction_order_sum[self.reactions[i].order]
+                    else:
+                        prob_i = 0.0
                 else:
-                    prob_i = 0.0
-            else:
-                prob_i = 1.0
-            self.reaction_prob = self.reaction_prob.at[i].set(prob_i)
+                    prob_i = 1.0
+                self.reaction_prob = self.reaction_prob.at[i].set(prob_i)
 
-        self.reaction_table = {
-            0: calc_zero_order,
-            1: calc_first_order,
-            2: calc_second_order,
-        }
+            self.reaction_table = {
+                0: calc_zero_order,
+                1: calc_first_order,
+                2: calc_second_order,
+            }
 
-        ## JIT and Vec functions
+            ## JIT and Vec functions
 
-        self.reaction_change_vec = jax.vmap(
-            calc_reaction_change,
-            in_axes=(None, 0, None, 0, None, 0, None, None, None, None, None),
-        )
-
-        self.pl = pv.Plotter()
-        self.pl.open_gif("cells.gif", framerate=30)
+            self.reaction_change_vec = jax.vmap(
+                calc_reaction_change,
+                in_axes=(None, 0, None, 0, None, 0, None, None, None, None, None),
+            )
 
     def calc_flux(self, field_id):
         """

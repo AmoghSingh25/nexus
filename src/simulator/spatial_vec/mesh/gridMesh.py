@@ -302,9 +302,6 @@ class GridMesh:
             in_axes=(None, 0, None, 0, None, 0, None, None, None, None, None),
         )
 
-        self.pl = pv.Plotter()
-        self.pl.open_gif("cells.gif", framerate=30)
-
     def calc_flux(self, field_id):
         """
         Calculate flux for the field at position _pos_.

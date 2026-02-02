@@ -107,6 +107,7 @@ class GRNSim:
         self.steady_states = jnp.zeros_like(self.gene_conc)
 
         self.prot_conc = jnp.zeros_like(self.gene_conc)
+
         self.prot_steady_state = jnp.zeros_like(self.gene_conc)
         self.prot_tran_rates = jnp.zeros_like(self.gene_conc)
         self.prot_decay = jnp.zeros_like(self.gene_conc)
@@ -193,6 +194,9 @@ class GRNSim:
         self.gene_conc, self.prot_conc = self.calc_steady_states()
         self.steady_states = self.gene_conc
         self.prot_steady_state = self.prot_conc
+
+        # if not self.protein_sim:
+        # self.key, self.sub_key, self.prot_conc = random_generators.generate_uniform(key=self.key, sub_key=self.sub_key, shape=self.gene_conc.shape)
 
         logging.info("Steady state concentrations calculated.")
 

@@ -79,13 +79,13 @@ class SpatialSimVec:
         )
         for i in tqdm(range(self.n_steps)):
             self.mesh.step(step_i=i + 1, delta=self.delta, logger=self.logger)
-            self.pos_logger.log_cell_pos(
-                i,
-                self.mesh.cell_positions,
-                self.mesh.cell_radius,
-                self.mesh.cell_states,
-            )
-        self.mesh.pl.close()
+            if self.logging:
+                self.pos_logger.log_cell_pos(
+                    i,
+                    self.mesh.cell_positions,
+                    self.mesh.cell_radius,
+                    self.mesh.cell_states,
+                )
 
         ##DEBUG: Error in mesh.field_chem for GridMesh
         self.logging and self.logger.log_chem_state(
