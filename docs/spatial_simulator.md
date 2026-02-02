@@ -193,7 +193,7 @@ $$[C] = \frac{[A]_0[B]_0(e^{\gamma([B]_0 - [A]_0)}-1)}{[B]_0e^{\gamma([B]_0-[A]_
 Compute a repulsion and attraction force. The repulsion force is used for correcting cell overlap while cell attraction is used for modelling tissue-like clumping of cells. Repulsion force is computed such that the cells do not overlap in a single simulation step while considering the scaling by _delta_. First, the force vectors are computed which denote the attractive force between the cells.
 
 $$ \forall i \in neigh(x): \bar{f_{x,i}^a} = pos_i - pos_x $$
-$$ \bar{f_{x,i}^r} = - \bar{f_{x,i}^a} $$
+$$ \bar{f_{x,i}^r} = - \bar{f_{i,x}^r} $$
 
 where $\bar{f_{x,i}^a}$ is the attraction force and $\bar{f_{x,i}^r}$ is the repulsion force.
 

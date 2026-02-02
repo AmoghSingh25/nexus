@@ -338,7 +338,7 @@ class FreeMesh:
 
         def calc_flux_i(D, field1_mass, field1_vol, field2_mass, field2_vol, dist_i):
             """Helper function for auto vectorization for flux calculation"""
-            flux_i = -D * (field2_mass * field2_vol - field1_mass * field1_vol) / dist_i
+            flux_i = -D * (field2_mass / field2_vol - field1_mass / field1_vol) / dist_i
             return flux_i
 
         auto_vec_flux = jax.vmap(calc_flux_i, in_axes=(None, 0, 0, None, None, 0))
@@ -368,7 +368,6 @@ class FreeMesh:
         :param delta: Simulation delta
         """
 
-        # TODO: Assuming area of boundary is 1. Change to dynamic
         def fix_flux(field_id, diff_mass):
             field_id = field_id.item()
             neighbours = self.field_neighbours[field_id]
@@ -383,6 +382,7 @@ class FreeMesh:
                     self.field_flux[field_id][i.item()].at[neg_idx].set(-1 * flux_i)
                 )
 
+        # TODO: Assuming area of boundary is 1. Change to dynamic
         def compute_delta_m(field_id):
             flux = self.calc_flux(field_id=field_id)
             area = 1
@@ -853,3 +853,14 @@ class FreeMesh:
             (l1_norm < radius) & (l1_norm > 0) & (self.live_cells_mask.reshape(-1))
         )
         return radial_neighs, l1_norm[radial_neighs]
+
+    def get_closest_field(self, cell_pos, norm_ord=1):
+        """
+        Function to return field ID of the field closest to the cell position passed
+
+        :param self: Description
+        :param cell_pos: Cell position to find the closest field
+        """
+        l1_norm = jnp.linalg.norm(cell_pos - self.field_positions, axis=1, ord=norm_ord)
+        closest_idxs = jnp.argsort(l1_norm)[0]
+        return self.field_id[closest_idxs]

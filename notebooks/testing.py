@@ -106,6 +106,7 @@ def _(GRNSim, cfg, time):
         _end = time.time()
         print("Time taken = ", _end - _start)
         _time_taken.append(_end - _start)
+        sim1.logger.cleanup()
     for _i in _time_taken:
         print(_i)
     return (sim1,)

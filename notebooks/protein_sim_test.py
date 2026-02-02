@@ -311,12 +311,6 @@ def _(n_cells):
 
 
 @app.cell
-def _(node_set):
-    node_set[:10]
-    return
-
-
-@app.cell
 def _(edges_set, node_set):
     print("Number of edges - ", len(edges_set))
     print("Number of nodes - ", len(node_set))
@@ -325,7 +319,7 @@ def _(edges_set, node_set):
 
 @app.cell
 def _(asizeof, edges_set, get_config, n_cells, node_set, random, time):
-    from simulator.grn.grnSimNew import GRNSim
+    from simulator.grn.grnSim import GRNSim
 
     _key, _sub_key = random.split(random.key(42))
     _decay = random.uniform(minval=0, maxval=1, shape=(n_cells, 1913, 1), key=_sub_key)
@@ -347,18 +341,16 @@ def _(asizeof, edges_set, get_config, n_cells, node_set, random, time):
         # decay=_decay
     )
     _t2 = time.time()
-    sim.run_sim()
-    gene_conc_1 = sim.gene_conc
-    prot_conc_1 = sim.prot_conc
+    # sim.run_sim()
     _t3 = time.time()
-    sim.n_steps = 100
-    sim.run_sim()
+    # sim.n_steps = 100
+    # sim.run_sim()
     _t4 = time.time()
     print("Time taken for initialization = ", (_t2 - _t1))
     print("Time taken for 10 iterations = ", (_t3 - _t2))
     print("Time taken for 100 iterations = ", (_t4 - _t3))
     print(f"Total memory usage: {asizeof.asizeof(sim) / 1024**2:.2f} MB")
-    return gene_conc_1, prot_conc_1, sim
+    return (sim,)
 
 
 @app.cell
@@ -420,18 +412,31 @@ def _(
     print("Min RNA MSE loss = ", _min_rna_l)
     print("Min Protein MSE loss = ", _min_prot_l)
 
-    _fig, (_ax1, _ax2) = plt.subplots(2, 1, figsize=(12, 8))
+    _fig, (_ax1, _ax2) = plt.subplots(1, 2, figsize=(20, 6))
     _ax1.plot(_rna_target, label="Target")
     _ax1.plot(_rna_pred[:, _min_rna_idx], label="Pred")
-    _ax1.set_title("RNA conc plot")
+    _ax1.set_xlabel("RNA ID", fontsize=14)
+    _ax1.set_ylabel("Standardized concentration", fontsize=14)
+    _ax1.set_title("RNA concentration comparison", fontsize=18)
+    _ax1.set_aspect("auto")
     _ax1.legend()
 
     _ax2.plot(_prot_target, label="Target")
     _ax2.plot(_prot_pred[:, _min_prot_idx], label="Pred")
-    _ax2.set_title("Prot conc plot")
+    _ax2.set_xlabel("Prot ID", fontsize=14)
+    _ax2.set_ylabel("Standardized concentration", fontsize=14)
+    _ax2.set_title("Protein concentration comparison", fontsize=18)
+    _ax2.set_aspect("auto")
     _ax2.legend()
 
+    plt.savefig("outputs/images/steady_state_comparison.pdf", bbox_inches="tight")
     plt.show()
+    return
+
+
+@app.cell
+def _(sim):
+    sim.run_sim()
     return
 
 
@@ -495,17 +500,22 @@ def _(
     print("Min RNA MSE loss = ", _min_rna_l)
     print("Min Protein MSE loss = ", _min_prot_l)
 
-    _fig, (_ax1, _ax2) = plt.subplots(2, 1, figsize=(12, 8))
+    _fig, (_ax1, _ax2) = plt.subplots(1, 2, figsize=(14, 5))
     _ax1.plot(_rna_target, label="Target")
     _ax1.plot(_rna_pred[:, _min_rna_idx], label="Pred")
+    _ax1.set_xlabel("RNA ID")
+    _ax1.set_ylabel("Standardized concentration")
     _ax1.set_title("RNA conc plot")
     _ax1.legend()
 
     _ax2.plot(_prot_target, label="Target")
     _ax2.plot(_prot_pred[:, _min_prot_idx], label="Pred")
     _ax2.set_title("Prot conc plot")
+    _ax2.set_xlabel("Prot ID")
+    _ax2.set_ylabel("Standardized concentration")
     _ax2.legend()
 
+    plt.savefig("outputs/images/prot_10_run_comparison.pdf")
     plt.show()
     return
 
@@ -569,17 +579,22 @@ def _(
     print("Min RNA MSE loss = ", _min_rna_l)
     print("Min Protein MSE loss = ", _min_prot_l)
 
-    _fig, (_ax1, _ax2) = plt.subplots(2, 1, figsize=(12, 8))
+    _fig, (_ax1, _ax2) = plt.subplots(1, 2, figsize=(14, 5))
     _ax1.plot(_rna_target, label="Target")
     _ax1.plot(_rna_pred[:, _min_rna_idx], label="Pred")
+    _ax1.set_xlabel("RNA ID")
+    _ax1.set_ylabel("Standardized concentration")
     _ax1.set_title("RNA conc plot")
     _ax1.legend()
 
     _ax2.plot(_prot_target, label="Target")
     _ax2.plot(_prot_pred[:, _min_prot_idx], label="Pred")
     _ax2.set_title("Prot conc plot")
+    _ax2.set_xlabel("Prot ID")
+    _ax2.set_ylabel("Standardized concentration")
     _ax2.legend()
 
+    plt.savefig("outputs/images/prot_100_run_comparison.pdf")
     plt.show()
     return
 

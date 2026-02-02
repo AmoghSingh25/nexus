@@ -282,7 +282,8 @@ export default function App() {
         marks
         defaultValue={0}
         valueLabelDisplay="on"
-        style={{ width: "90vw", zIndex: 2, margin: "2%" }}
+        style={{ width: "90vw", zIndex: 2, margin: "2%",
+         }}
         value={step_id}
         onChange={(e, v) => {
           setStepid(v);
@@ -296,7 +297,7 @@ export default function App() {
       >
         <DeckGL
           layers={layers}
-          widgets={[new ZoomWidget(), new ResetViewWidget()]}
+          // widgets={[new ZoomWidget(), new ResetViewWidget()]}
           // effects={[lighting_effect]}
           initialViewState={{
             target: [0, 0, 0],
@@ -310,7 +311,7 @@ export default function App() {
           }}
           views={view}
           controller={true}
-          style={{ height: "80vh" }}
+          style={{ height: "80vh", backgroundColor:"white" }}
         />
       </div>
       <div>

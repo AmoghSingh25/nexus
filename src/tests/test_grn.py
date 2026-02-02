@@ -1,5 +1,4 @@
 from simulator.grn.grnSim import GRNSim
-import numpy as np
 import jax.numpy as jnp
 import os
 from hydra import initialize_config_dir, compose
@@ -34,10 +33,10 @@ class TestFile:
             base_config.grn.config_file = self.config_files[i]
             base_config.grn.n_cells = self.cell_no[i]
             sim = GRNSim(base_config.grn)
-            gene_conc, prot_conc = sim.run_sim()
-            gene_conc, prot_conc = np.array(gene_conc), np.array(prot_conc)
-            assert gene_conc.shape == (10, 4, self.cell_no[i])
-            assert prot_conc.shape == (10, 4, self.cell_no[i])
+            sim.run_sim()
+            gene_conc, prot_conc = sim.gene_conc, sim.prot_conc
+            assert gene_conc.shape == (4, self.cell_no[i], 1)
+            assert prot_conc.shape == (4, self.cell_no[i], 1)
 
     def test_gene_only(self):
         base_config = get_config()
@@ -46,10 +45,10 @@ class TestFile:
             base_config.grn.config_file = self.config_files[i]
             base_config.grn.n_cells = self.cell_no[i]
             sim = GRNSim(cfg=base_config.grn)
-            gene_conc, prot_conc = sim.run_sim()
-            gene_conc, prot_conc = jnp.array(gene_conc), jnp.array(prot_conc)
-            assert gene_conc.shape == (10, 4, self.cell_no[i])
-            assert prot_conc.shape == (10, 4, self.cell_no[i])
+            sim.run_sim()
+            gene_conc, prot_conc = sim.gene_conc, sim.prot_conc
+            assert gene_conc.shape == (4, self.cell_no[i], 1)
+            assert prot_conc.shape == (4, self.cell_no[i], 1)
 
     def validate_sergio_output(self):
         base_config = get_config()

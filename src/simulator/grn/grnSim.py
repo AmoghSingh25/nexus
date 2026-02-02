@@ -477,7 +477,7 @@ class GRNSim:
         gene_conc_history = []
         prot_conc_history = []
         for t_i in tqdm(range(self.n_steps)):
-            self.gene_conc, self.prot_conc = self.jit_x_t(
+            _gene_conc, _prot_conc = self.jit_x_t(
                 self.gene_conc,
                 self.prot_conc,
                 self.delta,
@@ -490,6 +490,10 @@ class GRNSim:
                 self.prot_tran_rates,
                 self.prot_decay,
             )
+            _gene_conc = _gene_conc.reshape(*_gene_conc.shape, 1)
+            _prot_conc = _prot_conc.reshape(*_prot_conc.shape, 1)
+            self.gene_conc = self.gene_conc.at[:].set(_gene_conc)
+            self.prot_conc = self.prot_conc.at[:].set(_prot_conc)
             if self.is_logging:
                 self.logger.log_conc(
                     step=t_i,
@@ -497,6 +501,7 @@ class GRNSim:
                     gene_conc=self.gene_conc,
                     prot_conc=self.prot_conc,
                 )
+            clear_caches()
             gene_conc_history.append(self.gene_conc)
             prot_conc_history.append(self.prot_conc)
         logging.info("Simulation ended...")
