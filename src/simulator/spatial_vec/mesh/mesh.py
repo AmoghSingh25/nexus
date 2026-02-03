@@ -20,12 +20,12 @@ from simulator.spatial_vec.utils.verify_data import check_cell_type_data
 import pyvista as pv
 
 
-class FreeMesh:
+class Mesh:
     """
     Create a mesh of grid cells for 3D space. Performs flux and diffusion calculation, reaction, updates cells during simulation and other mesh and cell related functions.
     """
 
-    def __init__(self, cfg, random_key=42):
+    def __init__(self, cfg, random_key=42, mesh_type="lattice-free"):
         """
 
         :param self: FreeMesh
@@ -54,6 +54,7 @@ class FreeMesh:
         self.key, self.sub_key = random.split(random.key(random_key))
 
         self.param_field_resolution = cfg.get("field_resolution", 2)
+
         x, y, z = jnp.meshgrid(
             jnp.linspace(
                 -self.width / 2.0, self.width / 2.0, self.param_field_resolution
@@ -78,16 +79,33 @@ class FreeMesh:
         ## Cell positions, sizes, mass
 
         ## Random positions within the limits of Height, Width, Depth
-        self.key, self.sub_key, self.cell_positions = generate_uniform(
-            key=self.key,
-            sub_key=self.sub_key,
-            shape=(self.n_cells, 3),
-            minval=jnp.array(
-                [[-self.width / 2.0, -self.height / 2.0, -self.depth / 2.0]]
-            ),
-            maxval=jnp.array([[self.width / 2.0, self.height / 2.0, self.depth / 2.0]]),
-        )
-        self.cell_positions = jnp.round(self.cell_positions, decimals=2)
+        if mesh_type == "lattice-free":
+            self.key, self.sub_key, self.cell_positions = generate_uniform(
+                key=self.key,
+                sub_key=self.sub_key,
+                shape=(self.n_cells, 3),
+                minval=jnp.array(
+                    [[-self.width / 2.0, -self.height / 2.0, -self.depth / 2.0]]
+                ),
+                maxval=jnp.array(
+                    [[self.width / 2.0, self.height / 2.0, self.depth / 2.0]]
+                ),
+            )
+            self.cell_positions = jnp.round(self.cell_positions, decimals=2)
+        elif mesh_type == "grid":
+            n_axis = int(self.n_cells ** (1 / 3))
+            nx, ny = (
+                jnp.linspace(-self.width / 2.0, self.width / 2.0, n_axis),
+                jnp.linspace(-self.height / 2.0, self.height / 2.0, n_axis),
+            )
+            rem_cells = self.n_cells - n_axis**3 + n_axis
+            nz = jnp.linspace(-self.depth / 2.0, self.depth / 2.0, rem_cells)
+            x_vals, y_vals, z_vals = jnp.meshgrid(nx, ny, nz)
+
+            self.cell_positions = jnp.column_stack(
+                [x_vals.ravel(), y_vals.ravel(), z_vals.ravel()]
+            )[: self.n_cells]
+            self.cell_positions = jnp.round(self.cell_positions, decimals=2)
 
         ## Cellular-level attributes
         self.cycle_bool = cfg.get("cycle_bool", False)

@@ -45,6 +45,7 @@ class GRNSim:
         self.noise = cfg.noise
         if self.noise:
             self.noise_amp = jnp.array([cfg.noise_amplitude])
+            self.delta_sq = jnp.sqrt(self.delta)
         else:
             self.noise_amp = jnp.array([0.0])
         self.copy_cells = False
@@ -199,6 +200,36 @@ class GRNSim:
         # self.key, self.sub_key, self.prot_conc = random_generators.generate_uniform(key=self.key, sub_key=self.sub_key, shape=self.gene_conc.shape)
 
         logging.info("Steady state concentrations calculated.")
+
+    # def _tree_flatten(self):
+    #     children = (self.key, self.sub_key, self.gene_conc, self.prot_conc,)
+    #     aux_data = {
+    #         "delta": self.delta,
+    #         "n_cells": self.n_cells,
+    #         "protein_sim": self.protein_sim,
+    #         "noise": self.noise,
+    #         "noise_amp": self.noise_amp,
+    #         "delta_sq": self.delta_sq,
+    #         "non_mr_basal": self.non_mr_basal,
+    #         "decay": self.decay,
+    #         "hill_coeffs": self.hill_coeffs,
+    #         "n_steps": self.n_steps,
+    #         "n_genes": self.n_genes,
+    #         "is_logging": self.is_logging,
+    #         "basal_rates": self.basal_rates,
+    #         "is_mr": self.is_mr,
+    #         "ki_matrix": self.ki_matrix,
+    #         "steady_states": self.steady_states,
+    #         "prot_steady_state": self.prot_steady_state,
+    #         "prot_tran_rates": self.prot_tran_rates,
+    #         "prot_decay": self.prot_decay,
+    #         "prot_half_lives": self.prot_half_lives,
+    #     }
+    #     return (children, aux_data)
+
+    # @classmethod
+    # def _tree_unflatten(cls, aux_data, children):
+    #     return cls(*children, **aux_data)
 
     def calc_steady_state_mr(self, b, decay):
         """Steady state calculation for MRs"""
@@ -389,6 +420,8 @@ class GRNSim:
         hill_coeff,
         prot_kt,
         prot_kd,
+        noise_a,
+        noise_b,
     ):
         """Estimate the concentration of each gene and protein at the next time step.
 
@@ -415,6 +448,8 @@ class GRNSim:
             prot_conc,
             prot_kt,
             prot_kd,
+            noise_a_i,
+            noise_b_i,
         ):
             # gene_conc, delta, decay, steady_state, is_mr - Entire arrays passed for all genes in a cell
             p_i = self.jit_pij(
@@ -430,8 +465,8 @@ class GRNSim:
 
             if self.noise:
                 noise_add = noise_amp * (
-                    jnp.sqrt(p_i) * self.noise_a.generate_noise()
-                    + jnp.sqrt(decay * gene_conc[idx])
+                    jnp.sqrt(p_i) * noise_a_i
+                    + jnp.sqrt(decay * gene_conc[idx]) * noise_b_i
                 )
                 x_t_gene += noise_add
 
@@ -442,14 +477,16 @@ class GRNSim:
 
         # Auto vectorization over all the genes
         auto_vec_genes = vmap(
-            _single_gene_x_t, in_axes=(0, None, None, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+            _single_gene_x_t,
+            in_axes=(0, None, None, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
         )
 
         # Auto vectorization over auto_vec_genes for all cells
         auto_vec_cells = vmap(
             auto_vec_genes,
-            in_axes=(None, 1, None, 0, 1, 0, None, None, 0, 0, 1, 0, 0),
+            in_axes=(None, 1, None, 0, 1, 0, None, None, 0, 0, 1, 0, 0, 0, 0),
         )
+
         x_t, p_t = auto_vec_cells(
             jnp.arange(self.n_genes),
             gene_conc,
@@ -464,6 +501,8 @@ class GRNSim:
             prot_conc,
             prot_kt,
             prot_kd,
+            noise_a,
+            noise_b,
         )
 
         x_t = x_t.reshape((self.n_cells, self.n_genes)).T
@@ -481,6 +520,14 @@ class GRNSim:
         gene_conc_history = []
         prot_conc_history = []
         for t_i in tqdm(range(self.n_steps)):
+            wiener_noise_a = self.noise_a.generate_noise(
+                shape=(self.n_cells, self.n_genes)
+            )
+            wiener_noise_b = self.noise_b.generate_noise(
+                shape=(self.n_cells, self.n_genes)
+            )
+
+            self.key, self.sub_key = random.split(self.key)
             _gene_conc, _prot_conc = self.jit_x_t(
                 self.gene_conc,
                 self.prot_conc,
@@ -493,6 +540,8 @@ class GRNSim:
                 self.hill_coeffs,
                 self.prot_tran_rates,
                 self.prot_decay,
+                wiener_noise_a,
+                wiener_noise_b,
             )
             _gene_conc = _gene_conc.reshape(*_gene_conc.shape, 1)
             _prot_conc = _prot_conc.reshape(*_prot_conc.shape, 1)
@@ -510,3 +559,9 @@ class GRNSim:
             prot_conc_history.append(self.prot_conc)
         logging.info("Simulation ended...")
         return gene_conc_history, prot_conc_history
+
+
+# from jax import tree_util
+# tree_util.register_pytree_node(GRNSim,
+#                                GRNSim._tree_flatten,
+#                                GRNSim._tree_unflatten)

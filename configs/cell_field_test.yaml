@@ -11,7 +11,7 @@ grn:
   
   ## Gene related
   non_mr_basal: false
-  noise: false
+  noise: true
   noise_amplitude: 0.1
   decay:
     - 0.8

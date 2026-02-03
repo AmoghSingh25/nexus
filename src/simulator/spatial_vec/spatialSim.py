@@ -1,5 +1,4 @@
-from simulator.spatial_vec.mesh.gridMesh import GridMesh
-from simulator.spatial_vec.mesh.freeMesh import FreeMesh
+from simulator.spatial_vec.mesh.mesh import Mesh
 from omegaconf import DictConfig
 from tqdm import tqdm
 from simulator.spatial_vec.logger.mesh_logger import FieldLogger
@@ -29,14 +28,9 @@ class SpatialSimVec:
 
         self.timestamp = cfg.get("log_file_name", str(int(time.time())))
 
-        if self.mesh_type == "grid":
-            self.mesh = GridMesh(
-                cfg=cfg,
-            )
-        elif self.mesh_type == "lattice-free":
-            self.mesh = FreeMesh(cfg=cfg)
-        else:
+        if not (self.mesh_type == "grid" or self.mesh_type == "lattice-free"):
             raise ValueError("Incorrect mesh type")
+        self.mesh = Mesh(cfg=cfg, mesh_type=self.mesh_type)
 
         self.n_steps = cfg.n_steps
         self.logging = cfg.get("logging", True)
