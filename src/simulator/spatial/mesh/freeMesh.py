@@ -58,7 +58,7 @@ class FreeMesh:
         curr_id = 0
         self.delta_m = 0  # Adjust mass of chemicals if there is a mismatch in previous and current mass
 
-        self.n_neighbours = 3  # TODO: Use config to set value
+        self.n_neighbours = cfg.get("n_neighbours", 3)
 
         for [i, j, k] in self.positions:
             cell_i = FreeField(
@@ -189,7 +189,6 @@ class FreeMesh:
         :param delta: Simulation delta
         :param logger: mesh_logger object
         """
-        # TODO: Vectorize steps
 
         # Perform diffusion
 

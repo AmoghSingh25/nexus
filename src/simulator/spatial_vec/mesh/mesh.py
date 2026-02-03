@@ -418,7 +418,7 @@ class Mesh:
         ## Initial loop to fix negative masses
         ## TODO: Complete vectorization
         self.vec_compute_delta_m = jax.vmap(compute_delta_m, in_axes=(0))
-        # # self.vec_compute_delta_m(self.field_id)
+        # self.vec_compute_delta_m(self.field_id)
         for i in self.field_id:
             compute_delta_m(field_id=i)
 
