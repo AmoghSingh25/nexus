@@ -1,6 +1,5 @@
 # Config for GRN set to simulate SERGIO configuration
 defaults:
-  - ./default@_global_
   - _self_
 grn:
   ## Simulation related

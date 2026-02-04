@@ -3,6 +3,7 @@ from simulator.grn.grnSim import GRNSim
 from simulator.spatial_vec.spatialSim import SpatialSimVec
 import hydra
 from omegaconf import DictConfig, open_dict
+from simulator.intervention.intervention import InterventionManager
 
 
 @hydra.main(
@@ -10,25 +11,37 @@ from omegaconf import DictConfig, open_dict
 )
 def run_sim(cfg: DictConfig) -> None:
     ## Checking configs
+
     timestep = str(int(time.time()))
     print("Time step - ", timestep)
+    n_steps = cfg.grn.n_steps
     with open_dict(cfg):
         cfg.spatial_sim["log_file_name"] = timestep
         cfg.grn["log_file_name"] = timestep
+
+        cfg.grn["n_steps"] = 1
+        cfg.spatial_sim["n_steps"] = 1
     grn_sim = GRNSim(cfg.grn)
     spatial_sim = SpatialSimVec(cfg.spatial_sim)
+    interven_manager = InterventionManager(
+        cfg=cfg, spatial_obj=spatial_sim, grn_obj=grn_sim
+    )
     check_config(spatial_sim=spatial_sim, cfg=cfg)
 
     ## Running sim
-    grn_sim.run_sim()
-    spatial_sim.run_sim()
+    for i in range(n_steps):
+        interven_manager.check(i)
+        grn_sim.run_sim(i)
+        spatial_sim.run_sim(i)
 
 
 def check_config(spatial_sim, cfg):
-    if not cfg.grn.n_cells == spatial_sim.mesh.n_cells:
+    if not (cfg.grn.n_cells == spatial_sim.mesh.n_cells):
         raise ValueError(
             "Config values incorrect, no. of cells in spatial sim and GRN sim to be run together"
         )
+    if not (cfg.spatial_sim.n_steps == cfg.grn.n_steps):
+        raise ValueError("Number of steps in both simulators must be equal.")
 
 
 if __name__ == "__main__":

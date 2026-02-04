@@ -263,7 +263,6 @@ class FieldLogger:
         :param cells: List of cells to store chemical concentration
         :type cells: np.ndarray[GridField]
         """
-        # chem_conc, pos = self.get_cells_conc(cells=cells)
         field_chem = field_chem.reshape(field_chem.shape[0:2])
         field_idx, chem_idx = np.indices(field_chem.shape, sparse=False)
 

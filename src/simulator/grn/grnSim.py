@@ -509,7 +509,7 @@ class GRNSim:
         p_t = p_t.reshape((self.n_cells, self.n_genes)).T
         return x_t, p_t
 
-    def run_sim(self):
+    def run_sim(self, step=None):
         """
         Run the simulation for n_steps
 
@@ -549,7 +549,7 @@ class GRNSim:
             self.prot_conc = self.prot_conc.at[:].set(_prot_conc)
             if self.is_logging:
                 self.logger.log_conc(
-                    step=t_i,
+                    step=t_i if step is None else step,
                     cell=None,
                     gene_conc=self.gene_conc,
                     prot_conc=self.prot_conc,

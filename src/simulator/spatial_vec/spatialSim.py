@@ -61,7 +61,7 @@ class SpatialSimVec:
             self.logger = None
             self.pos_logger = None
 
-    def run_sim(self):
+    def run_sim(self, step=None):
         """
         Run the spatial simulation
 
@@ -72,10 +72,10 @@ class SpatialSimVec:
             step=0, field_chem=self.mesh.field_chem
         )
         for i in tqdm(range(self.n_steps)):
-            self.mesh.step(step_i=i + 1, delta=self.delta, logger=self.logger)
+            self.mesh.step(step_i=(i + 1) if step is None else step, logger=self.logger)
             if self.logging:
                 self.pos_logger.log_cell_pos(
-                    i,
+                    i if step is None else step,
                     self.mesh.cell_positions,
                     self.mesh.cell_radius,
                     self.mesh.cell_states,

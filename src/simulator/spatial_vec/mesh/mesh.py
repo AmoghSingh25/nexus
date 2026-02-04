@@ -1,4 +1,3 @@
-import numpy as np
 import jax.numpy as jnp
 import jax
 from jax import random
@@ -17,7 +16,6 @@ from simulator.spatial_vec.layers.chemical import (
 )
 from simulator.spatial_vec.layers.force import calc_vel
 from simulator.spatial_vec.utils.verify_data import check_cell_type_data
-import pyvista as pv
 
 
 class Mesh:
@@ -380,7 +378,7 @@ class Mesh:
         total_flux = jnp.sum(flux_list, axis=0)
         return total_flux
 
-    def calc_conc_change(self, delta):
+    def calc_conc_change(self):
         """
         Calculate change in chemical concentration due to diffusion
 
@@ -403,7 +401,7 @@ class Mesh:
                 )
 
         # TODO: Assuming area of boundary is 1. Change to dynamic
-        def compute_delta_m(field_id):
+        def compute_delta_m(delta, field_id):
             flux = self.calc_flux(field_id=field_id)
             area = 1
             delta_m = flux * area * delta
@@ -417,15 +415,15 @@ class Mesh:
 
         ## Initial loop to fix negative masses
         ## TODO: Complete vectorization
-        self.vec_compute_delta_m = jax.vmap(compute_delta_m, in_axes=(0))
+        self.vec_compute_delta_m = jax.vmap(compute_delta_m, in_axes=(None, 0))
         # self.vec_compute_delta_m(self.field_id)
         for i in self.field_id:
-            compute_delta_m(field_id=i)
+            compute_delta_m(self.delta, field_id=i)
 
         ## Final loop to set fixed masses
         ## TODO: Complete vectorization
         for i in self.field_id:
-            delta_m_l.append(compute_delta_m(field_id=i))
+            delta_m_l.append(compute_delta_m(self.delta, field_id=i))
 
         prev_mass = 0
         new_mass = 0
@@ -775,7 +773,7 @@ class Mesh:
             * self.cell_density[self.live_cells_mask | self.prg_cells_mask].reshape(-1)
         )
 
-    def step(self, step_i, delta, logger: FieldLogger):
+    def step(self, step_i, logger: FieldLogger):
         """
         Perform simulation step for the mesh and the cells within.
 
@@ -789,10 +787,7 @@ class Mesh:
 
         # Perform diffusion
         if self.diffusion_bool:
-            self.calc_conc_change(delta)
-            logger is not None and logger.log_chem_state(
-                step=step_i, field_chem=self.field_chem
-            )
+            self.calc_conc_change()
             logger is not None and print(
                 f"Step - {step_i}, Delta M = {self.delta_m:.4e}"
             )
@@ -826,18 +821,9 @@ class Mesh:
         # Cell Growth
         self.calc_cell_growth()
 
-        if self.debug_plot:
-            cloud = pv.PolyData(np.array(self.cell_positions))
-            cloud["r"] = np.array(self.cell_radius)
-            cloud = cloud.glyph(scale="r", geom=pv.Sphere())
-            self.pl.clear()
-            self.pl.add_mesh(cloud)
-            self.pl.show_axes()
-            self.pl.reset_camera()
-            self.pl.camera.Azimuth(3.0)
-            self.pl.write_frame()
-
-            print("\n\n")
+        logger is not None and logger.log_chem_state(
+            step=step_i, field_chem=self.field_chem
+        )
 
     def get_cell_id(self, pos):
         """
