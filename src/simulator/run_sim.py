@@ -1,3 +1,4 @@
+from tqdm import tqdm
 import time
 from simulator.grn.grnSim import GRNSim
 from simulator.spatial_vec.spatialSim import SpatialSimVec
@@ -19,20 +20,24 @@ def run_sim(cfg: DictConfig) -> None:
         cfg.spatial_sim["log_file_name"] = timestep
         cfg.grn["log_file_name"] = timestep
 
-        cfg.grn["n_steps"] = 1
-        cfg.spatial_sim["n_steps"] = 1
+        # cfg.grn["n_steps"] = 1
+        # cfg.spatial_sim["n_steps"] = 1
     grn_sim = GRNSim(cfg.grn)
     spatial_sim = SpatialSimVec(cfg.spatial_sim)
-    interven_manager = InterventionManager(
-        cfg=cfg, spatial_obj=spatial_sim, grn_obj=grn_sim
-    )
+    intervention_flag = False
+    if cfg.get("intervention") is not None:
+        interven_manager = InterventionManager(
+            cfg=cfg, spatial_obj=spatial_sim, grn_obj=grn_sim
+        )
+        intervention_flag = True
     check_config(spatial_sim=spatial_sim, cfg=cfg)
 
     ## Running sim
-    for i in range(n_steps):
-        interven_manager.check(i)
-        grn_sim.run_sim(i)
-        spatial_sim.run_sim(i)
+    print("Running simulators...")
+    for i in tqdm(range(n_steps)):
+        intervention_flag and interven_manager.check(i)
+        grn_sim.run_sim(step=i)
+        spatial_sim.run_sim(step=i)
 
 
 def check_config(spatial_sim, cfg):

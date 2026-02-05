@@ -13,7 +13,7 @@ from simulator.utils.file_manager import _save_file
 def run_sim(cfg: DictConfig) -> None:
     ## Checking configs
     timestep = str(int(time.time()))
-    print("Time step - ", timestep)
+    print("Time step file - ", timestep)
     with open_dict(cfg):
         cfg.spatial_sim["log_file_name"] = timestep
         cfg.grn["log_file_name"] = timestep
@@ -102,11 +102,6 @@ def run_sim(cfg: DictConfig) -> None:
     _save_file("src/simulator/spatial_vec/logs/cell_concs.pkl", cell_concs)
     _save_file("src/simulator/spatial_vec/logs/field_concs.pkl", field_concs)
     _save_file("src/simulator/spatial_vec/logs/field_cell_assgn.pkl", field_cell_assgns)
-
-    # print(before_field_concs[0, :].reshape(-1))
-    # print(after_field_concs[0, :].reshape(-1))
-    # print(before_cell_concs[0, :].reshape(-1))
-    # print(after_cell_concs[0, :].reshape(-1))
 
     # plt.show()
     ## Running sim

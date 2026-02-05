@@ -20,9 +20,6 @@ class InterventionManager:
             cfg.grn, self.grn_interventions, self.add_grn_checkpoint
         )
 
-        print("Spatial checkpoints - ", self.spatial_checkpoints)
-        print("GRN checkpoints - ", self.grn_checkpoints)
-
     def add_spatial_checkpoint(self, t, data):
         if self.spatial_checkpoints.get(t) is None:
             self.spatial_checkpoints[t] = [data]

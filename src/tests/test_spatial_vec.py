@@ -41,11 +41,6 @@ class TestSpatial:
             max_chem_idx = np.argmax(chem_after)
             s.cleanup()
 
-            print("DEBUG - - ")
-            print(field_id_1, field_id_2)
-            print(chem_before)
-            print(chem_after)
-
             if (
                 chem_before[min_chem_idx] <= chem_after[min_chem_idx]
                 and chem_before[max_chem_idx] >= chem_after[max_chem_idx]

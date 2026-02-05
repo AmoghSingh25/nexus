@@ -40,7 +40,7 @@ spatial_sim:
 
   ## Diffusion related
   D: 0.5
-  diffusion_bool: false
+  diffusion_bool: true
   n_neighbours: 3
   
   ## Simulation Related
@@ -100,7 +100,7 @@ spatial_sim:
       - 3
   
   ## Reactions
-  reaction_bool: true
+  reaction_bool: false
   reaction_prob: false
   reaction:
     reac_3: # Decay of chemical
@@ -115,11 +115,7 @@ spatial_sim:
   
 intervention:
     spatial_sim:
-      - - "delta"  # Parameter to change
-        - 0.1    # Value to change to/ shift by 
-        - ["scheduled", 1] # Temporal scope (Array)
-        - ["global"]  # Spatial scope (Array)
       - - "D"
-        - 0.1
-        - ["loop", 1, 4, 2]
+        - 2
+        - ["loop", 1, 2, 4]  # Type(Loop), Loop start time, loop length, gap between loops
         - ["global"]

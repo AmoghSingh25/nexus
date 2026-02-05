@@ -346,8 +346,18 @@ export default function App() {
           <Plot
             data={traces}
             layout={{
-              title: { text: `Field - ${selectedID}` },
+              title: { text: `Intervention on D. Field - ${selectedID}` },
               autosize: true,
+              xaxis: {
+                title: {
+                  text:"Steps"
+                }
+              },
+              yaxis: {
+                title: {
+                  text:"Conc."
+                }
+              }
             }}
             style={{ height: "100%", width: "100%" }}
           />

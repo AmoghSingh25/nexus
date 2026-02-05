@@ -71,20 +71,30 @@ class SpatialSimVec:
         self.logging and self.logger.log_chem_state(
             step=0, field_chem=self.mesh.field_chem
         )
-        for i in tqdm(range(self.n_steps)):
-            self.mesh.step(step_i=(i + 1) if step is None else step, logger=self.logger)
+        if step is None:
+            for i in tqdm(range(self.n_steps)):
+                self.mesh.step(step_i=i + 1, logger=self.logger)
+                if self.logging:
+                    self.pos_logger.log_cell_pos(
+                        i,
+                        self.mesh.cell_positions,
+                        self.mesh.cell_radius,
+                        self.mesh.cell_states,
+                    )
+
+            ##DEBUG: Error in mesh.field_chem for GridMesh
+            self.logging and self.logger.log_chem_state(
+                self.n_steps, field_chem=self.mesh.field_chem
+            )
+        else:
+            self.mesh.step(step_i=step, logger=self.logger)
             if self.logging:
                 self.pos_logger.log_cell_pos(
-                    i if step is None else step,
+                    step,
                     self.mesh.cell_positions,
                     self.mesh.cell_radius,
                     self.mesh.cell_states,
                 )
-
-        ##DEBUG: Error in mesh.field_chem for GridMesh
-        self.logging and self.logger.log_chem_state(
-            self.n_steps, field_chem=self.mesh.field_chem
-        )
 
     def cleanup(self):
         """

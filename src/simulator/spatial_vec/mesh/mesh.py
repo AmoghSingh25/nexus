@@ -212,7 +212,7 @@ class Mesh:
 
         ## Diffusion
         self.diffusion_bool = cfg.diffusion_bool
-        self.field_D = []
+        # self.field_D = []
         self.field_vol = []
         self.field_id = []
         self.field_keys = []
@@ -225,7 +225,7 @@ class Mesh:
         )
 
         for [i, j, k] in self.field_positions:
-            self.field_D.append(self.D)
+            # self.field_D.append(self.D)
             self.field_vol.append(self.field_vol_singular)
             self.field_keys.append(random.split(random.key(curr_id)))
             self.field_id.append(curr_id)
@@ -362,7 +362,7 @@ class Mesh:
         auto_vec_flux = jax.vmap(calc_flux_i, in_axes=(None, 0, 0, None, None, 0))
 
         flux_list = auto_vec_flux(
-            self.field_D[curr_field_id],
+            self.D,
             field_mass,
             field_vol,
             self.field_chem[curr_field_id],
@@ -782,8 +782,6 @@ class Mesh:
         :param delta: Simulation delta
         :param logger: mesh_logger object
         """
-        if self.debug_plot:
-            print("Step - ", step_i)
 
         # Perform diffusion
         if self.diffusion_bool:

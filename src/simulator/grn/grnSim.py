@@ -516,10 +516,51 @@ class GRNSim:
         :param self: simulator
         :param n_steps: Number of steps to run the simulation.
         """
-        logging.info("Running simulator...")
-        gene_conc_history = []
-        prot_conc_history = []
-        for t_i in tqdm(range(self.n_steps)):
+        if step is None:
+            logging.info("Running simulator...")
+            gene_conc_history = []
+            prot_conc_history = []
+            for t_i in tqdm(range(self.n_steps)):
+                wiener_noise_a = self.noise_a.generate_noise(
+                    shape=(self.n_cells, self.n_genes)
+                )
+                wiener_noise_b = self.noise_b.generate_noise(
+                    shape=(self.n_cells, self.n_genes)
+                )
+
+                self.key, self.sub_key = random.split(self.key)
+                _gene_conc, _prot_conc = self.jit_x_t(
+                    self.gene_conc,
+                    self.prot_conc,
+                    self.delta,
+                    self.decay,
+                    self.basal_rates,
+                    self.ki_matrix,
+                    self.is_mr,
+                    self.noise_amp,
+                    self.hill_coeffs,
+                    self.prot_tran_rates,
+                    self.prot_decay,
+                    wiener_noise_a,
+                    wiener_noise_b,
+                )
+                _gene_conc = _gene_conc.reshape(*_gene_conc.shape, 1)
+                _prot_conc = _prot_conc.reshape(*_prot_conc.shape, 1)
+                self.gene_conc = self.gene_conc.at[:].set(_gene_conc)
+                self.prot_conc = self.prot_conc.at[:].set(_prot_conc)
+                if self.is_logging:
+                    self.logger.log_conc(
+                        step=t_i if step is None else step,
+                        cell=None,
+                        gene_conc=self.gene_conc,
+                        prot_conc=self.prot_conc,
+                    )
+                clear_caches()
+                gene_conc_history.append(self.gene_conc)
+                prot_conc_history.append(self.prot_conc)
+            logging.info("Simulation ended...")
+            return gene_conc_history, prot_conc_history
+        else:
             wiener_noise_a = self.noise_a.generate_noise(
                 shape=(self.n_cells, self.n_genes)
             )
@@ -555,13 +596,4 @@ class GRNSim:
                     prot_conc=self.prot_conc,
                 )
             clear_caches()
-            gene_conc_history.append(self.gene_conc)
-            prot_conc_history.append(self.prot_conc)
-        logging.info("Simulation ended...")
-        return gene_conc_history, prot_conc_history
-
-
-# from jax import tree_util
-# tree_util.register_pytree_node(GRNSim,
-#                                GRNSim._tree_flatten,
-#                                GRNSim._tree_unflatten)
+            return self.gene_conc, self.prot_conc
