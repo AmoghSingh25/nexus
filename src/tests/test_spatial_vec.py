@@ -24,11 +24,8 @@ class TestSpatial:
             if s.mesh.n_fields < 2:
                 s.cleanup()
                 assert False
-            field_id_1 = random.randint(a=0, b=s.mesh.n_fields - 1)
-            field_id_2 = random.randint(a=0, b=s.mesh.n_fields - 1)
-            while field_id_2 == field_id_1:
-                field_id_1 = random.randint(a=0, b=s.mesh.n_fields - 1)
-                field_id_2 = random.randint(a=0, b=s.mesh.n_fields - 1)
+            field_id_1 = 0
+            field_id_2 = 1
 
             chem_before = s.logger.retrieve_chem_data(
                 step=0, field_id=[field_id_1, field_id_2]

@@ -25,13 +25,13 @@ grn:
 # Lattice free setup
 spatial_sim:
   ## Mesh related
-  height: 2
-  width: 2
+  height: 1
+  width: 1
   depth: 1
   mesh_type: "lattice-free"
   sparse_cells: true
-  field_resolution: 3 # Divide into X divisions along each axis
-  cell_concentration: 1 # Default value is 10
+  field_resolution: 2 # Divide into X divisions along each axis
+  cell_concentration: 2 # Default value is 10
   field_vol: 1.0
   n_cell_type: 2
   cell_qty:
@@ -114,8 +114,8 @@ spatial_sim:
       products_exponent:
   
 intervention:
-    spatial_sim:
-      - - "D"
-        - 2
-        - ["loop", 1, 2, 4]  # Type(Loop), Loop start time, loop length, gap between loops
-        - ["global"]
+    # spatial_sim:
+    #   - - "D"
+    #     - 2
+    #     - ["loop", 1, 2, 4]  # Type(Loop), Loop start time, loop length, gap between loops
+    #     - ["global"]

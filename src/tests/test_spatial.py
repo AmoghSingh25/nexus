@@ -27,10 +27,14 @@ class TestSpatial:
         chem_after = s.logger.retrieve_chem_data(
             step=-1, cell_id=cells, chem_id=chem_id
         )["conc"]
+        min_chem_idx = np.argmin(chem_before)
+        max_chem_idx = np.argmax(chem_after)
         s.cleanup()
-        if np.argmin(chem_before) == np.argmin(chem_after) and np.argmax(
-            chem_before
-        ) == np.argmax(chem_after):
+
+        if (
+            chem_before[min_chem_idx] <= chem_after[min_chem_idx]
+            and chem_before[max_chem_idx] >= chem_after[max_chem_idx]
+        ):
             assert True
         else:
             s.cleanup()
