@@ -436,7 +436,7 @@ class Mesh:
             new_mass += jnp.sum(chem_mass_i)
             self.field_flux[i] = {}
 
-        self.delta_m = (prev_mass - new_mass) / self.n_fields
+        self.delta_m = prev_mass - new_mass
 
     def calc_movement(self):
         """
@@ -786,9 +786,7 @@ class Mesh:
         # Perform diffusion
         if self.diffusion_bool:
             self.calc_conc_change()
-            logger is not None and print(
-                f"Step - {step_i}, Delta M = {self.delta_m:.4e}"
-            )
+            self.debug_plot and print(f"Step - {step_i}, Delta M = {self.delta_m:.4e}")
 
         # Perform reactions
         if self.reaction_bool:

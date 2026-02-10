@@ -4,7 +4,6 @@ import os
 import tiledb
 import numpy as np
 from typing import List
-from simulator.spatial.field.gridField import GridField
 
 
 class FieldLogger:
@@ -220,7 +219,7 @@ class FieldLogger:
         sch2 = tiledb.ArraySchema(domain=dom2, sparse=True, attrs=[att2])
         tiledb.Array.create(self.reaction_order_arr, sch2)
 
-    def get_cells_conc(self, cells: np.ndarray[GridField]):
+    def get_cells_conc(self, cells):
         """
         Helper function to get chemical concentrations of cells.
 
@@ -274,7 +273,7 @@ class FieldLogger:
             _A[step_idx, field_idx, chem_idx] = field_chem
             _A.close()
 
-    def log_diffusion_state(self, step, cells: np.ndarray[GridField]):
+    def log_diffusion_state(self, step, cells):
         """
         Logs the chemical concentrations post diffusion.
 

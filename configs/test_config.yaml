@@ -3,12 +3,12 @@ defaults:
   - _self_
 grn:
   ## Simulation related
-  n_cells: 4
+  n_cells: 8
   delta: 0.01
-  n_steps: 20
+  n_steps: 10
   config_file: "configs/sample_data/sample_network_1cell.yaml"
   random_key: 42
-  logging: false
+  logging: true
   
   ## Gene related
   non_mr_basal: false
@@ -25,13 +25,13 @@ grn:
 # Lattice free setup
 spatial_sim:
   ## Mesh related
-  height: 1
-  width: 1
-  depth: 1
+  height: 2
+  width: 2
+  depth: 2
   mesh_type: "lattice-free"
   sparse_cells: true
   field_resolution: 2 # Divide into X divisions along each axis
-  cell_concentration: 2 # Default value is 10
+  cell_concentration: 1 # Default value is 10
   field_vol: 1.0
   n_cell_type: 2
   cell_qty:
@@ -41,14 +41,14 @@ spatial_sim:
   ## Diffusion related
   D: 0.5
   diffusion_bool: true
-  n_neighbours: 3
+  n_neighbours: 1
   
   ## Simulation Related
   delta: 0.01
-  n_steps: 20
+  n_steps: 12
   random_key: 42
   logging: true
-  debug_plot: false
+  debug_plot: true
 
   ## Movement related
   movement_bool: true

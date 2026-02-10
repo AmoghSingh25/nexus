@@ -41,7 +41,7 @@ spatial_sim:
   ## Diffusion related
   D: 0.5
   diffusion_bool: true
-  n_neighbours: 3
+  n_neighbours: 1
   
   ## Simulation Related
   delta: 0.01

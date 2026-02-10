@@ -25,7 +25,7 @@ class TestSpatial:
                 s.cleanup()
                 assert False
             field_id_1 = 0
-            field_id_2 = 1
+            field_id_2 = s.mesh.field_neighbours[field_id_1][0]
 
             chem_before = s.logger.retrieve_chem_data(
                 step=0, field_id=[field_id_1, field_id_2]
@@ -45,6 +45,35 @@ class TestSpatial:
                 assert True
             else:
                 assert False
+        except Exception as e:
+            s.cleanup()
+            raise e
+
+    def test_mass_preserving_freemesh(self):
+        base_config = get_config("test_config")
+        base_config.spatial_sim.reaction_bool = False
+        base_config.spatial_sim.cycle_bool = False
+        base_config.spatial_sim.n_steps = 30
+
+        try:
+            s = SpatialSimVec(base_config.spatial_sim)
+
+            def calc_mass():
+                mass = 0
+                for i in s.mesh.field_id:
+                    mass += np.sum(s.mesh.field_chem[i])
+                return mass
+
+            mass_before = calc_mass()
+            s.run_sim()
+            mass_after = calc_mass()
+
+            print("Before - ", mass_before)
+            print("After - ", mass_after)
+            if s.mesh.n_fields < 2:
+                s.cleanup()
+                assert False
+            assert (mass_after - mass_before) <= 0.01 * mass_before
         except Exception as e:
             s.cleanup()
             raise e
