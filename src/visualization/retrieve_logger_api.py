@@ -11,9 +11,9 @@ from simulator.grn.logger.grnLogger import GRNLogger
 
 app = Flask(__name__)
 CORS(app, origins="*")
-data_base_dir = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "../simulator/spatial/logs"
-)
+# data_base_dir = os.path.join(
+#     os.path.dirname(os.path.abspath(__file__)), "../simulator/spatial/logs"
+# )
 spatial_base_dir = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "../simulator/spatial_vec/logs"
 )
@@ -80,6 +80,18 @@ def structure_field_pos(resp, n_fields):
 @app.route("/")
 def hello_world():
     return "<p>Hello World</p>"
+
+
+@app.route("/get_logs")
+def get_logs():
+    log_files = filter(
+        os.path.isdir,
+        [os.path.join(spatial_base_dir, x) for x in os.listdir(spatial_base_dir)],
+    )
+    log_files = list(log_files)
+    log_file_names = [x[len(str(spatial_base_dir)) + 1 :] for x in log_files]
+    resp_files = make_response({"files": log_file_names})
+    return resp_files
 
 
 @app.route("/positions", methods=["GET"])
@@ -162,8 +174,8 @@ if __name__ == "__main__":
     else:
         inp_file_name = "1767656604"
 
-    if not os.path.exists(os.path.join(data_base_dir, inp_file_name)):
-        raise FileNotFoundError("Log file does not exist")
+    # if not os.path.exists(os.path.join(data_base_dir, inp_file_name)):
+    #     raise FileNotFoundError("Log file does not exist")
 
     app.run(port=8080, debug=True)
 

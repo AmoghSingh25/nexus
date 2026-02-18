@@ -1,3 +1,4 @@
+## TODO: End to end differentiation - backprop
 import jax.numpy as jnp
 import time
 from simulator.grn.grnSim import GRNSim
