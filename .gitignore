@@ -3,4 +3,16 @@
 
 __pycache__/
 __marimo__/
-src/simulator/gpsim_old.py
+src/simulator/archive
+.DS_Store
+notebooks/protein_rna_test_data/
+.idea/
+.pytest_cache/
+.ruff_cache/
+.venv/
+outputs/
+src/simulator/spatial/logs/
+src/simulator/spatial_vec/logs/
+src/simulator/grn/logs/
+
+notebooks/testing_triangulation.py

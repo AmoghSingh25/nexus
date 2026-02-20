@@ -4,7 +4,7 @@ import networkx as nx
 import polars as pl
 import yaml
 import logging
-from .verify_network import _verify_network
+from simulator.utils.verify_network import _verify_network
 
 
 def _create_bins(bin_vals, n_bins, n_cells):
@@ -12,6 +12,8 @@ def _create_bins(bin_vals, n_bins, n_cells):
     cells_per_bin = n_cells // n_bins
     for i in range(n_bins):
         frmt_bins.extend([bin_vals[i]] * cells_per_bin)
+    if n_cells % n_bins != 0:
+        frmt_bins.extend([bin_vals[-1]] * (n_cells - len(frmt_bins)))
     return jnp.array(frmt_bins)
 
 
@@ -116,6 +118,8 @@ def _read_data(gene_data, mr_data, config_file, n_cells, protein_sim=False):
             mr_file=mr_data, gene_file=gene_data, n_cells=n_cells
         )
 
-    _verify_network(node_data, edge_data, n_cells, protein_sim)
+    node_data, edge_data, copy_cells = _verify_network(
+        node_data, edge_data, n_cells, protein_sim
+    )
     logging.info("Network checks passed")
-    return node_data, edge_data
+    return node_data, edge_data, copy_cells

@@ -1,0 +1,22 @@
+#cell-id .Select-control, #chem-id .Select-control, #chem-id-reaction .Select-control, #cell-id-reaction .Select-control{
+    background-color: black;
+    color: white;
+}
+#cell-id .Select-menu-outer, #chem-id .Select-menu-outer, #chem-id-reaction .Select-menu-outer, #cell-id-reaction .Select-menu-outer{
+    background-color: black;
+    color: white;
+}
+#cell-id .Select-value-label, #chem-id .Select-value-label, #chem-id-reaction .Select-value-label, #cell-id-reaction .Select-value-label{
+    background-color: black;
+    color: white;
+}
+
+#cell-id, #chem-id, #chem-id-reaction, #cell-id-reaction{
+    margin: 10px;
+}
+
+#select_row, #select_row_reaction{
+    display: flex;
+    align-items: center;
+    align-content: center;
+}

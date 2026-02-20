@@ -28,7 +28,10 @@ uv sync
     - `dynamics/` - Mathematical models for simulator dynamics
     - `noise_models/` - Noise processes, random seeds
     - `utils/` - Utility functions for simulator
-    - `dynSim.py` - Simulator code
+    - `grn/` - Code and logs of the GRN simulator
+    - `spatial/` -  Code, model definitions and logs of the Spatial Sim
+    - `spatial_vec/` -  Code, model definitions and logs of the vectorized version of Spatial Sim
+    - `run_sim.py` - Run the GRN and Spatial Sim
   - `causal/` - Causal discovery and inference modules
     - `identification/` - Algorithms for structure/parameter learning
     - `evaluation/` - Evaluation scripts
@@ -37,7 +40,7 @@ uv sync
   - `tests/` - Unit & integration tests
 - `configs/` - Config files for runs
 - `notebooks/` - Exploratory analyses and demos
-  - `testing.ipynb` - Notebook to check working of GeneProtSim
+  - `testing.py` - Notebook to check working of GeneProtSim
 - `pyproject.toml` - For package/dependency management
 - `README.md`
 
@@ -45,15 +48,24 @@ uv sync
 
 ### Simulator
 
-```py
-# Import simulator
-from simulator import gpsim
-
-# Initialize
-sim = gpsim.simulator(
-  config_file="configs/sample_data/sample_network_2cell.yaml", n_cells=2
-)
-
-# Run for 10 steps and return the progression of gene and protein concentration
-gene_conc, prot_conc = sim.run_sim(n_steps=10)
+```bash
+## Runs the GRN Sim and the spatial sim with the default config 'freemesh_config.yaml'
+uv run src/simulator/run_sim.py
 ```
+### Visualization
+
+The visualization can be run by the running the two commands in seperate terminal windows.
+
+```bash
+## Runs the API for fetching the data from TileDB
+uv run src/visualization/retrieve_logger_api.py
+
+## Runs the website to visualize the data
+cd src/visualization/visualization_web/
+npm install # If the packages are not installed
+npm run dev
+```
+
+After running these two commands, open the link `http://localhost:3000/vis?file_name={FILE_NAME}` and inserting the name of the log file to be visualized at `{FILE_NAME}`. This log file should be present inside `src/simulator/grn/logs/` and `src/simulator/spatial_vec/logs/`.
+
+The colors indicate the states of the cell, yellow indicating live cells, blue indicating cells undergoing programmed cell death and red are the cells undergoing sudden cell death.

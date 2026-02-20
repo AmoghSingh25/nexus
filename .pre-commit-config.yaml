@@ -17,4 +17,3 @@ repos:
         pass_filenames: false
         always_run: true
         types: [python]
-        working_dir: .

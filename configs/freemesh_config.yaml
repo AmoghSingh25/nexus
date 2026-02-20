@@ -1,0 +1,123 @@
+# Config for GRN set to simulate SERGIO configuration
+defaults:
+  - _self_
+grn:
+  ## Simulation related
+  n_cells: 4
+  delta: 0.01
+  n_steps: 10
+  config_file: "configs/sample_data/sample_network_1cell.yaml"
+  random_key: 42
+  logging: true
+  
+  ## Gene related
+  non_mr_basal: false
+  noise: false
+  noise_amplitude: 0.1
+  decay:
+    - 0.8
+  hill_coeffs:
+    - 1.0
+
+  ## Protein related
+  protein_sim: true
+  
+# Lattice free setup
+spatial_sim:
+  ## Mesh related
+  height: 2
+  width: 2
+  depth: 1
+  mesh_type: "lattice-free"
+  sparse_cells: true
+  field_resolution: 3 # Divide into X divisions along each axis
+  cell_concentration: 1 # Default value is 10
+  field_vol: 1.0
+  n_cell_type: 2
+  cell_qty:
+    cell1: 0.8
+    cell2: 0.2
+
+  ## Diffusion related
+  D: 0.5
+  diffusion_bool: true
+  n_neighbours: 1
+  
+  ## Simulation Related
+  delta: 0.01
+  n_steps: 20
+  random_key: 42
+  logging: true
+  debug_plot: false
+
+  ## Movement related
+  movement_bool: true
+  movement:
+    cell1:
+      qty_ratio: 0.8
+      attraction_coeff: 1
+      repulsion_coeff: 0.1
+      drift_vel_coeff: 0.01
+      random_vel_coeff: 0.01
+    cell2:
+      qty_ratio: 0.2
+      attraction_coeff: 2
+      repulsion_coeff: 0.2
+      drift_vel_coeff: 0.02
+      random_vel_coeff: 0.05
+
+  ## Cycle related
+  cycle_bool: true
+  cycle:
+    cell1:
+      cycle_len: 10
+      interphase_len: 0.9
+      necrosis_death_prob: 0.0001
+      apoptosis_death_prob: 0.001
+      cell_target_vol: 1.0
+      cell_density: 1.0
+      cell_vol_growth_rate: 1.0
+      cell_decay_rate: 0.5
+    cell2:
+      cycle_len: 20
+      interphase_len: 0.8
+      necrosis_death_prob: 0.0001
+      apoptosis_death_prob: 0.001
+      cell_target_vol: 2.0
+      cell_density: 2.0
+      cell_vol_growth_rate: 1.5
+      cell_decay_rate: 0.5
+  
+  ## Chemicals
+  chemical:
+    name:
+      - "chem1"
+      - "chem2"
+      - "chem3"
+    mol_mass:
+      - 1
+      - 2
+      - 3
+  
+  ## Reactions
+  reaction_bool: true
+  reaction_prob: false
+  reaction:
+    reac_2: # Production of chemical
+      order: 0
+      rate_coeff: 1
+      reactants:
+      reactants_exponent:
+      products:
+        - "chem3"
+      products_exponent:
+        - 3
+    reac_3: # Decay of chemical
+      order: 0
+      rate_coeff: 1
+      reactants:
+        - "chem2"
+      reactants_exponent:
+        - 3
+      products:
+      products_exponent:

@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.17.2"
+__generated_with = "0.18.4"
 app = marimo.App(width="full")
 
 
@@ -11,20 +11,38 @@ def _():
     import matplotlib.pyplot as plt
     import time
     import jax.numpy as jnp
+    from hydra import initialize_config_dir, compose
+    import os
 
     matplotlib.style.use("default")
     import logging
 
     logger = logging.getLogger("sample_logger")
     logger.setLevel(logging.ERROR)
-    return jnp, np, plt, time
+    return compose, initialize_config_dir, jnp, np, os, plt, time
+
+
+@app.cell
+def _(compose, initialize_config_dir, os):
+    def get_config(config_name="config"):
+        conf_path = os.path.join(os.getcwd(), "configs")
+        with initialize_config_dir(version_base=None, config_dir=conf_path):
+            cfg = compose(config_name=config_name)
+        return cfg
+
+    return (get_config,)
 
 
 @app.cell
 def _():
-    from simulator import gpsim
+    ## Testing
+    return
 
-    return (gpsim,)
+
+@app.cell
+def _(get_config):
+    cfg = get_config(config_name="3d_spatial_test")
+    return (cfg,)
 
 
 @app.cell
@@ -40,56 +58,58 @@ def _(np, plt):
         plt.grid(True)
         plt.show()
 
+    return (plot_conc,)
+
+
+@app.cell
+def _():
+    from simulator.grn.grnSim import GRNSim
+
+    return (GRNSim,)
+
+
+@app.cell
+def _(cfg):
+    cfg.grn.n_cells = 1
     return
 
 
 @app.cell
-def _(gpsim, time):
-    n_cells_1 = 2700
-    n_genes_1 = 100
-    _start = time.time()
-    sim1 = gpsim.simulator(
-        gene_data="configs/sample_data/Interaction_cID_4.txt",
-        mr_data="configs/sample_data/Regs_cID_4.txt",
-        n_cells=n_cells_1,
-        protein_sim=False,
-        decay=[0.8],
-    )
-    _start2 = time.time()
-    a, b = sim1.run_sim(1)
-    _end = time.time()
-    print("Time taken = ", _end - _start)
-    print("Steady state calculation time = ", _start2 - _start)
-    print("Simulation time = ", _end - _start2)
-    return n_cells_1, n_genes_1, sim1
-
-
-@app.cell
-def _(gpsim, n_cells_1, time):
-    _start = time.time()
-    sim2 = gpsim.simulator(
-        gene_data="configs/sample_data/Interaction_cID_4.txt",
-        mr_data="configs/sample_data/Regs_cID_4.txt",
-        n_cells=n_cells_1,
-        protein_sim=False,
-        noise=False,
-        decay=[0.8],
-    )
-    _start2 = time.time()
-    _a, _b = sim2.run_sim(1)
-    _end = time.time()
-    print("Total time taken = ", _end - _start)
-    print("Steady state calculation time = ", _start2 - _start)
-    print("Simulation time = ", _end - _start2)
-    return (sim2,)
-
-
-@app.cell
-def _(plt, sim1, sim2):
-    plt.plot(sim1.gene_conc[:, 0], label="With q=0.1 noise")
-    plt.plot(sim2.gene_conc[:, 0], label="Without noise")
-    plt.legend()
+def _():
+    # sim1 = GRNSim_v1(gene_data="configs/sample_data/Interaction_cID_4.txt",mr_data="configs/sample_data/Regs_cID_4.txt", protein_sim=False, n_cells=100)
+    # ret1=sim1.run_sim(20)
     return
+
+
+@app.cell
+def _(GRNSim, cfg):
+    sim2 = GRNSim(cfg.grn)
+    ret2 = sim2.run_sim()
+    return ret2, sim2
+
+
+@app.cell
+def _(plot_conc, ret2):
+    plot_conc(ret2[0], 0)
+    return
+
+
+@app.cell
+def _(GRNSim, cfg, time):
+    ## Calculating run times
+
+    cfg.grn.n_cells = 9
+    _time_taken = []
+    for _i in range(5):
+        _start = time.time()
+        sim1 = GRNSim(cfg.grn)
+        _end = time.time()
+        print("Time taken = ", _end - _start)
+        _time_taken.append(_end - _start)
+        sim1.logger.cleanup()
+    for _i in _time_taken:
+        print(_i)
+    return (sim1,)
 
 
 @app.cell
@@ -200,6 +220,13 @@ def _():
 
 
 @app.cell
+def _(node_mapping, pickle):
+    with open("src/tests/saved_outputs/node_mapping.pkl", "wb") as _f:
+        pickle.dump(node_mapping, _f)
+    return
+
+
+@app.cell
 def _():
     import pickle
 
@@ -207,12 +234,12 @@ def _():
         sergio_output_1 = pickle.load(f)
     with open("src/tests/saved_outputs/saved_output_9cells.pkl", "rb") as f:
         sergio_output_2 = pickle.load(f)
-    return sergio_output_1, sergio_output_2
+    return pickle, sergio_output_1, sergio_output_2
 
 
 @app.cell
-def _(jnp, n_cells_1, n_genes_1, node_mapping, sim2):
-    sim_output_1 = sim2.steady_states.reshape((n_genes_1, n_cells_1))
+def _(jnp, node_mapping, sim1):
+    sim_output_1 = sim1.gene_conc.reshape((100, 2700))
     reordered_output_1 = jnp.zeros_like(sim_output_1)
     for i in node_mapping:
         reordered_output_1 = reordered_output_1.at[i].set(sim_output_1[node_mapping[i]])
@@ -226,28 +253,18 @@ def _(jnp, reordered_output_1, sergio_output_1):
 
 
 @app.cell
-def _(gpsim, time):
-    n_cells_2 = 9
-    n_genes_2 = 100
+def _(NewGRNSim, cfg, time):
+    cfg.grn.n_cells = 9
     _start = time.time()
-    sim3 = gpsim.simulator(
-        gene_data="configs/sample_data/Interaction_cID_4.txt",
-        mr_data="configs/sample_data/Regs_cID_4.txt",
-        n_cells=n_cells_2,
-        protein_sim=False,
-    )
-    _start2 = time.time()
-    _a, _b = sim3.run_sim(1)
+    sim2 = NewGRNSim(cfg.grn)
     _end = time.time()
-    print("Total time taken = ", _end - _start)
-    print("Steady state calculation time = ", _start2 - _start)
-    print("Simulation time = ", _end - _start2)
-    return n_cells_2, n_genes_2, sim3
+    print("Time taken = ", _end - _start)
+    return (sim2,)
 
 
 @app.cell
-def _(jnp, n_cells_2, n_genes_2, node_mapping, sim3):
-    sim_output_2 = sim3.steady_states.reshape((n_genes_2, n_cells_2))
+def _(jnp, node_mapping, sim2):
+    sim_output_2 = sim2.steady_states.reshape((100, 9))
     reordered_output_2 = jnp.zeros_like(sim_output_2)
     for _i in node_mapping:
         reordered_output_2 = reordered_output_2.at[_i].set(
@@ -259,6 +276,11 @@ def _(jnp, n_cells_2, n_genes_2, node_mapping, sim3):
 @app.cell
 def _(jnp, reordered_output_2, sergio_output_2):
     print(jnp.allclose(reordered_output_2, sergio_output_2, rtol=1e-6, atol=1e-32))
+    return
+
+
+@app.cell
+def _():
     return
 
 

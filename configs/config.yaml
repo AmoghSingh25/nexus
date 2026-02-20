@@ -1,0 +1,82 @@
+# Config for GRN set to simulate SERGIO configuration
+grn:
+  ## Simulation related
+  n_cells: 2700
+  delta: 0.01
+  n_steps: 10
+  gene_data: "configs/sample_data/Interaction_cID_4.txt"
+  mr_data: "configs/sample_data/Regs_cID_4.txt"
+  config_file: ""
+  logging: true
+  
+  ## Gene related
+  non_mr_basal: false
+  noise: false
+  noise_amplitude: 0.1
+  decay:
+    - 0.8
+  hill_coeffs:
+    - 1.0
+
+  ## Protein related
+  protein_sim: false
+  
+
+spatial_sim:
+  ## Mesh related
+  height: 3
+  width: 3
+  depth: 3
+  mesh_type: "grid"
+  sparse_cells: true
+  cell_num: 10
+
+  ## Diffusion related
+  D: 0.5
+  diffusion_bool: true
+  
+  ## Simulation Related
+  delta: 0.01
+  n_steps: 10
+  random_key: 42
+  logging: false
+  
+  ## Chemicals
+  chemical:
+    name:
+      - "chem1"
+      - "chem2"
+      - "chem3"
+    mol_mass:
+      - 1
+      - 2
+      - 3
+  
+  ## Reactions
+  reaction_bool: true
+  reaction:
+    reac_1:
+      order: 2
+      rate_coeff: 3
+      reactants:
+        - - "chem1"
+          - 1
+        - - "chem2"
+          - 2
+      products:
+        - - "chem3"
+          - 3
+    reac_2: # Production of chemical
+      order: 0
+      rate_coeff: 1
+      reactants:
+      products:
+        - - "chem3"
+          - 3
+    reac_3: # Decay of chemical
+      order: 0
+      rate_coeff: 1
+      reactants:
+        - - "chem2"
+          - 3
+      products:
