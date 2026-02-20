@@ -1,6 +1,6 @@
 # Assumptions
 # - Simulation starts from steady state calculation
-# - Basal rates of non-MR is 0 (from SERGIO)
+# - Basal rates of non-MR is 0 (from SERGIO) - Can also be configured for non zero basal rates
 
 import os
 import time

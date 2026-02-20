@@ -40,25 +40,25 @@ def run_sim(cfg: DictConfig) -> None:
         cfg.spatial_sim.chemical["mol_mass"] = chem_mol_mass
 
     spatial_sim = SpatialSimVec(cfg.spatial_sim)
-    check_config(spatial_sim=spatial_sim, cfg=cfg)
+    check_config(spatial_sim=spatial_sim, grn_sim=grn_sim, cfg=cfg)
 
     cell_concs = [grn_sim.prot_conc]
     field_concs = [spatial_sim.mesh.field_chem]
     field_cell_assgns = []
 
-    for i in range(20):
+    for _i in range(20):
         associated_field = {}
         cell_mass = {}
         cell_vols = {}
+        associated_fields = spatial_sim.mesh.get_assigned_fields(norm_ord=2)
         for i in range(spatial_sim.mesh.n_cells):
             cell_mass[i] = grn_sim.prot_conc[:, i]
             cell_vols[i] = spatial_sim.mesh.cell_vol[i]
 
-            closest_field_i = spatial_sim.mesh.get_closest_field(i).item()
-            if associated_field.get(closest_field_i) is None:
-                associated_field[closest_field_i] = [i]
+            if associated_field.get(associated_fields[i].item()) is None:
+                associated_field[associated_fields[i].item()] = [i]
             else:
-                associated_field[closest_field_i].append(i)
+                associated_field[associated_fields[i].item()].append(i)
 
         before_field_concs = []
         before_cell_concs = []
@@ -104,14 +104,15 @@ def run_sim(cfg: DictConfig) -> None:
     _save_file("src/simulator/spatial_vec/logs/field_concs.pkl", field_concs)
     _save_file("src/simulator/spatial_vec/logs/field_cell_assgn.pkl", field_cell_assgns)
 
-    # plt.show()
-    ## Running sim
 
-
-def check_config(spatial_sim, cfg):
+def check_config(spatial_sim, grn_sim, cfg):
     if not cfg.grn.n_cells == spatial_sim.mesh.n_cells:
         raise ValueError(
             "Config values incorrect, no. of cells in spatial sim and GRN sim to be run together"
+        )
+    if not grn_sim.n_genes == spatial_sim.mesh.n_chemicals:
+        raise ValueError(
+            "Inconsistent number of chemicals across GRN sim and Spatial Sim"
         )
 
 

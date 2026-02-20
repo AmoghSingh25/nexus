@@ -16,6 +16,7 @@ from simulator.spatial_vec.layers.chemical import (
 )
 from simulator.spatial_vec.layers.force import calc_vel
 from simulator.spatial_vec.utils.verify_data import check_cell_type_data
+from simulator.spatial_vec.mesh.clustering_field import k_mean_clustering
 
 
 class Mesh:
@@ -856,13 +857,26 @@ class Mesh:
         )
         return radial_neighs, l1_norm[radial_neighs]
 
-    def get_closest_field(self, cell_pos, norm_ord=1):
+    def get_assigned_fields(self, norm_ord=1, clustering_type="norm"):
         """
         Function to return field ID of the field closest to the cell position passed
 
         :param self: Description
         :param cell_pos: Cell position to find the closest field
         """
-        l1_norm = jnp.linalg.norm(cell_pos - self.field_positions, axis=1, ord=norm_ord)
-        closest_idxs = jnp.argsort(l1_norm)[0]
-        return self.field_id[closest_idxs]
+        if clustering_type == "norm":
+            rep_pos = jnp.repeat(
+                self.cell_positions.reshape(
+                    self.cell_positions.shape[0], 1, self.cell_positions.shape[1]
+                ),
+                axis=1,
+                repeats=self.field_positions.shape[0],
+            )
+            new_cluster_assgns = jnp.argmin(
+                jnp.linalg.norm(rep_pos - self.field_positions, axis=2, ord=norm_ord),
+                axis=1,
+            )
+            return new_cluster_assgns
+        elif clustering_type == "k_mean":
+            assigned_fields = k_mean_clustering(3, self.cell_positions)
+            return assigned_fields

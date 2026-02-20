@@ -89,6 +89,62 @@ def _(GRNSim, cfg):
 
 
 @app.cell
+def _(ret2):
+    ret2[0]
+    return
+
+
+@app.cell
+def _(ret2):
+    ret2[1]
+    return
+
+
+@app.cell
+def _(ret2):
+    print(ret2[2][0][0].shape)
+    return
+
+
+@app.cell
+def _(ret2):
+    ret2[2][0][0].reshape(4, 4).diagonal()
+    return
+
+
+@app.cell
+def _(ret2):
+    ret2[2][0][1].reshape(4, 4).diagonal()
+    return
+
+
+@app.cell
+def _(ret2):
+    ret2[2][0][1]
+    return
+
+
+@app.cell
+def _(ret2):
+    ret2[2][0].reshape(4, 4)
+    return
+
+
+@app.cell
+def _(ret2):
+    ret2[2][0].shape
+    return
+
+
+@app.cell
+def _():
+    # 2
+    # (4, 1, 4, 1, 1)
+    # (4, 1, 4, 1, 1)
+    return
+
+
+@app.cell
 def _(plot_conc, ret2):
     plot_conc(ret2[0], 0)
     return
