@@ -6,7 +6,7 @@ import os
 import time
 import networkx as nx
 import jax.numpy as jnp
-from jax import vmap, random, lax, jit, clear_caches
+from jax import vmap, random, lax, jit, clear_caches, grad
 from simulator.utils.read_network import _read_data
 from tqdm import tqdm
 import logging
@@ -53,6 +53,9 @@ class GRNSim:
         self.decay = jnp.array(cfg.decay)
         self.hill_coeffs = jnp.array(cfg.hill_coeffs)
         self.n_steps = cfg.n_steps
+        self.learn_params = cfg.get("learn_params", False)
+        self.epochs = cfg.get("epochs", 0)
+        self.lr = cfg.get("lr", 0.01)
 
         if node_set is None and edges_set is None:
             node_set, edges_set, self.copy_cells = _read_data(
@@ -192,7 +195,9 @@ class GRNSim:
         self.jit_pij = jit(self.calc_pij)
         self.jit_x_t = jit(self.calc_x_t)
         logging.info("Calculating steady states...")
-        self.gene_conc, self.prot_conc = self.calc_steady_states()
+        self.gene_conc, self.prot_conc, new_vals = self.calc_steady_states()
+        if self.learn_params:
+            print("New vals = ", new_vals)
         self.steady_states = self.gene_conc
         self.prot_steady_state = self.prot_conc
 
@@ -367,7 +372,109 @@ class GRNSim:
             )
             gene_conc = gene_conc.at[i].set(g_conc)
             prot_conc = prot_conc.at[i].set(p_conc)
-        return gene_conc, prot_conc
+
+        def loss_target(
+            n_cells,
+            idx,
+            is_mr,
+            basal_rate,
+            decay,
+            ki_matrix,
+            gene_conc,
+            all_cell_conc,
+            hill_coeff,
+            prot_trans,
+            prot_decay,
+            prot_conc,
+            prot_ss,
+            target_gene_conc,
+        ):
+            g_conc, p_conc = _single_gene_steady_state(
+                n_cells,
+                idx,
+                is_mr,
+                basal_rate,
+                decay,
+                ki_matrix,
+                gene_conc,
+                all_cell_conc,
+                hill_coeff,
+                prot_trans,
+                prot_decay,
+                prot_conc,
+                prot_ss,
+            )
+            loss = jnp.sum(jnp.abs(target_gene_conc - g_conc))
+            return loss
+
+        grad_loss = grad(loss_target, argnums=[3, 4, 5, 8, 9, 10])
+
+        ## Copy params to shift values
+        ## TODO: Target fitting for Gene and Protein conc
+        ## TODO: Test for gradient func
+        ## TODO: Threshold for values - Ex. Basal rate cannot be less than 0
+        if self.learn_params:
+            basal_rates = self.basal_rates
+            decay = self.decay
+            ki_matrix = self.ki_matrix
+            hill_coeffs = self.hill_coeffs
+            prot_tran_rates = self.prot_tran_rates
+            prot_decay = self.prot_decay
+            learning_rate = self.lr
+
+            for _ in range(self.epochs):
+                for i in range(self.n_genes):
+                    grads = grad_loss(
+                        self.n_cells,
+                        i,
+                        self.is_mr[i],
+                        basal_rates[i],
+                        decay[:, i],
+                        ki_matrix[:, i, :],
+                        self.gene_conc,
+                        jnp.mean(
+                            self.gene_conc, axis=1
+                        ),  # To calculate half response as mean conc across all cells
+                        hill_coeffs[:, i],
+                        prot_tran_rates[:, i],
+                        prot_decay[:, i],
+                        self.prot_conc,
+                        self.prot_steady_state,
+                        jnp.ones_like(
+                            gene_conc[i]
+                        ),  ## TODO: Explicitly set target gene conc
+                    )
+                    basal_rates = basal_rates.at[i].set(
+                        basal_rates[i] - learning_rate * grads[0]
+                    )
+                    decay = decay.at[:, i].set(decay[:, i] - learning_rate * grads[1])
+                    ki_matrix = ki_matrix.at[:, i, :].set(
+                        ki_matrix[:, i, :] - learning_rate * grads[2]
+                    )
+                    hill_coeffs = hill_coeffs.at[:, i].set(
+                        hill_coeffs[:, i] - learning_rate * grads[3]
+                    )
+                    prot_tran_rates = prot_tran_rates.at[:, i].set(
+                        prot_tran_rates[:, i] - learning_rate * grads[4]
+                    )
+                    prot_decay = prot_decay.at[:, i].set(
+                        prot_decay[:, i] - learning_rate * grads[5]
+                    )
+
+            return (
+                gene_conc,
+                prot_conc,
+                [
+                    basal_rates,
+                    decay,
+                    ki_matrix,
+                    hill_coeffs,
+                    prot_tran_rates,
+                    prot_decay,
+                ],
+            )
+        else:
+            return gene_conc, prot_conc, []
 
     def calc_pij(
         self, is_mr, idx, basal_rates, gene_conc, gene_cell_mean, k_i, _hill=1

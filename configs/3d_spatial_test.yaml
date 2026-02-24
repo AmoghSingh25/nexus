@@ -7,6 +7,8 @@ grn:
   config_file: "configs/sample_data/sample_network_1cell.yaml"
   random_key: 42
   logging: true
+  learn_params: true
+  epochs: 10
   
   ## Gene related
   non_mr_basal: false

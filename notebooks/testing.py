@@ -71,6 +71,8 @@ def _():
 @app.cell
 def _(cfg):
     cfg.grn.n_cells = 1
+    cfg.grn.learn_params = True
+    cfg.grn.epochs = 10
     return
 
 
@@ -84,13 +86,61 @@ def _():
 @app.cell
 def _(GRNSim, cfg):
     sim2 = GRNSim(cfg.grn)
-    ret2 = sim2.run_sim()
-    return ret2, sim2
+    # ret2 = sim2.run_sim()
+    return (sim2,)
+
+
+@app.cell
+def _(sim2):
+    sim2.gene_conc
+    return
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
+def _(sim2):
+    target_gene = sim2.steady_states - 0.2
+    ret = sim2.learn_params_steady_state(target_gene, sim2.prot_steady_state)
+    return (ret,)
+
+
+@app.cell
+def _(ret):
+    ret
+    return
+
+
+@app.cell
+def _(sim2):
+    (
+        sim2.basal_rates,
+        sim2.decay,
+        sim2.ki_matrix,
+        sim2.hill_coeffs,
+        sim2.prot_tran_rates,
+        sim2.prot_decay,
+    )
+    return
+
+
+@app.cell
+def _(sim2):
+    sim2.calc_steady_states()
+    return
 
 
 @app.cell
 def _(ret2):
-    ret2[0]
+    ret2[0][-1].reshape(-1, 1)
+    return
+
+
+@app.cell
+def _():
     return
 
 
@@ -312,10 +362,10 @@ def _(jnp, reordered_output_1, sergio_output_1):
 def _(NewGRNSim, cfg, time):
     cfg.grn.n_cells = 9
     _start = time.time()
-    sim2 = NewGRNSim(cfg.grn)
+    sim_2 = NewGRNSim(cfg.grn)
     _end = time.time()
     print("Time taken = ", _end - _start)
-    return (sim2,)
+    return
 
 
 @app.cell
