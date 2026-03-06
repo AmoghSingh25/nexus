@@ -6,7 +6,7 @@ app = marimo.App(width="medium")
 
 @app.cell
 def _():
-    from simulator.spatial_vec.logger.mesh_logger import FieldLogger
+    from simulator.spatial.logger.mesh_logger import FieldLogger
     import matplotlib.pyplot as plt
     import matplotlib
 

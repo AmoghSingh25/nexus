@@ -7,7 +7,7 @@ app = marimo.App(width="medium")
 @app.cell
 def _():
     from simulator.spatial.spatialSim import SpatialSim
-    from simulator.spatial_vec.spatialSim import SpatialSimVec
+    from simulator.spatial.spatialSim import SpatialSimVec
     import matplotlib.pyplot as plt
     import matplotlib
     from hydra import (

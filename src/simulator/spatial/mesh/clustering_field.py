@@ -1,7 +1,6 @@
-from tqdm import tqdm
 import jax.numpy as jnp
 from jax import random
-from simulator.spatial_vec.utils.random_generators import generate_choices
+from simulator.spatial.utils.random_generators import generate_choices
 
 ## TODO: Use Clustering in field-cell computation - Assign fields after 2 steps to allow stabilization
 ## TODO: K Medoids
@@ -23,7 +22,7 @@ def k_mean_clustering(num_clusters, positions, num_steps=20):
 
     cluster_means = jnp.zeros((num_clusters, 3))
 
-    for i in tqdm(range(num_steps)):
+    for i in range(num_steps):
         for i in range(num_clusters):
             cluster_means = cluster_means.at[i].set(
                 jnp.mean(positions[cluster_assgn == i + 1], axis=0)

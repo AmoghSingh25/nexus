@@ -1,8 +1,9 @@
 ## TODO: End to end differentiation - backprop
+from tqdm import tqdm
 import jax.numpy as jnp
 import time
 from simulator.grn.grnSim import GRNSim
-from simulator.spatial_vec.spatialSim import SpatialSimVec
+from simulator.spatial.spatialSim import SpatialSimVec
 import hydra
 from omegaconf import DictConfig, open_dict
 from simulator.utils.file_manager import _save_file
@@ -45,12 +46,15 @@ def run_sim(cfg: DictConfig) -> None:
     cell_concs = [grn_sim.prot_conc]
     field_concs = [spatial_sim.mesh.field_chem]
     field_cell_assgns = []
+    n_steps = grn_sim.n_steps
 
-    for _i in range(20):
+    for _i in tqdm(range(n_steps)):
         associated_field = {}
         cell_mass = {}
         cell_vols = {}
-        associated_fields = spatial_sim.mesh.get_assigned_fields(norm_ord=2)
+        associated_fields = spatial_sim.mesh.get_assigned_fields(
+            norm_ord=2, clustering_type="k_mean"
+        )
         for i in range(spatial_sim.mesh.n_cells):
             cell_mass[i] = grn_sim.prot_conc[:, i]
             cell_vols[i] = spatial_sim.mesh.cell_vol[i]
@@ -97,8 +101,8 @@ def run_sim(cfg: DictConfig) -> None:
         before_field_concs = jnp.array(before_field_concs)
         after_field_concs = jnp.array(after_field_concs)
 
-        spatial_sim.run_sim()
-        grn_sim.run_sim()
+        spatial_sim.run_sim(step=_i)
+        grn_sim.run_sim(step=_i)
 
     _save_file("src/simulator/spatial_vec/logs/cell_concs.pkl", cell_concs)
     _save_file("src/simulator/spatial_vec/logs/field_concs.pkl", field_concs)
@@ -114,6 +118,8 @@ def check_config(spatial_sim, grn_sim, cfg):
         raise ValueError(
             "Inconsistent number of chemicals across GRN sim and Spatial Sim"
         )
+    if not grn_sim.n_steps == spatial_sim.n_steps:
+        raise ValueError("Unequal number of steps across simulators.")
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ import os
 import time
 import networkx as nx
 import jax.numpy as jnp
-from jax import vmap, random, lax, jit, clear_caches, grad
+from jax import vmap, random, lax, jit, clear_caches, grad, config
 from simulator.utils.read_network import _read_data
 from tqdm import tqdm
 import logging
@@ -23,6 +23,8 @@ class GRNSim:
         cfg: DictConfig,
         node_set=None,
         edges_set=None,
+        target_gene=None,
+        target_prot=None,
     ):
         """
         Shapes of variables :
@@ -32,12 +34,13 @@ class GRNSim:
         basal_rates -   (n_genes, n_cells, 1)
         ki_matrix -     (n_cells, n_genes, n_genes)
         is_mr -         (n_genes,)
-        decay -         (1,1)    # For now
         prot_conc -     (n_genes, n_cells, 1)
         prot_kt -       (n_cells, n_genes)
         prot_kd -       (n_cells, n_genes)
         decay -         (n_cells, n_genes, 1)
         """
+        config.update("jax_debug_nans", True)
+        start_time = time.time()
 
         self.delta = cfg.delta
         self.n_cells = cfg.n_cells
@@ -56,7 +59,10 @@ class GRNSim:
         self.learn_params = cfg.get("learn_params", False)
         self.epochs = cfg.get("epochs", 0)
         self.lr = cfg.get("lr", 0.01)
+        self.target_gene = target_gene
+        self.target_prot = target_prot
 
+        ## TODO: High read time
         if node_set is None and edges_set is None:
             node_set, edges_set, self.copy_cells = _read_data(
                 gene_data=cfg.get("gene_data", None),
@@ -65,7 +71,6 @@ class GRNSim:
                 n_cells=self.n_cells,
                 protein_sim=self.protein_sim,
             )
-
         self.n_genes = len(node_set)
 
         ## Setting up logger
@@ -181,6 +186,9 @@ class GRNSim:
             self.prot_tran_rates = jnp.zeros((self.n_cells, self.n_genes, 1))
             self.prot_decay = jnp.zeros_like(self.prot_half_lives)
 
+        node_set_time = time.time() - start_time
+        print("Setting node set", node_set_time)
+
         logging.info("Setting KI Matrix")
         self.ki_matrix = jnp.array(self.ki_matrix)
         del self.ki_values, self.g, node_set, edges_set
@@ -194,10 +202,12 @@ class GRNSim:
         ## Create JIT functions
         self.jit_pij = jit(self.calc_pij)
         self.jit_x_t = jit(self.calc_x_t)
+
+        jit_compile_time = time.time() - start_time
+        print("JIT compile time", jit_compile_time)
+
         logging.info("Calculating steady states...")
-        self.gene_conc, self.prot_conc, new_vals = self.calc_steady_states()
-        if self.learn_params:
-            print("New vals = ", new_vals)
+        self.gene_conc, self.prot_conc, self.learnt_params = self.calc_steady_states()
         self.steady_states = self.gene_conc
         self.prot_steady_state = self.prot_conc
 
@@ -205,36 +215,6 @@ class GRNSim:
         # self.key, self.sub_key, self.prot_conc = random_generators.generate_uniform(key=self.key, sub_key=self.sub_key, shape=self.gene_conc.shape)
 
         logging.info("Steady state concentrations calculated.")
-
-    # def _tree_flatten(self):
-    #     children = (self.key, self.sub_key, self.gene_conc, self.prot_conc,)
-    #     aux_data = {
-    #         "delta": self.delta,
-    #         "n_cells": self.n_cells,
-    #         "protein_sim": self.protein_sim,
-    #         "noise": self.noise,
-    #         "noise_amp": self.noise_amp,
-    #         "delta_sq": self.delta_sq,
-    #         "non_mr_basal": self.non_mr_basal,
-    #         "decay": self.decay,
-    #         "hill_coeffs": self.hill_coeffs,
-    #         "n_steps": self.n_steps,
-    #         "n_genes": self.n_genes,
-    #         "is_logging": self.is_logging,
-    #         "basal_rates": self.basal_rates,
-    #         "is_mr": self.is_mr,
-    #         "ki_matrix": self.ki_matrix,
-    #         "steady_states": self.steady_states,
-    #         "prot_steady_state": self.prot_steady_state,
-    #         "prot_tran_rates": self.prot_tran_rates,
-    #         "prot_decay": self.prot_decay,
-    #         "prot_half_lives": self.prot_half_lives,
-    #     }
-    #     return (children, aux_data)
-
-    # @classmethod
-    # def _tree_unflatten(cls, aux_data, children):
-    #     return cls(*children, **aux_data)
 
     def calc_steady_state_mr(self, b, decay):
         """Steady state calculation for MRs"""
@@ -254,26 +234,26 @@ class GRNSim:
         p_kd,
     ):
         """Steady state calculation for genes and proteins"""
-        e_x = (
-            self.jit_pij(
-                is_mr=is_mr,
-                idx=idx,
-                basal_rates=basal_rates,
-                gene_conc=gene_conc,
-                gene_cell_mean=gene_cell_mean,
-                k_i=k_i,
-                _hill=hill_coeff,
-            )
-            / decay
+        eps = 1e-8
+        e_x = self.jit_pij(
+            is_mr=is_mr,
+            idx=idx,
+            basal_rates=basal_rates,
+            gene_conc=gene_conc,
+            gene_cell_mean=gene_cell_mean,
+            k_i=k_i,
+            _hill=hill_coeff,
+        ) / (decay + eps)
+        p_c = lax.cond(
+            self.protein_sim,
+            lambda _: (p_kt * e_x) / (p_kd + eps),
+            lambda _: jnp.zeros_like(e_x, dtype=jnp.float32),
+            operand=None,
         )
-        if self.protein_sim:
-            p_c = (p_kt * e_x) / p_kd
-        else:
-            p_c = jnp.zeros_like(e_x)
 
         return e_x, p_c
 
-    def calc_steady_states(self):
+    def calc_steady_states(self, learn_params=True):
         """Calculates the steady state concentrations for the MR and Gene nodes.
         The steady state concentrations are calculated using the method mentioned in Equation 8 and Equation 10 in
         Dibaeinia, P., & Sinha, S. (2020). SERGIO: A Single-Cell Expression Simulator Guided by Gene Regulatory Networks.
@@ -282,7 +262,7 @@ class GRNSim:
         """
 
         def _single_gene_steady_state(
-            n_cells,
+            n_cells_range,
             idx,
             is_mr,
             basal_rate,
@@ -293,8 +273,6 @@ class GRNSim:
             hill_coeff,
             prot_trans,
             prot_decay,
-            prot_conc,
-            prot_ss,
         ):
             def _single_cell_steady_state(
                 gene_idx,
@@ -308,10 +286,9 @@ class GRNSim:
                 hill_coeff,
                 prot_trans,
                 prot_decay,
-                prot_conc,
-                prot_ss,
             ):
-                return self.calc_steady_state_g(
+                jit_calc_steady_state = self.calc_steady_state_g
+                return jit_calc_steady_state(
                     is_mr=is_mr,
                     idx=gene_idx,
                     basal_rates=basal_rate,
@@ -324,16 +301,18 @@ class GRNSim:
                     p_kd=prot_decay,
                 )
 
-            vmap_single_cell = vmap(
-                _single_cell_steady_state,
-                in_axes=(None, 0, None, 0, 0, 0, None, None, 0, 0, 0, None, None),
+            vmap_single_cell = jit(
+                vmap(
+                    _single_cell_steady_state,
+                    in_axes=(None, 0, None, 0, 0, 0, None, None, 0, 0, 0),
+                )
             )
             steady_vals = lax.cond(
                 is_mr,
-                lambda _: self.calc_steady_state_mr(basal_rate, decay[:, idx]),
+                lambda _: jit(self.calc_steady_state_mr)(basal_rate, decay[:, idx]),
                 lambda _: vmap_single_cell(
                     idx,
-                    jnp.arange(n_cells),
+                    n_cells_range,
                     is_mr,
                     basal_rate,
                     decay,
@@ -343,8 +322,6 @@ class GRNSim:
                     hill_coeff,
                     prot_trans,
                     prot_decay,
-                    prot_conc,
-                    prot_ss,
                 ),
                 operand=None,
             )
@@ -352,9 +329,26 @@ class GRNSim:
             return steady_vals[0], steady_vals[1]
 
         gene_conc, prot_conc = self.gene_conc, self.prot_conc
-        for i in range(self.n_genes):
-            g_conc, p_conc = _single_gene_steady_state(
-                n_cells=self.n_cells,
+        ## TODO: VMAP over genes does not work as genes depend on the concentration of the regulator genes
+
+        # vmap_gene_conc, vmap_prot_conc = _all_genes_steady_state(
+        #     self.n_cells,
+        #     self.is_mr,
+        #     self.basal_rates,
+        #     self.decay,
+        #     self.ki_matrix,
+        #     gene_conc,
+        #     self.hill_coeffs,
+        #     self.prot_tran_rates,
+        #     self.prot_decay,
+        #     self.prot_conc,
+        #     self.prot_steady_state
+        # )
+        calc_steady_state_jit = jit(_single_gene_steady_state)
+
+        for i in tqdm(range(self.n_genes)):
+            g_conc, p_conc = calc_steady_state_jit(
+                n_cells_range=jnp.arange(self.n_cells),
                 idx=i,
                 is_mr=self.is_mr[i],
                 basal_rate=self.basal_rates[i],
@@ -367,53 +361,85 @@ class GRNSim:
                 hill_coeff=self.hill_coeffs[:, i],
                 prot_trans=self.prot_tran_rates[:, i],
                 prot_decay=self.prot_decay[:, i],
-                prot_conc=self.prot_conc,
-                prot_ss=self.prot_steady_state,
             )
             gene_conc = gene_conc.at[i].set(g_conc)
             prot_conc = prot_conc.at[i].set(p_conc)
 
-        def loss_target(
-            n_cells,
-            idx,
-            is_mr,
-            basal_rate,
-            decay,
-            ki_matrix,
-            gene_conc,
-            all_cell_conc,
-            hill_coeff,
-            prot_trans,
-            prot_decay,
-            prot_conc,
-            prot_ss,
-            target_gene_conc,
-        ):
-            g_conc, p_conc = _single_gene_steady_state(
-                n_cells,
-                idx,
+        ## Copy params to shift values
+        ## TODO: Test for gradient func
+        ## TODO: Threshold for values - Ex. Basal rate cannot be less than 0
+
+        if self.learn_params and learn_params:
+            logging.info("Running backpropagation to learn parameters...")
+
+            def loss_target(
+                n_cells_range,
+                n_genes_range,
                 is_mr,
                 basal_rate,
                 decay,
                 ki_matrix,
                 gene_conc,
-                all_cell_conc,
                 hill_coeff,
                 prot_trans,
                 prot_decay,
-                prot_conc,
-                prot_ss,
-            )
-            loss = jnp.sum(jnp.abs(target_gene_conc - g_conc))
-            return loss
+                target_conc,
+                target_gene=True,
+            ):
+                def _all_genes_steady_state(
+                    n_cells_range,
+                    n_genes_range,
+                    is_mr,
+                    basal_rates,
+                    decay,
+                    ki_matrix,
+                    gene_conc,
+                    hill_coeffs,
+                    prot_tran_rates,
+                    prot_decay,
+                ):
+                    vmap_all_genes = vmap(
+                        _single_gene_steady_state,
+                        in_axes=(None, 0, 0, 0, 1, 1, None, None, 1, 1, 1),
+                    )
+                    ret_ = vmap_all_genes(
+                        n_cells_range,
+                        n_genes_range,
+                        is_mr,
+                        basal_rates,
+                        decay,
+                        ki_matrix,
+                        gene_conc,
+                        jnp.mean(gene_conc, axis=1),
+                        hill_coeffs,
+                        prot_tran_rates,
+                        prot_decay,
+                    )
+                    return ret_
 
-        grad_loss = grad(loss_target, argnums=[3, 4, 5, 8, 9, 10])
+                g_conc, p_conc = _all_genes_steady_state(
+                    n_cells_range,
+                    n_genes_range,
+                    is_mr,
+                    basal_rate,
+                    decay,
+                    ki_matrix,
+                    gene_conc,
+                    hill_coeff,
+                    prot_trans,
+                    prot_decay,
+                )
+                loss = lax.cond(
+                    target_gene,
+                    lambda _: jnp.sum((target_conc - g_conc) ** 2),
+                    lambda _: jnp.sum((target_conc - p_conc) ** 2),
+                    operand=None,
+                )
+                return loss
 
-        ## Copy params to shift values
-        ## TODO: Target fitting for Gene and Protein conc
-        ## TODO: Test for gradient func
-        ## TODO: Threshold for values - Ex. Basal rate cannot be less than 0
-        if self.learn_params:
+            grad_loss_gene = jit(grad(loss_target, argnums=[3, 4, 5, 8]))
+            grad_loss_prot = jit(grad(loss_target, argnums=[9, 10]))
+
             basal_rates = self.basal_rates
             decay = self.decay
             ki_matrix = self.ki_matrix
@@ -421,45 +447,57 @@ class GRNSim:
             prot_tran_rates = self.prot_tran_rates
             prot_decay = self.prot_decay
             learning_rate = self.lr
+            for e_i in range(self.epochs):
+                logging.info("\tEpoch - {e_i}")
+                grad_gene = grad_loss_gene(
+                    jnp.arange(self.n_cells),
+                    jnp.arange(self.n_genes),
+                    self.is_mr,
+                    basal_rates,
+                    decay,
+                    ki_matrix,
+                    self.gene_conc,
+                    hill_coeffs,
+                    prot_tran_rates,
+                    prot_decay,
+                    self.target_gene,
+                )
 
-            for _ in range(self.epochs):
-                for i in range(self.n_genes):
-                    grads = grad_loss(
-                        self.n_cells,
-                        i,
-                        self.is_mr[i],
-                        basal_rates[i],
-                        decay[:, i],
-                        ki_matrix[:, i, :],
-                        self.gene_conc,
-                        jnp.mean(
-                            self.gene_conc, axis=1
-                        ),  # To calculate half response as mean conc across all cells
-                        hill_coeffs[:, i],
-                        prot_tran_rates[:, i],
-                        prot_decay[:, i],
-                        self.prot_conc,
-                        self.prot_steady_state,
-                        jnp.ones_like(
-                            gene_conc[i]
-                        ),  ## TODO: Explicitly set target gene conc
-                    )
-                    basal_rates = basal_rates.at[i].set(
-                        basal_rates[i] - learning_rate * grads[0]
-                    )
-                    decay = decay.at[:, i].set(decay[:, i] - learning_rate * grads[1])
-                    ki_matrix = ki_matrix.at[:, i, :].set(
-                        ki_matrix[:, i, :] - learning_rate * grads[2]
-                    )
-                    hill_coeffs = hill_coeffs.at[:, i].set(
-                        hill_coeffs[:, i] - learning_rate * grads[3]
-                    )
-                    prot_tran_rates = prot_tran_rates.at[:, i].set(
-                        prot_tran_rates[:, i] - learning_rate * grads[4]
-                    )
-                    prot_decay = prot_decay.at[:, i].set(
-                        prot_decay[:, i] - learning_rate * grads[5]
-                    )
+                grad_prot = grad_loss_prot(
+                    jnp.arange(self.n_cells),
+                    jnp.arange(self.n_genes),
+                    self.is_mr,
+                    basal_rates,
+                    decay,
+                    ki_matrix,
+                    self.gene_conc,
+                    hill_coeffs,
+                    prot_tran_rates,
+                    prot_decay,
+                    self.target_gene,
+                    target_gene=False,
+                )
+                basal_rates = basal_rates.at[:].set(
+                    basal_rates - learning_rate * grad_gene[0]
+                )
+                decay = decay.at[:].set(decay - learning_rate * grad_gene[1])
+                ki_matrix = ki_matrix.at[:].set(
+                    ki_matrix - learning_rate * grad_gene[2]
+                )
+                hill_coeffs = hill_coeffs.at[:].set(
+                    hill_coeffs - learning_rate * grad_gene[3]
+                )
+
+                print(grad_prot[1].shape, prot_decay.shape)
+                print(grad_prot[1])
+                # prot_tran_rates = prot_tran_rates.at[:].set(
+                #     prot_tran_rates - learning_rate * grad_prot[0]
+                # )
+                # prot_decay = prot_decay.at[:].set(
+                #     prot_decay
+                #     - learning_rate
+                #     * grad_prot[1].squeeze(2).T.reshape(prot_decay.shape)
+                # )
 
             return (
                 gene_conc,
@@ -488,9 +526,9 @@ class GRNSim:
         """
 
         def _calc_pij_g(gene_conc, gene_cell_mean, k_i, _hill=1):
-            frac = jnp.pow(gene_conc, _hill) / (
-                jnp.pow(gene_cell_mean, _hill) + jnp.pow(gene_conc, _hill)
-            )
+            eps = 1e-8
+            num = jnp.pow(gene_conc, _hill)
+            frac = num / (jnp.pow(gene_cell_mean, _hill) + num + eps)
 
             def _calc_hill(f_i, k_ij):
                 return lax.cond(

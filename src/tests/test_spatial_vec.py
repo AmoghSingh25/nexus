@@ -1,4 +1,4 @@
-from simulator.spatial_vec.spatialSim import SpatialSimVec
+from simulator.spatial.spatialSim import SpatialSimVec
 import numpy as np
 import os
 from hydra import initialize_config_dir, compose

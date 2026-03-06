@@ -2,21 +2,21 @@ import jax.numpy as jnp
 import jax
 from jax import random
 import math
-from simulator.spatial_vec.utils.random_generators import (
+from simulator.spatial.utils.random_generators import (
     generate_uniform,
     generate_normal,
 )
-from simulator.spatial_vec.logger.mesh_logger import FieldLogger
-from simulator.spatial_vec.models.reaction import Reaction
-from simulator.spatial_vec.layers.chemical import (
+from simulator.spatial.logger.mesh_logger import FieldLogger
+from simulator.spatial.models.reaction import Reaction
+from simulator.spatial.layers.chemical import (
     calc_zero_order,
     calc_first_order,
     calc_second_order,
     calc_reaction_change,
 )
-from simulator.spatial_vec.layers.force import calc_vel
-from simulator.spatial_vec.utils.verify_data import check_cell_type_data
-from simulator.spatial_vec.mesh.clustering_field import k_mean_clustering
+from simulator.spatial.layers.force import calc_vel
+from simulator.spatial.utils.verify_data import check_cell_type_data
+from simulator.spatial.mesh.clustering_field import k_mean_clustering
 
 
 class Mesh:
@@ -878,5 +878,5 @@ class Mesh:
             )
             return new_cluster_assgns
         elif clustering_type == "k_mean":
-            assigned_fields = k_mean_clustering(3, self.cell_positions)
+            assigned_fields, cluster_means = k_mean_clustering(3, self.cell_positions)
             return assigned_fields

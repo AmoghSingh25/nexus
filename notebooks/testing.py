@@ -29,7 +29,6 @@ def _(compose, initialize_config_dir, os):
         with initialize_config_dir(version_base=None, config_dir=conf_path):
             cfg = compose(config_name=config_name)
         return cfg
-
     return (get_config,)
 
 
@@ -57,14 +56,12 @@ def _(np, plt):
         plt.legend()
         plt.grid(True)
         plt.show()
-
     return (plot_conc,)
 
 
 @app.cell
 def _():
     from simulator.grn.grnSim import GRNSim
-
     return (GRNSim,)
 
 
@@ -348,7 +345,9 @@ def _(jnp, node_mapping, sim1):
     sim_output_1 = sim1.gene_conc.reshape((100, 2700))
     reordered_output_1 = jnp.zeros_like(sim_output_1)
     for i in node_mapping:
-        reordered_output_1 = reordered_output_1.at[i].set(sim_output_1[node_mapping[i]])
+        reordered_output_1 = reordered_output_1.at[i].set(
+            sim_output_1[node_mapping[i]]
+        )
     return (reordered_output_1,)
 
 
