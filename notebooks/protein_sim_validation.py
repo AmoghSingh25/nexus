@@ -206,9 +206,8 @@ def _(conc_dict, g, random, tqdm):
     key, sub_key = random.split(random.key(42))
     nodes_names = []
 
-    basal_rate_range = (1, 10)
+    basal_rate_range = (0.1, 20)
     ki_range = (-2, 2)
-    decay_range = (0, 2)
 
     for _i in tqdm(conc_dict):
         if _i in g.nodes() and len(list(g.predecessors(_i))) == 0:
@@ -354,6 +353,7 @@ def _(
     ids,
     jnp,
     n_cells,
+    nn,
     node_set,
     np,
     prot_conc,
@@ -365,12 +365,12 @@ def _(
     _output_rna_names = np.array([_i["name"] for _i in node_set])
     _target_rna_ids = [ids.to_list().index(_i) for _i in _output_rna_names]
 
-    for _i in range(len(prot_conc)):
-        _prot_conc_target.append(prot_conc[_i])
+    for _i in range(len(node_set)):
+        _prot_conc_target.append(prot_conc[list(ids).index(node_set[_i]["name"])])
 
-    _prot_conc_target = jnp.array(_prot_conc_target)
+    _prot_conc_target = nn.standardize(jnp.array(_prot_conc_target))
 
-    _rna_target = rna_conc.to_numpy()[_target_rna_ids]
+    _rna_target = nn.standardize(rna_conc.to_numpy()[_target_rna_ids])
 
     from simulator.grn.grnSim import GRNSim
 
@@ -380,28 +380,23 @@ def _(
     _decay = _mu_decay + _std_decay * random.normal(
         key=_sub_key, shape=(n_cells, 1913, 1)
     )
-    # _decay = random.uniform(
-    #     minval=decay_range[0],
-    #     maxval=decay_range[1],
-    #     shape=(n_cells, 1913, 1),
-    #     key=_sub_key,
-    # )
+
     cfg = get_config(config_name="config")
     cfg.grn.n_cells = n_cells
     cfg.grn.protein_sim = True
     cfg.grn.non_mr_basal = True
     cfg.grn.decay = _decay.tolist()
     cfg.grn.logging = True
-    cfg.grn.learn_params = True  # Toggle if disabling backprop
-    cfg.grn.epochs = 1
+    cfg.grn.learn_params = False  # Toggle if disabling backprop
+    cfg.grn.epochs = 10
 
     _t1 = time.time()
     sim = GRNSim(
         node_set=node_set,
         edges_set=edges_set,
         cfg=cfg.grn,
-        target_gene=_rna_target,
-        target_prot=_prot_conc_target,
+        target_gene_conc=_rna_target,
+        target_prot_conc=_prot_conc_target,
     )
     prev_gene_conc, prev_prot_conc = sim.gene_conc, sim.prot_conc
     if cfg.grn.learn_params:
@@ -420,18 +415,30 @@ def _(
 
 
 @app.cell
+def _(jnp, nn):
+    def z_score_norm(inp, axis=0):
+        return nn.standardize(inp)
+        mean = jnp.mean(inp, axis=axis)
+        std = jnp.std(inp, axis=axis)
+        inp = (inp - mean) / std
+        return inp
+    return (z_score_norm,)
+
+
+@app.cell
 def _(
     ids,
     jnp,
     n_cells,
-    nn,
     node_names_refined,
     node_set,
     np,
     plt,
     prot_conc,
     rna_conc,
+    shortlisted_prots,
     sim,
+    z_score_norm,
 ):
     _prot_conc_target = []
     _output_prots = np.array(node_names_refined)[
@@ -454,17 +461,32 @@ def _(
     _output_rna_names = np.array([_i["name"] for _i in node_set])
     _target_rna_ids = [ids.to_list().index(_i) for _i in _output_rna_names]
 
-    _rna_pred = sim.steady_states.reshape(-1, n_cells)
-    _prot_pred = sim.prot_steady_state[_pred_prod_ids].reshape(-1, n_cells)
+    _rna_pred = z_score_norm(sim.steady_states.reshape(-1, n_cells))
+    _prot_pred = z_score_norm(
+        sim.prot_steady_state[_pred_prod_ids].reshape(-1, n_cells)
+    )
 
     for _i in range(len(prot_conc)):
         if ids[_i] in _output_prod_names:
             _prot_conc_target.append(prot_conc[_i])
 
+
+    _prot_conc_shortlisted = []
+    _prot_conc_pred_shortlisted = []
+    for _i in range(len(prot_conc)):
+        if ids[_i] in shortlisted_prots:
+            _prot_conc_shortlisted.append(prot_conc[_i])
+            _prot_conc_pred_shortlisted.append(_prot_pred[_i])
+
     _prot_conc_target = jnp.array(_prot_conc_target)
 
-    _prot_target = nn.standardize(_prot_conc_target)
-    _rna_target = nn.standardize(rna_conc.to_numpy()[_target_rna_ids])
+    _prot_conc_shortlisted = z_score_norm(jnp.array(_prot_conc_shortlisted))
+    _prot_conc_pred_shortlisted = z_score_norm(
+        jnp.array(_prot_conc_pred_shortlisted)
+    )
+
+    _prot_target = z_score_norm(_prot_conc_target)
+    _rna_target = z_score_norm(rna_conc.to_numpy()[_target_rna_ids])
 
     _min_gene_loss = jnp.inf
 
@@ -473,8 +495,9 @@ def _(
         _min_loss = jnp.inf
         idx = 0
         for _i in range(n_cells):
-            # _norm_pred = nn.standardize(_pred[:, _i])
-            _mse_loss = jnp.mean((_target - _pred[:, _i]) ** 2)
+            _norm_pred = z_score_norm(_pred[:, _i])
+            _norm_target = z_score_norm(_target)
+            _mse_loss = jnp.mean((_norm_target - _norm_pred) ** 2)
             if _mse_loss < _min_loss:
                 _min_loss = min(_min_loss, _mse_loss)
                 idx = _i
@@ -482,11 +505,17 @@ def _(
 
 
     _min_rna_l, _min_rna_idx = _calc_mse(_rna_target, _rna_pred)
-    _min_prot_l, _min_prot_idx = _calc_mse(_prot_target, _prot_pred)
+    _min_prot_sh_l, _min_prot_sh_l_idx = _calc_mse(
+        _prot_conc_shortlisted, _prot_conc_pred_shortlisted
+    )
+    _min_prot_l, _min_prot_idx = _calc_mse(
+        _prot_target, _prot_pred[:, [_min_prot_sh_l_idx]]
+    )
 
     print("Comparing steady states")
     print("Min RNA MSE loss = ", _min_rna_l)
     print("Min Protein MSE loss = ", _min_prot_l)
+    print("Min Shortlisted Protein MSE loss = ", _min_prot_sh_l)
 
     _fig, (_ax1, _ax2) = plt.subplots(1, 2, figsize=(20, 6))
     _ax1.plot(_rna_target, label="Target")
@@ -498,14 +527,40 @@ def _(
     _ax1.legend()
 
     _ax2.plot(_prot_target, label="Target")
-    _ax2.plot(_prot_pred[:, _min_prot_idx], label="Pred")
+    _ax2.plot(_prot_pred[:, _min_prot_sh_l_idx], label="Pred")
     _ax2.set_xlabel("Prot ID", fontsize=14)
     _ax2.set_ylabel("Standardized concentration", fontsize=14)
     _ax2.set_title("Protein concentration comparison", fontsize=18)
     _ax2.set_aspect("auto")
     _ax2.legend()
 
-    plt.savefig("outputs/images/steady_state_comparison.pdf", bbox_inches="tight")
+    # _ax2[0].plot(_prot_conc_shortlisted, label="Target")
+    # _ax2[0].plot(_prot_conc_pred_shortlisted[:, _min_prot_sh_l_idx], label="Pred")
+    # _ax2[0].set_xlabel("Prot ID", fontsize=14)
+    # _ax2[0].set_ylabel("Standardized concentration", fontsize=14)
+    # _ax2[0].set_title(
+    #     "Concentration comparison of proteins with known half lives ", fontsize=18
+    # )
+    # _ax2[0].set_aspect("auto")
+    # _ax2[0].legend()
+
+    plt.savefig(
+        "outputs/images/steady_state_comparison_range.pdf", bbox_inches="tight"
+    )
+
+    fig, _ax1 = plt.subplots(1, 1, figsize=(10, 6))
+    _ax1.plot(_prot_conc_shortlisted, label="Target")
+    _ax1.plot(_prot_conc_pred_shortlisted[:, _min_prot_sh_l_idx], label="Pred")
+    _ax1.set_xlabel("Prot ID", fontsize=14)
+    _ax1.set_ylabel("Standardized concentration", fontsize=14)
+    _ax1.set_title(
+        "Concentration comparison of proteins with known half lives ", fontsize=18
+    )
+    _ax1.set_aspect("auto")
+    _ax1.legend()
+    plt.savefig(
+        "outputs/images/steady_state_comparison_range_2.pdf", bbox_inches="tight"
+    )
     plt.show()
     return
 

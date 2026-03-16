@@ -6,7 +6,7 @@ import os
 import time
 import networkx as nx
 import jax.numpy as jnp
-from jax import vmap, random, lax, jit, clear_caches, grad, config
+from jax import vmap, random, lax, jit, clear_caches, grad, config, debug
 from simulator.utils.read_network import _read_data
 from tqdm import tqdm
 import logging
@@ -23,8 +23,8 @@ class GRNSim:
         cfg: DictConfig,
         node_set=None,
         edges_set=None,
-        target_gene=None,
-        target_prot=None,
+        target_gene_conc=None,
+        target_prot_conc=None,
     ):
         """
         Shapes of variables :
@@ -59,8 +59,6 @@ class GRNSim:
         self.learn_params = cfg.get("learn_params", False)
         self.epochs = cfg.get("epochs", 0)
         self.lr = cfg.get("lr", 0.01)
-        self.target_gene = target_gene
-        self.target_prot = target_prot
 
         ## TODO: High read time
         if node_set is None and edges_set is None:
@@ -86,6 +84,10 @@ class GRNSim:
                 n_cells=self.n_cells,
                 n_genes=self.n_genes,
             )
+
+        if target_gene_conc is not None:
+            self.target_gene_conc = target_gene_conc.reshape(self.n_genes, 1)
+            self.target_prot_conc = target_prot_conc.reshape(self.n_genes, 1)
 
         self.decay = _copy_param_vals(
             var=self.decay, var_name="Decay", n_cells=self.n_cells, n_genes=self.n_genes
@@ -431,14 +433,33 @@ class GRNSim:
                 )
                 loss = lax.cond(
                     target_gene,
-                    lambda _: jnp.sum((target_conc - g_conc) ** 2),
-                    lambda _: jnp.sum((target_conc - p_conc) ** 2),
+                    lambda _: jnp.sqrt(
+                        jnp.sum(
+                            (
+                                target_conc.repeat(axis=1, repeats=100)
+                                - g_conc.squeeze(2)
+                            )
+                            ** 2,
+                            axis=0,
+                        )
+                    ),
+                    lambda _: jnp.sqrt(
+                        jnp.sum(
+                            (
+                                target_conc.repeat(axis=1, repeats=100)
+                                - p_conc.squeeze(2)
+                            )
+                            ** 2,
+                            axis=0,
+                        )
+                    ),
                     operand=None,
                 )
+                debug.print("Target gene = {y} Loss - {x}", x=loss, y=target_gene)
                 return loss
 
-            grad_loss_gene = jit(grad(loss_target, argnums=[3, 4, 5, 8]))
-            grad_loss_prot = jit(grad(loss_target, argnums=[9, 10]))
+            grad_loss_gene = jit(grad(loss_target, argnums=[3, 4, 5, 7]))
+            grad_loss_prot = jit(grad(loss_target, argnums=[9]))
 
             basal_rates = self.basal_rates
             decay = self.decay
@@ -448,7 +469,7 @@ class GRNSim:
             prot_decay = self.prot_decay
             learning_rate = self.lr
             for e_i in range(self.epochs):
-                logging.info("\tEpoch - {e_i}")
+                logging.info(f"\tEpoch - {e_i}")
                 grad_gene = grad_loss_gene(
                     jnp.arange(self.n_cells),
                     jnp.arange(self.n_genes),
@@ -460,7 +481,7 @@ class GRNSim:
                     hill_coeffs,
                     prot_tran_rates,
                     prot_decay,
-                    self.target_gene,
+                    target_conc=self.target_gene_conc,
                 )
 
                 grad_prot = grad_loss_prot(
@@ -474,11 +495,11 @@ class GRNSim:
                     hill_coeffs,
                     prot_tran_rates,
                     prot_decay,
-                    self.target_gene,
+                    target_conc=self.target_prot_conc,
                     target_gene=False,
                 )
                 basal_rates = basal_rates.at[:].set(
-                    basal_rates - learning_rate * grad_gene[0]
+                    basal_rates - jnp.multiply(grad_gene[0], learning_rate)
                 )
                 decay = decay.at[:].set(decay - learning_rate * grad_gene[1])
                 ki_matrix = ki_matrix.at[:].set(
@@ -488,16 +509,14 @@ class GRNSim:
                     hill_coeffs - learning_rate * grad_gene[3]
                 )
 
-                print(grad_prot[1].shape, prot_decay.shape)
-                print(grad_prot[1])
                 # prot_tran_rates = prot_tran_rates.at[:].set(
                 #     prot_tran_rates - learning_rate * grad_prot[0]
                 # )
-                # prot_decay = prot_decay.at[:].set(
-                #     prot_decay
-                #     - learning_rate
-                #     * grad_prot[1].squeeze(2).T.reshape(prot_decay.shape)
-                # )
+                prot_decay = prot_decay.at[:].set(
+                    prot_decay
+                    - learning_rate
+                    * grad_prot[0].squeeze(2).T.reshape(prot_decay.shape)
+                )
 
             return (
                 gene_conc,

@@ -10,6 +10,7 @@ grn:
   logging: true
   learn_params: true
   epochs: 10
+  lr: 1
   
   ## Gene related
   non_mr_basal: false
