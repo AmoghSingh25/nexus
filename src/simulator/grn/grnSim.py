@@ -6,7 +6,7 @@ import os
 import time
 import networkx as nx
 import jax.numpy as jnp
-from jax import vmap, random, lax, jit, clear_caches, grad, config, debug
+from jax import vmap, random, lax, jit, clear_caches, grad, config, nn
 from simulator.utils.read_network import _read_data
 from tqdm import tqdm
 import logging
@@ -15,6 +15,7 @@ import numpy as np
 from simulator.utils.verify_network import _copy_param_vals
 from omegaconf import DictConfig
 from simulator.grn.logger.grnLogger import GRNLogger
+import optax
 
 
 class GRNSim:
@@ -209,7 +210,12 @@ class GRNSim:
         print("JIT compile time", jit_compile_time)
 
         logging.info("Calculating steady states...")
-        self.gene_conc, self.prot_conc, self.learnt_params = self.calc_steady_states()
+        (
+            self.gene_conc,
+            self.prot_conc,
+            self.learnt_gene_params,
+            self.learnt_prot_params,
+        ) = self.calc_steady_states()
         self.steady_states = self.gene_conc
         self.prot_steady_state = self.prot_conc
 
@@ -375,16 +381,12 @@ class GRNSim:
             logging.info("Running backpropagation to learn parameters...")
 
             def loss_target(
+                params,
+                params_prot,
                 n_cells_range,
                 n_genes_range,
                 is_mr,
-                basal_rate,
-                decay,
-                ki_matrix,
                 gene_conc,
-                hill_coeff,
-                prot_trans,
-                prot_decay,
                 target_conc,
                 target_gene=True,
             ):
@@ -404,6 +406,7 @@ class GRNSim:
                         _single_gene_steady_state,
                         in_axes=(None, 0, 0, 0, 1, 1, None, None, 1, 1, 1),
                     )
+
                     ret_ = vmap_all_genes(
                         n_cells_range,
                         n_genes_range,
@@ -423,44 +426,44 @@ class GRNSim:
                     n_cells_range,
                     n_genes_range,
                     is_mr,
-                    basal_rate,
-                    decay,
-                    ki_matrix,
+                    nn.softplus(params["basal_rates"]),
+                    nn.softplus(params["decay"]),
+                    params["ki_matrix"],
                     gene_conc,
-                    hill_coeff,
-                    prot_trans,
-                    prot_decay,
+                    params["hill_coeffs"],
+                    nn.softplus(params_prot["prot_tran_rates"]),
+                    nn.softplus(params_prot["prot_decay"]),
                 )
+
+                n_cells = len(n_cells_range)
                 loss = lax.cond(
                     target_gene,
                     lambda _: jnp.sqrt(
                         jnp.sum(
                             (
-                                target_conc.repeat(axis=1, repeats=100)
+                                target_conc.repeat(axis=1, repeats=n_cells)
                                 - g_conc.squeeze(2)
                             )
                             ** 2,
-                            axis=0,
+                            dtype=jnp.float32,
                         )
-                    ),
+                    ).astype(jnp.float32),
                     lambda _: jnp.sqrt(
                         jnp.sum(
                             (
-                                target_conc.repeat(axis=1, repeats=100)
+                                target_conc.repeat(axis=1, repeats=n_cells)
                                 - p_conc.squeeze(2)
                             )
                             ** 2,
-                            axis=0,
+                            dtype=jnp.float32,
                         )
-                    ),
+                    ).astype(jnp.float32),
                     operand=None,
                 )
-                debug.print("Target gene = {y} Loss - {x}", x=loss, y=target_gene)
                 return loss
 
-            grad_loss_gene = jit(grad(loss_target, argnums=[3, 4, 5, 7]))
-            grad_loss_prot = jit(grad(loss_target, argnums=[9]))
-
+            grad_loss_gene = jit(grad(loss_target, argnums=0))
+            grad_loss_prot = jit(grad(loss_target, argnums=1))
             basal_rates = self.basal_rates
             decay = self.decay
             ki_matrix = self.ki_matrix
@@ -468,70 +471,61 @@ class GRNSim:
             prot_tran_rates = self.prot_tran_rates
             prot_decay = self.prot_decay
             learning_rate = self.lr
+
+            params_gene = {
+                "basal_rates": basal_rates,
+                "decay": decay,
+                "ki_matrix": ki_matrix,
+                "hill_coeffs": hill_coeffs,
+            }
+            params_prot = {
+                "prot_tran_rates": prot_tran_rates,
+                "prot_decay": prot_decay,
+            }
+            # mask_prot_decay = {"prot_tran_rates": True, "prot_decay": False}
+            exp_decay = optax.schedules.exponential_decay(learning_rate, 50, 0.5)
+            exp_decay_prot = optax.schedules.exponential_decay(learning_rate, 50, 0.5)
+            optimizer = optax.chain(
+                optax.clip_by_global_norm(1.0),
+                optax.inject_hyperparams(optax.adam)(learning_rate=exp_decay),
+            )
+            optimizer_prot = optax.inject_hyperparams(optax.adam)(
+                learning_rate=exp_decay_prot
+            )
+
+            opt_state = optimizer.init(params_gene)
+            opt_state_prot = optimizer_prot.init(params_prot)
+
             for e_i in range(self.epochs):
                 logging.info(f"\tEpoch - {e_i}")
                 grad_gene = grad_loss_gene(
+                    params_gene,
+                    params_prot,
                     jnp.arange(self.n_cells),
                     jnp.arange(self.n_genes),
                     self.is_mr,
-                    basal_rates,
-                    decay,
-                    ki_matrix,
                     self.gene_conc,
-                    hill_coeffs,
-                    prot_tran_rates,
-                    prot_decay,
                     target_conc=self.target_gene_conc,
                 )
+                updates, opt_state = optimizer.update(grad_gene, opt_state)
+                params_gene = optax.apply_updates(params_gene, updates)
 
                 grad_prot = grad_loss_prot(
+                    params_gene,
+                    params_prot,
                     jnp.arange(self.n_cells),
                     jnp.arange(self.n_genes),
                     self.is_mr,
-                    basal_rates,
-                    decay,
-                    ki_matrix,
                     self.gene_conc,
-                    hill_coeffs,
-                    prot_tran_rates,
-                    prot_decay,
                     target_conc=self.target_prot_conc,
                     target_gene=False,
                 )
-                basal_rates = basal_rates.at[:].set(
-                    basal_rates - jnp.multiply(grad_gene[0], learning_rate)
-                )
-                decay = decay.at[:].set(decay - learning_rate * grad_gene[1])
-                ki_matrix = ki_matrix.at[:].set(
-                    ki_matrix - learning_rate * grad_gene[2]
-                )
-                hill_coeffs = hill_coeffs.at[:].set(
-                    hill_coeffs - learning_rate * grad_gene[3]
-                )
+                updates, opt_state = optimizer_prot.update(grad_prot, opt_state_prot)
+                params_prot = optax.apply_updates(params_prot, updates)
 
-                # prot_tran_rates = prot_tran_rates.at[:].set(
-                #     prot_tran_rates - learning_rate * grad_prot[0]
-                # )
-                prot_decay = prot_decay.at[:].set(
-                    prot_decay
-                    - learning_rate
-                    * grad_prot[0].squeeze(2).T.reshape(prot_decay.shape)
-                )
-
-            return (
-                gene_conc,
-                prot_conc,
-                [
-                    basal_rates,
-                    decay,
-                    ki_matrix,
-                    hill_coeffs,
-                    prot_tran_rates,
-                    prot_decay,
-                ],
-            )
+                return gene_conc, prot_conc, params_gene, params_prot
         else:
-            return gene_conc, prot_conc, []
+            return gene_conc, prot_conc, {}, {}
 
     def calc_pij(
         self, is_mr, idx, basal_rates, gene_conc, gene_cell_mean, k_i, _hill=1

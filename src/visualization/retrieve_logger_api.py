@@ -15,7 +15,7 @@ CORS(app, origins="*")
 #     os.path.dirname(os.path.abspath(__file__)), "../simulator/spatial/logs"
 # )
 spatial_base_dir = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "../simulator/spatial_vec/logs"
+    os.path.dirname(os.path.abspath(__file__)), "../simulator/spatial/logs"
 )
 grn_base_dir = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "../simulator/grn/logs"

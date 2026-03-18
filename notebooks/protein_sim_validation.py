@@ -202,12 +202,12 @@ def _(conc_dict, prot_half_lives, shortlisted_prots):
 @app.cell
 def _(conc_dict, g, random, tqdm):
     simulator_config = []
-    n_cells = 100
+    n_cells = 10
     key, sub_key = random.split(random.key(42))
     nodes_names = []
 
-    basal_rate_range = (0.1, 20)
-    ki_range = (-2, 2)
+    basal_rate_range = (0, 1e-3)
+    ki_range = (-1e-3, 1e-3)
 
     for _i in tqdm(conc_dict):
         if _i in g.nodes() and len(list(g.predecessors(_i))) == 0:
@@ -375,8 +375,8 @@ def _(
     from simulator.grn.grnSim import GRNSim
 
     _key, _sub_key = random.split(random.key(42))
-    _mu_decay = 5.6e-4
-    _std_decay = 1e-4
+    _mu_decay = 5.6e-1
+    _std_decay = 1e-1
     _decay = _mu_decay + _std_decay * random.normal(
         key=_sub_key, shape=(n_cells, 1913, 1)
     )
@@ -387,8 +387,8 @@ def _(
     cfg.grn.non_mr_basal = True
     cfg.grn.decay = _decay.tolist()
     cfg.grn.logging = True
-    cfg.grn.learn_params = False  # Toggle if disabling backprop
-    cfg.grn.epochs = 10
+    cfg.grn.learn_params = True  # Toggle if disabling backprop
+    cfg.grn.epochs = 1000
 
     _t1 = time.time()
     sim = GRNSim(
@@ -399,19 +399,46 @@ def _(
         target_prot_conc=_prot_conc_target,
     )
     prev_gene_conc, prev_prot_conc = sim.gene_conc, sim.prot_conc
+    prev_params = [
+        sim.basal_rates,
+        sim.decay,
+        sim.ki_matrix,
+        sim.hill_coeffs,
+        sim.prot_tran_rates,
+        sim.prot_decay,
+    ]
     if cfg.grn.learn_params:
-        sim.basal_rates = sim.learnt_params[0]
-        sim.decay = sim.learnt_params[1]
-        sim.ki_matrix = sim.learnt_params[2]
-        sim.hill_coeffs = sim.learnt_params[3]
-
-        sim.prot_tran_rates = sim.learnt_params[4]
-        sim.prot_decay = sim.learnt_params[5]
-        sim.steady_states, sim.prot_steady_state, _ = sim.calc_steady_states(
+        sim.basal_rates = sim.learnt_gene_params['basal_rates']
+        sim.decay = sim.learnt_gene_params['decay']
+        sim.ki_matrix = sim.learnt_gene_params['ki_matrix']
+        sim.hill_coeffs = sim.learnt_gene_params['hill_coeffs']
+        sim.prot_tran_rates = sim.learnt_prot_params['prot_tran_rates']
+        sim.prot_decay = sim.learnt_prot_params['prot_decay']
+        sim.steady_states, sim.prot_steady_state, _, _ = sim.calc_steady_states(
             learn_params=False
         )
     # sim.run_sim()
     return (sim,)
+
+
+@app.cell
+def _(plt, sim):
+    # plt.plot(prev_gene_conc[:, 0], label="Without backprop")
+    plt.plot(sim.steady_states[:, 0], label="Pred")
+    plt.plot(sim.target_gene_conc, label="Target")
+    # plt.yscale("log")
+    plt.legend()
+    return
+
+
+@app.cell
+def _(plt, sim):
+    # plt.plot(prev_gene_conc[:, 0], label="Without backprop")
+    plt.plot(sim.prot_steady_state[:, 0], label="Pred")
+    plt.plot(sim.target_prot_conc, label="Target")
+    # plt.yscale("log")
+    plt.legend()
+    return
 
 
 @app.cell
@@ -461,10 +488,8 @@ def _(
     _output_rna_names = np.array([_i["name"] for _i in node_set])
     _target_rna_ids = [ids.to_list().index(_i) for _i in _output_rna_names]
 
-    _rna_pred = z_score_norm(sim.steady_states.reshape(-1, n_cells))
-    _prot_pred = z_score_norm(
-        sim.prot_steady_state[_pred_prod_ids].reshape(-1, n_cells)
-    )
+    _rna_pred = sim.steady_states.reshape(-1, n_cells)
+    _prot_pred =sim.prot_steady_state[_pred_prod_ids].reshape(-1, n_cells)
 
     for _i in range(len(prot_conc)):
         if ids[_i] in _output_prod_names:
@@ -480,10 +505,8 @@ def _(
 
     _prot_conc_target = jnp.array(_prot_conc_target)
 
-    _prot_conc_shortlisted = z_score_norm(jnp.array(_prot_conc_shortlisted))
-    _prot_conc_pred_shortlisted = z_score_norm(
-        jnp.array(_prot_conc_pred_shortlisted)
-    )
+    _prot_conc_shortlisted = jnp.array(_prot_conc_shortlisted)
+    _prot_conc_pred_shortlisted = jnp.array(_prot_conc_pred_shortlisted)
 
     _prot_target = z_score_norm(_prot_conc_target)
     _rna_target = z_score_norm(rna_conc.to_numpy()[_target_rna_ids])
