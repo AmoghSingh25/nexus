@@ -206,8 +206,8 @@ def _(conc_dict, g, random, tqdm):
     key, sub_key = random.split(random.key(42))
     nodes_names = []
 
-    basal_rate_range = (0, 1e-3)
-    ki_range = (-1e-3, 1e-3)
+    basal_rate_range = (0, 10)
+    ki_range = (-2, 2)
 
     for _i in tqdm(conc_dict):
         if _i in g.nodes() and len(list(g.predecessors(_i))) == 0:
@@ -375,8 +375,8 @@ def _(
     from simulator.grn.grnSim import GRNSim
 
     _key, _sub_key = random.split(random.key(42))
-    _mu_decay = 5.6e-1
-    _std_decay = 1e-1
+    _mu_decay = 5.4
+    _std_decay = 2
     _decay = _mu_decay + _std_decay * random.normal(
         key=_sub_key, shape=(n_cells, 1913, 1)
     )
@@ -388,7 +388,7 @@ def _(
     cfg.grn.decay = _decay.tolist()
     cfg.grn.logging = True
     cfg.grn.learn_params = True  # Toggle if disabling backprop
-    cfg.grn.epochs = 1000
+    cfg.grn.epochs = 500
 
     _t1 = time.time()
     sim = GRNSim(
@@ -412,32 +412,61 @@ def _(
         sim.decay = sim.learnt_gene_params['decay']
         sim.ki_matrix = sim.learnt_gene_params['ki_matrix']
         sim.hill_coeffs = sim.learnt_gene_params['hill_coeffs']
-        sim.prot_tran_rates = sim.learnt_prot_params['prot_tran_rates']
+        # sim.prot_tran_rates = sim.learnt_prot_params['prot_tran_rates']
         sim.prot_decay = sim.learnt_prot_params['prot_decay']
         sim.steady_states, sim.prot_steady_state, _, _ = sim.calc_steady_states(
             learn_params=False
         )
     # sim.run_sim()
-    return (sim,)
+    return prev_params, sim
 
 
 @app.cell
-def _(plt, sim):
-    # plt.plot(prev_gene_conc[:, 0], label="Without backprop")
-    plt.plot(sim.steady_states[:, 0], label="Pred")
-    plt.plot(sim.target_gene_conc, label="Target")
-    # plt.yscale("log")
+def _(plt, prev_params, sim):
+    plt.plot(sim.decay[:, 0], label="Opt")
+    plt.plot(prev_params[1][:, 0], label="Before opt")
     plt.legend()
+    plt.show()
     return
 
 
 @app.cell
-def _(plt, sim):
-    # plt.plot(prev_gene_conc[:, 0], label="Without backprop")
-    plt.plot(sim.prot_steady_state[:, 0], label="Pred")
-    plt.plot(sim.target_prot_conc, label="Target")
-    # plt.yscale("log")
+def _(nn, plt, sim):
+    # plt.plot(prev_gene_conc[:, 0], label='Before opt')
+    plt.plot(nn.relu(sim.steady_states[:, 0]), label='After opt')
+    plt.plot(sim.target_gene_conc, label="Target")
+    # plt.plot(sim.steady_states[:, 0], label='After opt')
     plt.legend()
+    plt.show()
+    return
+
+
+@app.cell
+def _(jnp, n_cells, nn, plt, sim):
+    def _calc_mse(_target, _pred):
+        _min_loss = jnp.inf
+        idx = 0
+        for _i in range(n_cells):
+            _norm_pred = _pred[:, _i]
+            _norm_target = _target
+            _mse_loss = jnp.mean((_norm_target - _norm_pred) ** 2)
+            if _mse_loss < _min_loss:
+                _min_loss = min(_min_loss, _mse_loss)
+                idx = _i
+        return _min_loss, idx
+    print(_calc_mse(sim.target_gene_conc, nn.relu(sim.steady_states)))
+
+    plt.figure(figsize=(12,6))
+    # plt.plot(prev_gene_conc[:, 0], label="Without backprop")
+    plt.plot(nn.relu(sim.steady_states[:, 0]), label="Pred")
+    plt.plot(sim.target_gene_conc, label="Target")
+    # plt.yscale("log")
+    plt.title("Comparison of RNA conc.")
+    plt.xlabel("RNA idx")
+    plt.ylabel("Concentration")
+    plt.legend()
+
+    plt.show()
     return
 
 
@@ -449,7 +478,7 @@ def _(jnp, nn):
         std = jnp.std(inp, axis=axis)
         inp = (inp - mean) / std
         return inp
-    return (z_score_norm,)
+    return
 
 
 @app.cell
@@ -465,7 +494,6 @@ def _(
     rna_conc,
     shortlisted_prots,
     sim,
-    z_score_norm,
 ):
     _prot_conc_target = []
     _output_prots = np.array(node_names_refined)[
@@ -508,8 +536,8 @@ def _(
     _prot_conc_shortlisted = jnp.array(_prot_conc_shortlisted)
     _prot_conc_pred_shortlisted = jnp.array(_prot_conc_pred_shortlisted)
 
-    _prot_target = z_score_norm(_prot_conc_target)
-    _rna_target = z_score_norm(rna_conc.to_numpy()[_target_rna_ids])
+    _prot_target = _prot_conc_target
+    _rna_target = rna_conc.to_numpy()[_target_rna_ids]
 
     _min_gene_loss = jnp.inf
 
@@ -518,8 +546,8 @@ def _(
         _min_loss = jnp.inf
         idx = 0
         for _i in range(n_cells):
-            _norm_pred = z_score_norm(_pred[:, _i])
-            _norm_target = z_score_norm(_target)
+            _norm_pred = _pred[:, _i]
+            _norm_target = _target
             _mse_loss = jnp.mean((_norm_target - _norm_pred) ** 2)
             if _mse_loss < _min_loss:
                 _min_loss = min(_min_loss, _mse_loss)

@@ -388,6 +388,7 @@ class GRNSim:
                 is_mr,
                 gene_conc,
                 target_conc,
+                prot_tran_rates,
                 target_gene=True,
             ):
                 def _all_genes_steady_state(
@@ -431,7 +432,7 @@ class GRNSim:
                     params["ki_matrix"],
                     gene_conc,
                     params["hill_coeffs"],
-                    nn.softplus(params_prot["prot_tran_rates"]),
+                    prot_tran_rates,
                     nn.softplus(params_prot["prot_decay"]),
                 )
 
@@ -464,6 +465,7 @@ class GRNSim:
 
             grad_loss_gene = jit(grad(loss_target, argnums=0))
             grad_loss_prot = jit(grad(loss_target, argnums=1))
+            calc_loss = jit(loss_target)
             basal_rates = self.basal_rates
             decay = self.decay
             ki_matrix = self.ki_matrix
@@ -479,22 +481,20 @@ class GRNSim:
                 "hill_coeffs": hill_coeffs,
             }
             params_prot = {
-                "prot_tran_rates": prot_tran_rates,
+                # "prot_tran_rates": prot_tran_rates,
                 "prot_decay": prot_decay,
             }
             # mask_prot_decay = {"prot_tran_rates": True, "prot_decay": False}
-            exp_decay = optax.schedules.exponential_decay(learning_rate, 50, 0.5)
+            # exp_decay = optax.schedules.exponential_decay(learning_rate, 20, 0.5)
             exp_decay_prot = optax.schedules.exponential_decay(learning_rate, 50, 0.5)
-            optimizer = optax.chain(
-                optax.clip_by_global_norm(1.0),
-                optax.inject_hyperparams(optax.adam)(learning_rate=exp_decay),
-            )
+            optimizer = optax.inject_hyperparams(optax.adam)(learning_rate=self.lr)
             optimizer_prot = optax.inject_hyperparams(optax.adam)(
                 learning_rate=exp_decay_prot
             )
 
             opt_state = optimizer.init(params_gene)
             opt_state_prot = optimizer_prot.init(params_prot)
+            losses = []
 
             for e_i in range(self.epochs):
                 logging.info(f"\tEpoch - {e_i}")
@@ -506,9 +506,32 @@ class GRNSim:
                     self.is_mr,
                     self.gene_conc,
                     target_conc=self.target_gene_conc,
+                    prot_tran_rates=prot_tran_rates,
                 )
                 updates, opt_state = optimizer.update(grad_gene, opt_state)
                 params_gene = optax.apply_updates(params_gene, updates)
+                if e_i % 50 == 0:
+                    loss_i = calc_loss(
+                        params_gene,
+                        params_prot,
+                        jnp.arange(self.n_cells),
+                        jnp.arange(self.n_genes),
+                        self.is_mr,
+                        self.gene_conc,
+                        target_conc=self.target_gene_conc,
+                        prot_tran_rates=prot_tran_rates,
+                    )
+                    losses.append(loss_i)
+                    if (
+                        len(losses) > 1
+                        and (losses[-2] - losses[-1]) / losses[-2] <= 0.1
+                    ):
+                        opt_state.hyperparams["learning_rate"] = (
+                            opt_state.hyperparams["learning_rate"] / 2.0
+                        )
+                    print(
+                        f"Epoch - {e_i} Loss = {loss_i} Learing rate = {opt_state.hyperparams['learning_rate']}"
+                    )
 
                 grad_prot = grad_loss_prot(
                     params_gene,
@@ -518,12 +541,15 @@ class GRNSim:
                     self.is_mr,
                     self.gene_conc,
                     target_conc=self.target_prot_conc,
+                    prot_tran_rates=prot_tran_rates,
                     target_gene=False,
                 )
-                updates, opt_state = optimizer_prot.update(grad_prot, opt_state_prot)
+                updates, opt_state_prot = optimizer_prot.update(
+                    grad_prot, opt_state_prot
+                )
                 params_prot = optax.apply_updates(params_prot, updates)
 
-                return gene_conc, prot_conc, params_gene, params_prot
+            return gene_conc, prot_conc, params_gene, params_prot
         else:
             return gene_conc, prot_conc, {}, {}
 
@@ -558,10 +584,15 @@ class GRNSim:
         return lax.cond(
             is_mr,
             lambda x: jnp.zeros_like(basal_rates),
-            lambda x: _calc_pij_g(
-                gene_conc=gene_conc, gene_cell_mean=gene_cell_mean, k_i=k_i, _hill=_hill
-            )
-            + basal_rates,
+            lambda x: (
+                _calc_pij_g(
+                    gene_conc=gene_conc,
+                    gene_cell_mean=gene_cell_mean,
+                    k_i=k_i,
+                    _hill=_hill,
+                )
+                + basal_rates
+            ),
             operand=None,
         )
 
