@@ -20,6 +20,7 @@ def _():
     import os
     from hydra import initialize_config_dir, compose
 
+    import scipy
     matplotlib.style.use("default")
     return (
         compose,
@@ -33,6 +34,7 @@ def _():
         pl,
         plt,
         random,
+        scipy,
         time,
         tqdm,
     )
@@ -412,8 +414,8 @@ def _(
         sim.decay = sim.learnt_gene_params['decay']
         sim.ki_matrix = sim.learnt_gene_params['ki_matrix']
         sim.hill_coeffs = sim.learnt_gene_params['hill_coeffs']
-        # sim.prot_tran_rates = sim.learnt_prot_params['prot_tran_rates']
-        sim.prot_decay = sim.learnt_prot_params['prot_decay']
+        sim.prot_tran_rates = sim.learnt_prot_params['prot_tran_rates']
+        sim.prot_decay = jnp.clip(sim.learnt_prot_params['prot_decay'], min=0)
         sim.steady_states, sim.prot_steady_state, _, _ = sim.calc_steady_states(
             learn_params=False
         )
@@ -423,26 +425,14 @@ def _(
 
 @app.cell
 def _(plt, prev_params, sim):
-    plt.plot(sim.decay[:, 0], label="Opt")
-    plt.plot(prev_params[1][:, 0], label="Before opt")
+    plt.plot(prev_params[5][0], label='Before')
+    plt.plot(sim.prot_decay[0], label="After")
     plt.legend()
-    plt.show()
     return
 
 
 @app.cell
-def _(nn, plt, sim):
-    # plt.plot(prev_gene_conc[:, 0], label='Before opt')
-    plt.plot(nn.relu(sim.steady_states[:, 0]), label='After opt')
-    plt.plot(sim.target_gene_conc, label="Target")
-    # plt.plot(sim.steady_states[:, 0], label='After opt')
-    plt.legend()
-    plt.show()
-    return
-
-
-@app.cell
-def _(jnp, n_cells, nn, plt, sim):
+def _(jnp, n_cells, plt, sim):
     def _calc_mse(_target, _pred):
         _min_loss = jnp.inf
         idx = 0
@@ -454,11 +444,13 @@ def _(jnp, n_cells, nn, plt, sim):
                 _min_loss = min(_min_loss, _mse_loss)
                 idx = _i
         return _min_loss, idx
-    print(_calc_mse(sim.target_gene_conc, nn.relu(sim.steady_states)))
-
+    _loss, _idx = _calc_mse(sim.target_gene_conc, sim.steady_states)
+    _loss2, _idx = _calc_mse(sim.target_gene_conc, jnp.clip(sim.steady_states, min=min(sim.target_gene_conc)))
+    print("MSE Loss = ", _loss)
+    print("MSE Loss with clipping = ", _loss2)
     plt.figure(figsize=(12,6))
     # plt.plot(prev_gene_conc[:, 0], label="Without backprop")
-    plt.plot(nn.relu(sim.steady_states[:, 0]), label="Pred")
+    plt.plot(jnp.clip(sim.steady_states[:, _idx], min=min(sim.target_gene_conc)), label="Pred")
     plt.plot(sim.target_gene_conc, label="Target")
     # plt.yscale("log")
     plt.title("Comparison of RNA conc.")
@@ -471,6 +463,52 @@ def _(jnp, n_cells, nn, plt, sim):
 
 
 @app.cell
+def _(jnp, n_cells, plt, sim):
+    def _calc_mse(_target, _pred):
+        _min_loss = jnp.inf
+        idx = 0
+        for _i in range(n_cells):
+            _norm_pred = _pred[:, _i]
+            _norm_target = _target
+            _mse_loss = jnp.mean((_norm_target - _norm_pred) ** 2)
+            if _mse_loss < _min_loss:
+                _min_loss = min(_min_loss, _mse_loss)
+                idx = _i
+        return _min_loss, idx
+    _loss, _idx = _calc_mse(sim.target_prot_conc, sim.prot_steady_state)
+    _loss2, _idx = _calc_mse(sim.target_prot_conc, jnp.clip(sim.prot_steady_state, min=min(sim.target_prot_conc), max=max(sim.target_prot_conc)))
+    print("MSE Loss = ", _loss)
+    print("MSE Loss with clipping = ", _loss2)
+
+
+    plt.figure(figsize=(12,6))
+    plt.plot(jnp.clip(sim.prot_steady_state[:, _idx], min=min(sim.target_prot_conc), max=max(sim.target_prot_conc)), label="Pred")
+    # plt.plot(sim.prot_steady_state[:, _idx], label="No Clipping Pred")
+    plt.plot(sim.target_prot_conc, label="Target")
+    # plt.yscale("log")
+    plt.title("Comparison of protein conc.")
+    plt.xlabel("Protein idx")
+    plt.ylabel("Concentration")
+    plt.legend()
+
+    plt.show()
+    return
+
+
+@app.cell
+def _(jnp, nn, scipy, sim):
+    _stats = scipy.stats.pearsonr(sim.steady_states[:, 7], sim.target_gene_conc)
+    print(_stats)
+
+    _stats = scipy.stats.pearsonr(nn.relu(sim.steady_states[:, 7]), sim.target_gene_conc)
+    print(_stats)
+
+    _stats = scipy.stats.pearsonr(jnp.clip(sim.steady_states[:, 7], min=min(sim.target_gene_conc)), sim.target_gene_conc)
+    print(_stats)
+    return
+
+
+@app.cell
 def _(jnp, nn):
     def z_score_norm(inp, axis=0):
         return nn.standardize(inp)
@@ -478,7 +516,7 @@ def _(jnp, nn):
         std = jnp.std(inp, axis=axis)
         inp = (inp - mean) / std
         return inp
-    return
+    return (z_score_norm,)
 
 
 @app.cell
@@ -494,6 +532,7 @@ def _(
     rna_conc,
     shortlisted_prots,
     sim,
+    z_score_norm,
 ):
     _prot_conc_target = []
     _output_prots = np.array(node_names_refined)[
@@ -517,7 +556,7 @@ def _(
     _target_rna_ids = [ids.to_list().index(_i) for _i in _output_rna_names]
 
     _rna_pred = sim.steady_states.reshape(-1, n_cells)
-    _prot_pred =sim.prot_steady_state[_pred_prod_ids].reshape(-1, n_cells)
+    _prot_pred = sim.prot_steady_state[_pred_prod_ids].reshape(-1, n_cells)
 
     for _i in range(len(prot_conc)):
         if ids[_i] in _output_prod_names:
@@ -533,11 +572,11 @@ def _(
 
     _prot_conc_target = jnp.array(_prot_conc_target)
 
-    _prot_conc_shortlisted = jnp.array(_prot_conc_shortlisted)
+    _prot_conc_shortlisted = z_score_norm(jnp.array(_prot_conc_shortlisted))
     _prot_conc_pred_shortlisted = jnp.array(_prot_conc_pred_shortlisted)
 
-    _prot_target = _prot_conc_target
-    _rna_target = rna_conc.to_numpy()[_target_rna_ids]
+    _prot_target = z_score_norm(_prot_conc_target)
+    _rna_target = z_score_norm(rna_conc.to_numpy()[_target_rna_ids])
 
     _min_gene_loss = jnp.inf
 
@@ -555,6 +594,10 @@ def _(
         return _min_loss, idx
 
 
+    ## Clipping
+    _rna_pred = jnp.clip(_rna_pred, min=min(_rna_target))
+    _prot_pred = jnp.clip(_prot_pred, min=min(_prot_target))
+
     _min_rna_l, _min_rna_idx = _calc_mse(_rna_target, _rna_pred)
     _min_prot_sh_l, _min_prot_sh_l_idx = _calc_mse(
         _prot_conc_shortlisted, _prot_conc_pred_shortlisted
@@ -567,6 +610,7 @@ def _(
     print("Min RNA MSE loss = ", _min_rna_l)
     print("Min Protein MSE loss = ", _min_prot_l)
     print("Min Shortlisted Protein MSE loss = ", _min_prot_sh_l)
+    print("Min protein loss idx = ", _min_prot_sh_l_idx)
 
     _fig, (_ax1, _ax2) = plt.subplots(1, 2, figsize=(20, 6))
     _ax1.plot(_rna_target, label="Target")

@@ -252,9 +252,10 @@ class GRNSim:
             k_i=k_i,
             _hill=hill_coeff,
         ) / (decay + eps)
+        p_kd = jnp.maximum(p_kd, eps)
         p_c = lax.cond(
             self.protein_sim,
-            lambda _: (p_kt * e_x) / (p_kd + eps),
+            lambda _: (p_kt * e_x) / p_kd,
             lambda _: jnp.zeros_like(e_x, dtype=jnp.float32),
             operand=None,
         )
@@ -423,6 +424,7 @@ class GRNSim:
                     )
                     return ret_
 
+                params["hill_coeffs"] = jnp.clip(params["hill_coeffs"], 1.0, 4.0)
                 g_conc, p_conc = _all_genes_steady_state(
                     n_cells_range,
                     n_genes_range,
@@ -432,33 +434,35 @@ class GRNSim:
                     params["ki_matrix"],
                     gene_conc,
                     params["hill_coeffs"],
-                    prot_tran_rates,
+                    nn.softplus(params_prot["prot_tran_rates"]),
                     nn.softplus(params_prot["prot_decay"]),
                 )
-
                 n_cells = len(n_cells_range)
+                p_conc = jnp.clip(p_conc, min=jnp.min(target_conc))
                 loss = lax.cond(
                     target_gene,
                     lambda _: jnp.sqrt(
                         jnp.sum(
                             (
-                                target_conc.repeat(axis=1, repeats=n_cells)
-                                - g_conc.squeeze(2)
+                                jnp.log1p(target_conc.repeat(axis=1, repeats=n_cells))
+                                - jnp.log1p(g_conc.squeeze(2))
                             )
                             ** 2,
                             dtype=jnp.float32,
                         )
-                    ).astype(jnp.float32),
+                    ).astype(jnp.float32)
+                    + jnp.sum(params["ki_matrix"] ** 2),
                     lambda _: jnp.sqrt(
                         jnp.sum(
                             (
-                                target_conc.repeat(axis=1, repeats=n_cells)
-                                - p_conc.squeeze(2)
+                                jnp.log1p(target_conc.repeat(axis=1, repeats=n_cells))
+                                - jnp.log1p(p_conc.squeeze(2))
                             )
                             ** 2,
                             dtype=jnp.float32,
                         )
-                    ).astype(jnp.float32),
+                    ).astype(jnp.float32)
+                    + jnp.sum(params_prot["prot_tran_rates"] ** 2),
                     operand=None,
                 )
                 return loss
@@ -472,7 +476,6 @@ class GRNSim:
             hill_coeffs = self.hill_coeffs
             prot_tran_rates = self.prot_tran_rates
             prot_decay = self.prot_decay
-            learning_rate = self.lr
 
             params_gene = {
                 "basal_rates": basal_rates,
@@ -481,15 +484,20 @@ class GRNSim:
                 "hill_coeffs": hill_coeffs,
             }
             params_prot = {
-                # "prot_tran_rates": prot_tran_rates,
+                "prot_tran_rates": prot_tran_rates,
                 "prot_decay": prot_decay,
             }
-            # mask_prot_decay = {"prot_tran_rates": True, "prot_decay": False}
-            # exp_decay = optax.schedules.exponential_decay(learning_rate, 20, 0.5)
-            exp_decay_prot = optax.schedules.exponential_decay(learning_rate, 50, 0.5)
-            optimizer = optax.inject_hyperparams(optax.adam)(learning_rate=self.lr)
-            optimizer_prot = optax.inject_hyperparams(optax.adam)(
-                learning_rate=exp_decay_prot
+            scheduler = optax.cosine_decay_schedule(
+                init_value=self.lr, decay_steps=self.epochs
+            )
+            scheduler_prot = optax.cosine_decay_schedule(
+                init_value=self.lr, decay_steps=self.epochs
+            )
+
+            optimizer = optax.inject_hyperparams(optax.adam)(learning_rate=scheduler)
+            optimizer_prot = optax.chain(
+                optax.clip_by_global_norm(1.0),
+                optax.inject_hyperparams(optax.adam)(learning_rate=scheduler_prot),
             )
 
             opt_state = optimizer.init(params_gene)
@@ -521,16 +529,20 @@ class GRNSim:
                         target_conc=self.target_gene_conc,
                         prot_tran_rates=prot_tran_rates,
                     )
+                    loss_i_prot = calc_loss(
+                        params_gene,
+                        params_prot,
+                        jnp.arange(self.n_cells),
+                        jnp.arange(self.n_genes),
+                        self.is_mr,
+                        self.gene_conc,
+                        target_conc=self.target_prot_conc,
+                        prot_tran_rates=prot_tran_rates,
+                        target_gene=False,
+                    )
                     losses.append(loss_i)
-                    if (
-                        len(losses) > 1
-                        and (losses[-2] - losses[-1]) / losses[-2] <= 0.1
-                    ):
-                        opt_state.hyperparams["learning_rate"] = (
-                            opt_state.hyperparams["learning_rate"] / 2.0
-                        )
                     print(
-                        f"Epoch - {e_i} Loss = {loss_i} Learing rate = {opt_state.hyperparams['learning_rate']}"
+                        f"Epoch - {e_i} Loss = {loss_i} Protein loss = {loss_i_prot} Learing rate = {opt_state.hyperparams['learning_rate']}"
                     )
 
                 grad_prot = grad_loss_prot(
@@ -548,7 +560,6 @@ class GRNSim:
                     grad_prot, opt_state_prot
                 )
                 params_prot = optax.apply_updates(params_prot, updates)
-
             return gene_conc, prot_conc, params_gene, params_prot
         else:
             return gene_conc, prot_conc, {}, {}
