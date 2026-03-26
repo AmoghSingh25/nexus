@@ -349,6 +349,16 @@ def _(mo):
 
 
 @app.cell
+def _(jnp):
+    def zero_one_norm(inp):
+        max_d = jnp.max(inp)
+        min_d = jnp.min(inp)
+        denom = max_d - min_d
+        return (inp - min_d.reshape(-1,1)) / denom
+    return (zero_one_norm,)
+
+
+@app.cell
 def _(
     edges_set,
     get_config,
@@ -362,6 +372,7 @@ def _(
     random,
     rna_conc,
     time,
+    zero_one_norm,
 ):
     _prot_conc_target = []
     _output_rna_names = np.array([_i["name"] for _i in node_set])
@@ -370,9 +381,9 @@ def _(
     for _i in range(len(node_set)):
         _prot_conc_target.append(prot_conc[list(ids).index(node_set[_i]["name"])])
 
-    _prot_conc_target = nn.standardize(jnp.array(_prot_conc_target))
+    _prot_conc_target = zero_one_norm(jnp.array(_prot_conc_target))
 
-    _rna_target = nn.standardize(rna_conc.to_numpy()[_target_rna_ids])
+    _rna_target = zero_one_norm(rna_conc.to_numpy()[_target_rna_ids])
 
     from simulator.grn.grnSim import GRNSim
 
@@ -410,12 +421,12 @@ def _(
         sim.prot_decay,
     ]
     if cfg.grn.learn_params:
-        sim.basal_rates = sim.learnt_gene_params['basal_rates']
-        sim.decay = sim.learnt_gene_params['decay']
+        sim.basal_rates = nn.softplus(sim.learnt_gene_params['basal_rates'])
+        sim.decay = nn.softplus(sim.learnt_gene_params['decay'])
         sim.ki_matrix = sim.learnt_gene_params['ki_matrix']
         sim.hill_coeffs = sim.learnt_gene_params['hill_coeffs']
-        sim.prot_tran_rates = sim.learnt_prot_params['prot_tran_rates']
-        sim.prot_decay = jnp.clip(sim.learnt_prot_params['prot_decay'], min=0)
+        sim.prot_tran_rates = nn.softplus(sim.learnt_prot_params['prot_tran_rates'])
+        sim.prot_decay = nn.softplus(sim.learnt_prot_params['prot_decay'])
         sim.steady_states, sim.prot_steady_state, _, _ = sim.calc_steady_states(
             learn_params=False
         )
@@ -448,10 +459,13 @@ def _(jnp, n_cells, plt, sim):
     _loss2, _idx = _calc_mse(sim.target_gene_conc, jnp.clip(sim.steady_states, min=min(sim.target_gene_conc)))
     print("MSE Loss = ", _loss)
     print("MSE Loss with clipping = ", _loss2)
+    print("Min idx = ", _idx)
+
     plt.figure(figsize=(12,6))
     # plt.plot(prev_gene_conc[:, 0], label="Without backprop")
-    plt.plot(jnp.clip(sim.steady_states[:, _idx], min=min(sim.target_gene_conc)), label="Pred")
     plt.plot(sim.target_gene_conc, label="Target")
+    plt.plot(jnp.clip(sim.steady_states[:, _idx], min=min(sim.target_gene_conc)), label="Pred")
+    # plt.plot(sim.steady_states[:, _idx], label="Pred w/o clip")
     # plt.yscale("log")
     plt.title("Comparison of RNA conc.")
     plt.xlabel("RNA idx")
@@ -479,12 +493,13 @@ def _(jnp, n_cells, plt, sim):
     _loss2, _idx = _calc_mse(sim.target_prot_conc, jnp.clip(sim.prot_steady_state, min=min(sim.target_prot_conc), max=max(sim.target_prot_conc)))
     print("MSE Loss = ", _loss)
     print("MSE Loss with clipping = ", _loss2)
+    print("Min idx = ", _idx)
 
 
     plt.figure(figsize=(12,6))
+    plt.plot(sim.target_prot_conc, label="Target")
     plt.plot(jnp.clip(sim.prot_steady_state[:, _idx], min=min(sim.target_prot_conc), max=max(sim.target_prot_conc)), label="Pred")
     # plt.plot(sim.prot_steady_state[:, _idx], label="No Clipping Pred")
-    plt.plot(sim.target_prot_conc, label="Target")
     # plt.yscale("log")
     plt.title("Comparison of protein conc.")
     plt.xlabel("Protein idx")
@@ -497,14 +512,16 @@ def _(jnp, n_cells, plt, sim):
 
 @app.cell
 def _(jnp, nn, scipy, sim):
-    _stats = scipy.stats.pearsonr(sim.steady_states[:, 7], sim.target_gene_conc)
-    print(_stats)
+    _idx = 4
 
-    _stats = scipy.stats.pearsonr(nn.relu(sim.steady_states[:, 7]), sim.target_gene_conc)
-    print(_stats)
+    _stats = scipy.stats.pearsonr(sim.steady_states[:, _idx], sim.target_gene_conc)
+    print("Without clipping \t" , _stats)
 
-    _stats = scipy.stats.pearsonr(jnp.clip(sim.steady_states[:, 7], min=min(sim.target_gene_conc)), sim.target_gene_conc)
-    print(_stats)
+    _stats = scipy.stats.pearsonr(nn.relu(sim.steady_states[:, _idx]), sim.target_gene_conc)
+    print("With relu clipping \t", _stats)
+
+    _stats = scipy.stats.pearsonr(jnp.clip(sim.steady_states[:, _idx], min=min(sim.target_gene_conc)), sim.target_gene_conc)
+    print("With jnp clip \t\t", _stats)
     return
 
 

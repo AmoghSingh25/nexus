@@ -41,7 +41,6 @@ class GRNSim:
         decay -         (n_cells, n_genes, 1)
         """
         config.update("jax_debug_nans", True)
-        start_time = time.time()
 
         self.delta = cfg.delta
         self.n_cells = cfg.n_cells
@@ -60,8 +59,6 @@ class GRNSim:
         self.learn_params = cfg.get("learn_params", False)
         self.epochs = cfg.get("epochs", 0)
         self.lr = cfg.get("lr", 0.01)
-
-        ## TODO: High read time
         if node_set is None and edges_set is None:
             node_set, edges_set, self.copy_cells = _read_data(
                 gene_data=cfg.get("gene_data", None),
@@ -150,7 +147,6 @@ class GRNSim:
             else:
                 regulators = list(sorted(self.g.predecessors(i)))
                 basal_rate_i = jnp.zeros((self.n_cells, 1))  # 0 basal rate for non-MRs
-                # self.key, self.sub_key = random.split(self.key)
                 self.g.add_node(i)
                 ki_vals = jnp.array(node["ki"])
                 if self.non_mr_basal:
@@ -160,8 +156,6 @@ class GRNSim:
                 else:
                     self.basal_rates.append(basal_rate_i)
                 if ki_vals.ndim == 2:
-                    # ki_vals = ki_vals.reshape(self.n_cells, len(regulators), 1)
-                    # ki_vals = jnp.repeat(ki_vals, repeats=self.n_cells, axis=0)
                     self.ki_matrix[:, i, regulators] = ki_vals
                 else:
                     self.ki_matrix[:, i, regulators] = ki_vals[0][:, 0].reshape(1, -1)
@@ -189,9 +183,6 @@ class GRNSim:
             self.prot_tran_rates = jnp.zeros((self.n_cells, self.n_genes, 1))
             self.prot_decay = jnp.zeros_like(self.prot_half_lives)
 
-        node_set_time = time.time() - start_time
-        print("Setting node set", node_set_time)
-
         logging.info("Setting KI Matrix")
         self.ki_matrix = jnp.array(self.ki_matrix)
         del self.ki_values, self.g, node_set, edges_set
@@ -206,9 +197,6 @@ class GRNSim:
         self.jit_pij = jit(self.calc_pij)
         self.jit_x_t = jit(self.calc_x_t)
 
-        jit_compile_time = time.time() - start_time
-        print("JIT compile time", jit_compile_time)
-
         logging.info("Calculating steady states...")
         (
             self.gene_conc,
@@ -218,9 +206,6 @@ class GRNSim:
         ) = self.calc_steady_states()
         self.steady_states = self.gene_conc
         self.prot_steady_state = self.prot_conc
-
-        # if not self.protein_sim:
-        # self.key, self.sub_key, self.prot_conc = random_generators.generate_uniform(key=self.key, sub_key=self.sub_key, shape=self.gene_conc.shape)
 
         logging.info("Steady state concentrations calculated.")
 
@@ -252,7 +237,7 @@ class GRNSim:
             k_i=k_i,
             _hill=hill_coeff,
         ) / (decay + eps)
-        p_kd = jnp.maximum(p_kd, eps)
+        p_kd = jnp.maximum(p_kd, 1e-4)
         p_c = lax.cond(
             self.protein_sim,
             lambda _: (p_kt * e_x) / p_kd,
@@ -376,7 +361,6 @@ class GRNSim:
 
         ## Copy params to shift values
         ## TODO: Test for gradient func
-        ## TODO: Threshold for values - Ex. Basal rate cannot be less than 0
 
         if self.learn_params and learn_params:
             logging.info("Running backpropagation to learn parameters...")
@@ -439,6 +423,9 @@ class GRNSim:
                 )
                 n_cells = len(n_cells_range)
                 p_conc = jnp.clip(p_conc, min=jnp.min(target_conc))
+
+                l2_gene_coeff = 1e-4
+                l2_prot_coeff = 1e-4
                 loss = lax.cond(
                     target_gene,
                     lambda _: jnp.sqrt(
@@ -451,7 +438,7 @@ class GRNSim:
                             dtype=jnp.float32,
                         )
                     ).astype(jnp.float32)
-                    + jnp.sum(params["ki_matrix"] ** 2),
+                    + l2_gene_coeff * jnp.sum(params["ki_matrix"] ** 2),
                     lambda _: jnp.sqrt(
                         jnp.sum(
                             (
@@ -462,7 +449,7 @@ class GRNSim:
                             dtype=jnp.float32,
                         )
                     ).astype(jnp.float32)
-                    + jnp.sum(params_prot["prot_tran_rates"] ** 2),
+                    + l2_prot_coeff * jnp.sum(params_prot["prot_tran_rates"] ** 2),
                     operand=None,
                 )
                 return loss
