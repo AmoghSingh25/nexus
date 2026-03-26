@@ -1,4 +1,4 @@
-from simulator.spatial_vec import spatialSim
+from simulator.spatial import spatialSim
 from simulator.grn import grnSim
 
 

@@ -4,7 +4,7 @@ grn:
   ## Simulation related
   n_cells: 8
   delta: 0.01
-  n_steps: 1
+  n_steps: 20
   config_file: "configs/sample_data/sample_network_1cell.yaml"
   random_key: 42
   logging: false
@@ -43,7 +43,7 @@ spatial_sim:
   
   ## Simulation Related
   delta: 0.01
-  n_steps: 1
+  n_steps: 20
   random_key: 42
   logging: false
   debug_plot: false

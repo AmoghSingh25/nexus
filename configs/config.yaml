@@ -8,6 +8,9 @@ grn:
   mr_data: "configs/sample_data/Regs_cID_4.txt"
   config_file: ""
   logging: true
+  learn_params: true
+  epochs: 10
+  lr: 1
   
   ## Gene related
   non_mr_basal: false

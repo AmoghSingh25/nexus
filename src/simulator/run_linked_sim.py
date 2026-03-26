@@ -1,7 +1,9 @@
+## TODO: End to end differentiation - backprop
+from tqdm import tqdm
 import jax.numpy as jnp
 import time
 from simulator.grn.grnSim import GRNSim
-from simulator.spatial_vec.spatialSim import SpatialSimVec
+from simulator.spatial.spatialSim import SpatialSimVec
 import hydra
 from omegaconf import DictConfig, open_dict
 from simulator.utils.file_manager import _save_file
@@ -39,25 +41,28 @@ def run_sim(cfg: DictConfig) -> None:
         cfg.spatial_sim.chemical["mol_mass"] = chem_mol_mass
 
     spatial_sim = SpatialSimVec(cfg.spatial_sim)
-    check_config(spatial_sim=spatial_sim, cfg=cfg)
+    check_config(spatial_sim=spatial_sim, grn_sim=grn_sim, cfg=cfg)
 
     cell_concs = [grn_sim.prot_conc]
     field_concs = [spatial_sim.mesh.field_chem]
     field_cell_assgns = []
+    n_steps = grn_sim.n_steps
 
-    for i in range(20):
+    for _i in tqdm(range(n_steps)):
         associated_field = {}
         cell_mass = {}
         cell_vols = {}
+        associated_fields = spatial_sim.mesh.get_assigned_fields(
+            norm_ord=2, clustering_type="k_mean"
+        )
         for i in range(spatial_sim.mesh.n_cells):
             cell_mass[i] = grn_sim.prot_conc[:, i]
             cell_vols[i] = spatial_sim.mesh.cell_vol[i]
 
-            closest_field_i = spatial_sim.mesh.get_closest_field(i).item()
-            if associated_field.get(closest_field_i) is None:
-                associated_field[closest_field_i] = [i]
+            if associated_field.get(associated_fields[i].item()) is None:
+                associated_field[associated_fields[i].item()] = [i]
             else:
-                associated_field[closest_field_i].append(i)
+                associated_field[associated_fields[i].item()].append(i)
 
         before_field_concs = []
         before_cell_concs = []
@@ -96,22 +101,25 @@ def run_sim(cfg: DictConfig) -> None:
         before_field_concs = jnp.array(before_field_concs)
         after_field_concs = jnp.array(after_field_concs)
 
-        spatial_sim.run_sim()
-        grn_sim.run_sim()
+        spatial_sim.run_sim(step=_i)
+        grn_sim.run_sim(step=_i)
 
     _save_file("src/simulator/spatial_vec/logs/cell_concs.pkl", cell_concs)
     _save_file("src/simulator/spatial_vec/logs/field_concs.pkl", field_concs)
     _save_file("src/simulator/spatial_vec/logs/field_cell_assgn.pkl", field_cell_assgns)
 
-    # plt.show()
-    ## Running sim
 
-
-def check_config(spatial_sim, cfg):
+def check_config(spatial_sim, grn_sim, cfg):
     if not cfg.grn.n_cells == spatial_sim.mesh.n_cells:
         raise ValueError(
             "Config values incorrect, no. of cells in spatial sim and GRN sim to be run together"
         )
+    if not grn_sim.n_genes == spatial_sim.mesh.n_chemicals:
+        raise ValueError(
+            "Inconsistent number of chemicals across GRN sim and Spatial Sim"
+        )
+    if not grn_sim.n_steps == spatial_sim.n_steps:
+        raise ValueError("Unequal number of steps across simulators.")
 
 
 if __name__ == "__main__":

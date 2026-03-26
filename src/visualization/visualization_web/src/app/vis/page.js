@@ -1,17 +1,13 @@
-// TODO: Allow user to select log file to run from webpage
 "use client";
 import React, { useEffect } from "react";
 import dynamic from "next/dynamic";
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 import { DeckGL } from "@deck.gl/react";
 import {
-  AmbientLight,
   COORDINATE_SYSTEM,
-  LightingEffect,
   OrbitView,
 } from "@deck.gl/core";
 import { SimpleMeshLayer, ZoomWidget } from "deck.gl";
-import { ResetViewWidget } from "@deck.gl/widgets";
 import {
   CircularProgress,
   FormControl,
@@ -195,7 +191,6 @@ export default function App() {
       coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
       pickable: false,
     });
-    console.log(sphereLayers)
     return [...sphereLayers, fieldLayer];
   }, [currVis, step_id, dataReady]);
 
@@ -282,8 +277,7 @@ export default function App() {
         marks
         defaultValue={0}
         valueLabelDisplay="on"
-        style={{ width: "90vw", zIndex: 2, margin: "2%",
-         }}
+        style={{ width: "90vw", zIndex: 2, margin: "2%" }}
         value={step_id}
         onChange={(e, v) => {
           setStepid(v);
@@ -311,7 +305,7 @@ export default function App() {
           }}
           views={view}
           controller={true}
-          style={{ height: "80vh", backgroundColor:"white" }}
+          style={{ height: "80vh", backgroundColor: "white" }}
         />
       </div>
       <div>
@@ -350,14 +344,14 @@ export default function App() {
               autosize: true,
               xaxis: {
                 title: {
-                  text:"Steps"
-                }
+                  text: "Steps",
+                },
               },
               yaxis: {
                 title: {
-                  text:"Conc."
-                }
-              }
+                  text: "Conc.",
+                },
+              },
             }}
             style={{ height: "100%", width: "100%" }}
           />

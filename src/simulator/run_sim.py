@@ -1,7 +1,7 @@
 from tqdm import tqdm
 import time
 from simulator.grn.grnSim import GRNSim
-from simulator.spatial_vec.spatialSim import SpatialSimVec
+from simulator.spatial.spatialSim import SpatialSimVec
 import hydra
 from omegaconf import DictConfig, open_dict
 from simulator.intervention.intervention import InterventionManager
