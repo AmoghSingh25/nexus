@@ -12,7 +12,6 @@ from simulator.intervention.intervention import InterventionManager
 )
 def run_sim(cfg: DictConfig) -> None:
     ## Checking configs
-
     timestep = str(int(time.time()))
     print("Time step - ", timestep)
     n_steps = cfg.grn.n_steps
@@ -38,6 +37,7 @@ def run_sim(cfg: DictConfig) -> None:
         intervention_flag and interven_manager.check(i)
         grn_sim.run_sim(step=i)
         spatial_sim.run_sim(step=i)
+    return grn_sim, spatial_sim
 
 
 def check_config(spatial_sim, cfg):

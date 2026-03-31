@@ -45,7 +45,7 @@ spatial_sim:
   
   ## Simulation Related
   delta: 0.01
-  n_steps: 12
+  n_steps: 10
   random_key: 42
   logging: true
   debug_plot: true
@@ -114,8 +114,8 @@ spatial_sim:
       products_exponent:
   
 intervention:
-    # spatial_sim:
-    #   - - "D"
-    #     - 2
-    #     - ["loop", 1, 2, 4]  # Type(Loop), Loop start time, loop length, gap between loops
-    #     - ["global"]
+    spatial_sim:
+      - - "cell_mass"
+        - 2
+        - ["loop", 1, 2, 4]  # Type(Loop), Loop start time, loop length, gap between loops
+        - ["global", [1,2,3]]

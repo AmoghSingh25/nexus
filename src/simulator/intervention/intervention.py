@@ -1,5 +1,7 @@
 from simulator.spatial import spatialSim
 from simulator.grn import grnSim
+import jax.numpy as jnp
+import jax
 
 
 class InterventionManager:
@@ -35,20 +37,21 @@ class InterventionManager:
     def process_interventions(self, cfg, intervention_dict, add_checkpoint_func):
         for interven_i in intervention_dict:
             interven_param = interven_i[0]
-            interven_val = interven_i[1]
+            # interven_val = interven_i[1]
             temporal_params = interven_i[2]
             # spatial_params = interven_i[3]
 
             if temporal_params[0] == "scheduled":
-                add_checkpoint_func(temporal_params[1], [interven_param, interven_val])
+                add_checkpoint_func(temporal_params[1], interven_i)
 
             elif temporal_params[0] == "pulse":
                 start_pulse = temporal_params[1]
                 end_pulse = temporal_params[2]
                 curr_val = cfg.get(interven_param)
 
-                add_checkpoint_func(start_pulse, [interven_param, interven_val])
-                add_checkpoint_func(end_pulse, [interven_param, curr_val])
+                add_checkpoint_func(start_pulse, interven_i)
+                interven_i[1] = curr_val
+                add_checkpoint_func(end_pulse, interven_i)
 
             elif temporal_params[0] == "loop":
                 start_loop = temporal_params[1]
@@ -59,10 +62,9 @@ class InterventionManager:
 
                 start_i = start_loop
                 while start_i < cfg.get("n_steps"):
-                    add_checkpoint_func(start_i, [interven_param, interven_val])
-                    add_checkpoint_func(
-                        start_i + loop_length, [interven_param, curr_val]
-                    )
+                    add_checkpoint_func(start_i, interven_i)
+                    interven_i[1] = curr_val
+                    add_checkpoint_func(start_i + loop_length, interven_i)
 
                     start_i = start_i + loop_length + gap
 
@@ -72,15 +74,26 @@ class InterventionManager:
             for i in self.spatial_checkpoints[t]:
                 interven_param = i[0]
                 interven_val = i[1]
+                # temporal_scope = i[2]
+                spatial_scope = i[3]
+                param = getattr(self.spatial_obj.mesh, interven_param)
 
-                setattr(self.spatial_obj.mesh, interven_param, interven_val)
+                if spatial_scope[0] == "cell" and interven_param.startswith("cell_"):
+                    cell_range = jnp.array(spatial_scope[1])
+                elif interven_param.startswith("cell_"):
+                    cell_range = jnp.array(range(len(param)))
+                if isinstance(param, jax.Array):
+                    param = param.at[cell_range].set(interven_val)
+                else:
+                    param[cell_range] = interven_val
+                setattr(self.spatial_obj.mesh, interven_param, param)
 
         if t in self.grn_checkpoints:
             for i in self.grn_checkpoints[t]:
                 interven_param = i[0]
                 interven_val = i[1]
-                # spatial_scope = i[2]
-                # temporal_scope = i[3]
+                # temporal_scope = i[2]
+                # spatial_scope = i[3]
 
             # Perform interventions on the grn sim
         return self.spatial_obj

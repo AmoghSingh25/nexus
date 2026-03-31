@@ -14,5 +14,6 @@ outputs/
 src/simulator/spatial/logs/
 src/simulator/spatial_vec/logs/
 src/simulator/grn/logs/
+pytestdebug.log
 
 notebooks/testing_triangulation.py
