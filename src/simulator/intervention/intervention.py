@@ -1,4 +1,3 @@
-## TODO: Change cell type spatial scope to individual/point ? Cell cannot be useful for protein, rna etc.
 from simulator.spatial import spatialSim
 from simulator.grn import grnSim
 import jax.numpy as jnp
