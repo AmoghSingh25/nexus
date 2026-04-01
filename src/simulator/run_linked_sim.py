@@ -1,4 +1,3 @@
-## TODO: End to end differentiation - backprop
 from tqdm import tqdm
 import jax.numpy as jnp
 import time

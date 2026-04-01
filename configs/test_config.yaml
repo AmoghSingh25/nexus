@@ -9,6 +9,8 @@ grn:
   config_file: "configs/sample_data/sample_network_1cell.yaml"
   random_key: 42
   logging: true
+  learn_params: false
+  epochs: 0
   
   ## Gene related
   non_mr_basal: false
@@ -115,7 +117,12 @@ spatial_sim:
   
 intervention:
     spatial_sim:
-      - - "cell_mass"
+      - - "D"
         - 2
         - ["loop", 1, 2, 4]  # Type(Loop), Loop start time, loop length, gap between loops
         - ["global", [1,2,3]]
+    grn:
+      - - "decay"
+        - 0.8
+        - ["scheduled", 1]  # Type(Loop), Loop start time, loop length, gap between loops
+        - ["global"]

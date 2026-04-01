@@ -360,7 +360,6 @@ class GRNSim:
             prot_conc = prot_conc.at[i].set(p_conc)
 
         ## Copy params to shift values
-        ## TODO: Test for gradient func
 
         if self.learn_params and learn_params:
             logging.info("Running backpropagation to learn parameters...")

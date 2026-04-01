@@ -49,7 +49,7 @@ class TestInterventions:
         interventions = []
         for i in cell_params:
             interventions.append(
-                [i, val_set, ["scheduled", interven_step], ["cell", cell_range]]
+                [i, val_set, ["scheduled", interven_step], ["index", cell_range]]
             )
         base_config["intervention"]["spatial_sim"] = interventions
         grn_sim, spatial_sim = run_sim(base_config)
@@ -73,7 +73,11 @@ class TestInterventions:
             if i == interven_step:
                 for i in cell_params:
                     _param = getattr(spatial_sim.mesh, i)
-                    assert jnp.all(_param[jnp.array(cell_range)] == val_set)
+                    assert jnp.all(
+                        _param[jnp.array(cell_range)] == val_set
+                    ) and not jnp.all(
+                        _param[jnp.array(range(n_cell_random + 1, 8))] == val_set
+                    )
                 break
             else:
                 grn_sim.run_sim(step=i)

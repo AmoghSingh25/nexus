@@ -1,3 +1,4 @@
+## TODO: Change cell type spatial scope to individual/point ? Cell cannot be useful for protein, rna etc.
 from simulator.spatial import spatialSim
 from simulator.grn import grnSim
 import jax.numpy as jnp
@@ -16,10 +17,13 @@ class InterventionManager:
         self.spatial_obj = spatial_obj
 
         self.process_interventions(
-            cfg.spatial_sim, self.spatial_interventions, self.add_spatial_checkpoint
+            cfg.spatial_sim,
+            self.spatial_interventions,
+            self.add_spatial_checkpoint,
+            sim=self.spatial_obj.mesh,
         )
         self.process_interventions(
-            cfg.grn, self.grn_interventions, self.add_grn_checkpoint
+            cfg.grn, self.grn_interventions, self.add_grn_checkpoint, sim=self.grn_obj
         )
 
     def add_spatial_checkpoint(self, t, data):
@@ -34,7 +38,8 @@ class InterventionManager:
         else:
             self.grn_checkpoints[t].append(data)
 
-    def process_interventions(self, cfg, intervention_dict, add_checkpoint_func):
+    def process_interventions(self, cfg, intervention_dict, add_checkpoint_func, sim):
+        ## TODO: Fix getting previously set attributes for looped/pulse changes
         for interven_i in intervention_dict:
             interven_param = interven_i[0]
             # interven_val = interven_i[1]
@@ -78,15 +83,18 @@ class InterventionManager:
                 spatial_scope = i[3]
                 param = getattr(self.spatial_obj.mesh, interven_param)
 
-                if spatial_scope[0] == "cell" and interven_param.startswith("cell_"):
-                    cell_range = jnp.array(spatial_scope[1])
-                elif interven_param.startswith("cell_"):
-                    cell_range = jnp.array(range(len(param)))
-                if isinstance(param, jax.Array):
-                    param = param.at[cell_range].set(interven_val)
+                if interven_param.startswith("cell_"):
+                    if spatial_scope[0] == "index":
+                        cell_range = jnp.array(spatial_scope[1])
+                    else:
+                        cell_range = jnp.array(range(len(param)))
+                    if isinstance(param, jax.Array):
+                        param = param.at[cell_range].set(interven_val)
+                    else:
+                        param[cell_range] = interven_val
+                    setattr(self.spatial_obj.mesh, interven_param, param)
                 else:
-                    param[cell_range] = interven_val
-                setattr(self.spatial_obj.mesh, interven_param, param)
+                    setattr(self.spatial_obj.mesh, interven_param, interven_val)
 
         if t in self.grn_checkpoints:
             for i in self.grn_checkpoints[t]:
@@ -94,6 +102,13 @@ class InterventionManager:
                 interven_val = i[1]
                 # temporal_scope = i[2]
                 # spatial_scope = i[3]
+
+                param = getattr(self.grn_obj, interven_param)
+                if isinstance(param, jax.Array):
+                    param = param.at[:].set(interven_val)
+                else:
+                    param = interven_val
+                setattr(self.spatial_obj, interven_param, param)
 
             # Perform interventions on the grn sim
         return self.spatial_obj
