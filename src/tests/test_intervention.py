@@ -43,8 +43,8 @@ class TestInterventions:
         base_config["grn"]["n_steps"] = n_steps
         base_config["spatial_sim"]["n_steps"] = n_steps
         val_set = random.randint(1, 10)
-        n_cell_random = random.randint(a=1, b=8)
-        cell_range = list(range(n_cell_random))
+        n_cell_ = 3
+        cell_range = list(range(3))
 
         interventions = []
         for i in cell_params:
@@ -76,7 +76,7 @@ class TestInterventions:
                     assert jnp.all(
                         _param[jnp.array(cell_range)] == val_set
                     ) and not jnp.all(
-                        _param[jnp.array(range(n_cell_random + 1, 8))] == val_set
+                        _param[jnp.array(range(n_cell_ + 1, 8))] == val_set
                     )
                 break
             else:

@@ -17,3 +17,4 @@ src/simulator/grn/logs/
 pytestdebug.log
 
 notebooks/testing_triangulation.py
+*.egg-info/
