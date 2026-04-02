@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { Suspense, useEffect } from "react";
 import dynamic from "next/dynamic";
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 import { DeckGL } from "@deck.gl/react";
@@ -123,7 +123,7 @@ function compute_ds(currVis) {
   field_cubes = field_cube_layer;
 }
 
-export default function App() {
+function Visualization() {
   const [step_id, setStepid] = new React.useState(0);
   const [dataReady, setDataReady] = new React.useState(false);
   const [currVis, setCurrVis] = new React.useState(0); // 0 - Field, 1 - Cell
@@ -375,4 +375,10 @@ export default function App() {
       )}
     </div>
   );
+}
+
+export default function App(){
+  return <Suspense>
+    <Visualization />
+  </Suspense>
 }

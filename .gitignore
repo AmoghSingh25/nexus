@@ -16,3 +16,5 @@ src/simulator/spatial_vec/logs/
 src/simulator/grn/logs/
 
 notebooks/testing_triangulation.py
+*.egg-info/
+pytestdebug.log

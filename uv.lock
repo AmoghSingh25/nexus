@@ -467,75 +467,6 @@ wheels = [
 ]
 
 [[package]]
-name = "dynamicsim"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "dash" },
-    { name = "dash-ag-grid" },
-    { name = "dash-bootstrap-components" },
-    { name = "fastexcel" },
-    { name = "flask-cors" },
-    { name = "flax", version = "0.10.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "flax", version = "0.12.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "hydra-core" },
-    { name = "imageio" },
-    { name = "jax", version = "0.6.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "jax", version = "0.8.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "marimo" },
-    { name = "matplotlib" },
-    { name = "msgspec" },
-    { name = "networkx", version = "3.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "numpy", version = "2.4.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "optax" },
-    { name = "pandas" },
-    { name = "polars" },
-    { name = "pre-commit" },
-    { name = "pydeck" },
-    { name = "pympler" },
-    { name = "pytest" },
-    { name = "pyvista" },
-    { name = "pyyaml" },
-    { name = "requests" },
-    { name = "ruff" },
-    { name = "tiledb" },
-    { name = "tqdm" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "dash", specifier = ">=3.3.0" },
-    { name = "dash-ag-grid", specifier = ">=32.3.2" },
-    { name = "dash-bootstrap-components", specifier = ">=2.0.4" },
-    { name = "fastexcel", specifier = ">=0.16.0" },
-    { name = "flask-cors", specifier = ">=6.0.2" },
-    { name = "flax", specifier = ">=0.10.7" },
-    { name = "hydra-core", specifier = ">=1.3.2" },
-    { name = "imageio", specifier = ">=2.37.2" },
-    { name = "jax", specifier = ">=0.6.2" },
-    { name = "marimo", specifier = ">=0.17.0" },
-    { name = "matplotlib", specifier = ">=3.10.7" },
-    { name = "msgspec", specifier = ">=0.20.0" },
-    { name = "networkx", specifier = ">=3.4.2" },
-    { name = "numpy", specifier = ">=2.2.6" },
-    { name = "optax", specifier = ">=0.2.6" },
-    { name = "pandas", specifier = ">=2.3.3" },
-    { name = "polars", specifier = ">=1.34.0" },
-    { name = "pre-commit", specifier = ">=4.3.0" },
-    { name = "pydeck", specifier = ">=0.9.1" },
-    { name = "pympler", specifier = ">=1.1" },
-    { name = "pytest", specifier = ">=8.4.2" },
-    { name = "pyvista", specifier = ">=0.46.5" },
-    { name = "pyyaml", specifier = ">=6.0.3" },
-    { name = "requests", specifier = ">=2.32.5" },
-    { name = "ruff", specifier = ">=0.14.0" },
-    { name = "tiledb", specifier = ">=0.35.2" },
-    { name = "tqdm", specifier = ">=4.67.1" },
-]
-
-[[package]]
 name = "etils"
 version = "1.13.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1683,6 +1614,83 @@ resolution-markers = [
 sdist = { url = "https://files.pythonhosted.org/packages/6a/51/63fe664f3908c97be9d2e4f1158eb633317598cfa6e1fc14af5383f17512/networkx-3.6.1.tar.gz", hash = "sha256:26b7c357accc0c8cde558ad486283728b65b6a95d85ee1cd66bafab4c8168509", size = 2517025, upload-time = "2025-12-08T17:02:39.908Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl", hash = "sha256:d47fbf302e7d9cbbb9e2555a0d267983d2aa476bac30e90dfbe5669bd57f3762", size = 2068504, upload-time = "2025-12-08T17:02:38.159Z" },
+]
+
+[[package]]
+name = "nexus-sim"
+version = "0.1.0a1"
+source = { editable = "." }
+dependencies = [
+    { name = "dash" },
+    { name = "dash-ag-grid" },
+    { name = "dash-bootstrap-components" },
+    { name = "fastexcel" },
+    { name = "flask-cors" },
+    { name = "flax", version = "0.10.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "flax", version = "0.12.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "hydra-core" },
+    { name = "imageio" },
+    { name = "jax", version = "0.6.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "jax", version = "0.8.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "marimo" },
+    { name = "matplotlib" },
+    { name = "msgspec" },
+    { name = "networkx", version = "3.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.4.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "optax" },
+    { name = "pandas" },
+    { name = "polars" },
+    { name = "pydeck" },
+    { name = "pympler" },
+    { name = "pyvista" },
+    { name = "pyyaml" },
+    { name = "requests" },
+    { name = "tiledb" },
+    { name = "tqdm" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dash", specifier = ">=3.3.0" },
+    { name = "dash-ag-grid", specifier = ">=32.3.2" },
+    { name = "dash-bootstrap-components", specifier = ">=2.0.4" },
+    { name = "fastexcel", specifier = ">=0.16.0" },
+    { name = "flask-cors", specifier = ">=6.0.2" },
+    { name = "flax", specifier = ">=0.10.7" },
+    { name = "hydra-core", specifier = ">=1.3.2" },
+    { name = "imageio", specifier = ">=2.37.2" },
+    { name = "jax", specifier = ">=0.6.2" },
+    { name = "marimo", specifier = ">=0.17.0" },
+    { name = "matplotlib", specifier = ">=3.10.7" },
+    { name = "msgspec", specifier = ">=0.20.0" },
+    { name = "networkx", specifier = ">=3.4.2" },
+    { name = "numpy", specifier = ">=2.2.6" },
+    { name = "optax", specifier = ">=0.2.6" },
+    { name = "pandas", specifier = ">=2.3.3" },
+    { name = "polars", specifier = ">=1.34.0" },
+    { name = "pydeck", specifier = ">=0.9.1" },
+    { name = "pympler", specifier = ">=1.1" },
+    { name = "pyvista", specifier = ">=0.46.5" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
+    { name = "requests", specifier = ">=2.32.5" },
+    { name = "tiledb", specifier = ">=0.35.2" },
+    { name = "tqdm", specifier = ">=4.67.1" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pre-commit", specifier = ">=4.3.0" },
+    { name = "pytest", specifier = ">=8.4.2" },
+    { name = "ruff", specifier = ">=0.14.0" },
 ]
 
 [[package]]
