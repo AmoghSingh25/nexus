@@ -1,4 +1,4 @@
-from simulator.spatial.layers.chemical import ChemicalLayer
+from nexus_sim.simulator.spatial.layers.chemical import ChemicalLayer
 
 
 class FreeField:

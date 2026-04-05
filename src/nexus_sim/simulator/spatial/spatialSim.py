@@ -1,8 +1,8 @@
-from simulator.spatial.mesh.mesh import Mesh
+from nexus_sim.simulator.spatial.mesh.mesh import Mesh
 from omegaconf import DictConfig
 from tqdm import tqdm
-from simulator.spatial.logger.mesh_logger import FieldLogger
-from simulator.spatial.logger.spatial_logger import SpatialLogger
+from nexus_sim.simulator.spatial.logger.mesh_logger import FieldLogger
+from nexus_sim.simulator.spatial.logger.spatial_logger import SpatialLogger
 import time
 import os
 

@@ -1,5 +1,5 @@
-from simulator.spatial import spatialSim
-from simulator.grn import grnSim
+from nexus_sim.simulator.spatial import spatialSim
+from nexus_sim.simulator.grn import grnSim
 
 
 class InterventionManager:

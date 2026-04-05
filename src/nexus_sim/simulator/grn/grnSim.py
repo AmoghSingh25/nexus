@@ -7,14 +7,14 @@ import time
 import networkx as nx
 import jax.numpy as jnp
 from jax import vmap, random, lax, jit, clear_caches, grad, config, nn
-from simulator.utils.read_network import _read_data
+from nexus_sim.simulator.utils.read_network import _read_data
 from tqdm import tqdm
 import logging
-from simulator.noise_models.wiener_noise import WienerNoise
+from nexus_sim.simulator.noise_models.wiener_noise import WienerNoise
 import numpy as np
-from simulator.utils.verify_network import _copy_param_vals
+from nexus_sim.simulator.utils.verify_network import _copy_param_vals
 from omegaconf import DictConfig
-from simulator.grn.logger.grnLogger import GRNLogger
+from nexus_sim.simulator.grn.logger.grnLogger import GRNLogger
 import optax
 
 

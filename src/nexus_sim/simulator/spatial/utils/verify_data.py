@@ -1,5 +1,5 @@
 import numpy as np
-from simulator.spatial.utils.random_generators import (
+from nexus_sim.simulator.spatial.utils.random_generators import (
     generate_permutation,
 )
 

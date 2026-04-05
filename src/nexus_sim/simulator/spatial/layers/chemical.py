@@ -1,6 +1,6 @@
 import jax
 import jax.numpy as jnp
-from simulator.spatial.utils.random_generators import (
+from nexus_sim.simulator.spatial.utils.random_generators import (
     generate_poisson,
     generate_uniform,
     generate_permutation,

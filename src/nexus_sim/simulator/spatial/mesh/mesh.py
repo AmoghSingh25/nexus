@@ -2,21 +2,21 @@ import jax.numpy as jnp
 import jax
 from jax import random
 import math
-from simulator.spatial.utils.random_generators import (
+from nexus_sim.simulator.spatial.utils.random_generators import (
     generate_uniform,
     generate_normal,
 )
-from simulator.spatial.logger.mesh_logger import FieldLogger
-from simulator.spatial.models.reaction import Reaction
-from simulator.spatial.layers.chemical import (
+from nexus_sim.simulator.spatial.logger.mesh_logger import FieldLogger
+from nexus_sim.simulator.spatial.models.reaction import Reaction
+from nexus_sim.simulator.spatial.layers.chemical import (
     calc_zero_order,
     calc_first_order,
     calc_second_order,
     calc_reaction_change,
 )
-from simulator.spatial.layers.force import calc_vel
-from simulator.spatial.utils.verify_data import check_cell_type_data
-from simulator.spatial.mesh.clustering_field import k_mean_clustering
+from nexus_sim.simulator.spatial.layers.force import calc_vel
+from nexus_sim.simulator.spatial.utils.verify_data import check_cell_type_data
+from nexus_sim.simulator.spatial.mesh.clustering_field import k_mean_clustering
 
 
 class Mesh:

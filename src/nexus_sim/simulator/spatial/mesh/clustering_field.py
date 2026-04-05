@@ -1,6 +1,6 @@
 import jax.numpy as jnp
 from jax import random
-from simulator.spatial.utils.random_generators import generate_choices
+from nexus_sim.simulator.spatial.utils.random_generators import generate_choices
 
 ## TODO: Use Clustering in field-cell computation - Assign fields after 2 steps to allow stabilization
 ## TODO: K Medoids

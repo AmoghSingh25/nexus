@@ -2,11 +2,11 @@
 from tqdm import tqdm
 import jax.numpy as jnp
 import time
-from simulator.grn.grnSim import GRNSim
-from simulator.spatial.spatialSim import SpatialSimVec
+from nexus_sim.simulator.grn.grnSim import GRNSim
+from nexus_sim.simulator.spatial.spatialSim import SpatialSimVec
 import hydra
 from omegaconf import DictConfig, open_dict
-from simulator.utils.file_manager import _save_file
+from nexus_sim.simulator.utils.file_manager import _save_file
 
 
 @hydra.main(

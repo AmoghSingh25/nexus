@@ -1,10 +1,10 @@
 from tqdm import tqdm
 import time
-from simulator.grn.grnSim import GRNSim
-from simulator.spatial.spatialSim import SpatialSimVec
+from nexus_sim.simulator.grn.grnSim import GRNSim
+from nexus_sim.simulator.spatial.spatialSim import SpatialSimVec
 import hydra
 from omegaconf import DictConfig, open_dict
-from simulator.intervention.intervention import InterventionManager
+from nexus_sim.simulator.intervention.intervention import InterventionManager
 
 
 @hydra.main(

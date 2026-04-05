@@ -1,4 +1,4 @@
-from simulator.grn.grnSim import GRNSim
+from nexus_sim.simulator.grn.grnSim import GRNSim
 import jax.numpy as jnp
 import os
 from hydra import initialize_config_dir, compose

@@ -5,9 +5,9 @@ import argparse
 import pandas as pd
 import numpy as np
 
-from simulator.spatial.logger.mesh_logger import FieldLogger as DataLoggerVec
-from simulator.spatial.logger.spatial_logger import SpatialLogger
-from simulator.grn.logger.grnLogger import GRNLogger
+from nexus_sim.simulator.spatial.logger.mesh_logger import FieldLogger as DataLoggerVec
+from nexus_sim.simulator.spatial.logger.spatial_logger import SpatialLogger
+from nexus_sim.simulator.grn.logger.grnLogger import GRNLogger
 
 app = Flask(__name__)
 CORS(app, origins="*")

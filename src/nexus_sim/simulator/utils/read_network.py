@@ -4,7 +4,7 @@ import networkx as nx
 import polars as pl
 import yaml
 import logging
-from simulator.utils.verify_network import _verify_network
+from nexus_sim.simulator.utils.verify_network import _verify_network
 
 
 def _create_bins(bin_vals, n_bins, n_cells):
