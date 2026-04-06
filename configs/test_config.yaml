@@ -23,7 +23,7 @@ grn:
 
   ## Protein related
   protein_sim: true
-  
+
 # Lattice free setup
 spatial_sim:
   ## Mesh related
@@ -102,7 +102,7 @@ spatial_sim:
       - 3
   
   ## Reactions
-  reaction_bool: false
+  reaction_bool: true
   reaction_prob: false
   reaction:
     reac_3: # Decay of chemical
