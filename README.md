@@ -46,26 +46,24 @@ uv sync
 
 ## Usage
 
-### Simulator
+Examples for running the simulator are given in a [Marimo notebook](examples/marimo_example.py) and a [IPYNB notebook](examples/ipynb_example.ipynb).
 
-```bash
-## Runs the GRN Sim and the spatial sim with the default config 'freemesh_config.yaml'
-uv run src/simulator/run_sim.py
-```
-### Visualization
+## Visualization
 
 The visualization can be run by the running the two commands in seperate terminal windows.
 
 ```bash
 ## Runs the API for fetching the data from TileDB
-uv run src/visualization/retrieve_logger_api.py
+uv run src/nexus_sim/dashboad/retrieve_logger_api.py
 
 ## Runs the website to visualize the data
-cd src/visualization/visualization_web/
+cd src/nexus_sim/dashboard/web/
 npm install # If the packages are not installed
 npm run dev
 ```
 
-After running these two commands, open the link `http://localhost:3000/vis?file_name={FILE_NAME}` and inserting the name of the log file to be visualized at `{FILE_NAME}`. This log file should be present inside `src/simulator/grn/logs/` and `src/simulator/spatial_vec/logs/`.
+After running these two commands, open the link `http://localhost:3000` and selecting a log file from the dropdown. This log file should be present inside `src/simulator/grn/logs/` and `src/simulator/spatial_vec/logs/`.
 
 The colors indicate the states of the cell, yellow indicating live cells, blue indicating cells undergoing programmed cell death and red are the cells undergoing sudden cell death.
+
+Further instructions on using the dashboard is given in [README](src/nexus_sim/dashboard/web/README.md)

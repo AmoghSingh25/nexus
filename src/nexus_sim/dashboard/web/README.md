@@ -1,38 +1,21 @@
-## TODO: Update this readme
+# Visualization dashboard
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-
-## Getting Started
-
-First, run the development server:
+The visualization can be run by the running the two commands in seperate terminal windows.
 
 ```bash
+## Runs the API for fetching the data from TileDB
+uv run src/nexus_sim/dashboad/retrieve_logger_api.py
+
+## Runs the website to visualize the data
+cd src/nexus_sim/dashboard/web/
+npm install # If the packages are not installed
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+After running these two commands, open the link `http://localhost:3000` and selecting a log file from the dropdown. This log file should be present inside `src/simulator/grn/logs/` and `src/simulator/spatial_vec/logs/`.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+The colors indicate the states of the cell, yellow indicating live cells, blue indicating cells undergoing programmed cell death and red are the cells undergoing sudden cell death.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+A time slider is given on the top to select the time step for visualization. This can be used to view the change in the cell positions with time.
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The bottom section also provides visualization of chemical concentrations in a Field or a Cell, depending on the selection. To visualize a different Field/Cell, it can be selected in the 3D view to update the plot.

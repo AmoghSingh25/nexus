@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.18.4"
+__generated_with = "0.22.4"
 app = marimo.App(width="medium")
 
 
@@ -11,6 +11,7 @@ def _():
     from nexus_sim.simulator.run_linked_sim import run_sim
     from nexus_sim.simulator.grn.grnSim import GRNSim
     from nexus_sim.simulator.spatial.spatialSim import SpatialSim
+    from nexus_sim.simulator.utils.file_manager import _read_file
     from hydra import initialize_config_dir, compose
     from omegaconf import OmegaConf
     import pprint
@@ -221,7 +222,6 @@ def _(plt, spatial_sim):
     plt.xlabel("Timestep")
     plt.ylabel("Conc.")
     plt.title("Concentration of chemicals in Field 1 across timesteps")
-    plt.show()
     return
 
 
@@ -247,11 +247,6 @@ def _(cfg4, run_sim):
 
 @app.cell
 def _():
-    return
-
-
-@app.cell
-def _():
     field_conc = _read_file("src/nexus_sim/simulator/spatial/logs/field_concs.pkl")
     return (field_conc,)
 
@@ -271,12 +266,7 @@ def _(field_conc, plt):
     plt.xlabel("Timestep")
     plt.ylabel("Conc")
     plt.xticks(_ticks)
-    plt.show()
-    return
-
-
-@app.cell
-def _():
+    plt.gca()
     return
 
 

@@ -63,7 +63,8 @@ exclude = [
     "outputs*",
     "experiments*",
     "simulator.archive*",
-    "*.egg-info*"
+    "*.egg-info*",
+    "dashboard*"
 ]
 
 [tool.setuptools.exclude-package-data]
