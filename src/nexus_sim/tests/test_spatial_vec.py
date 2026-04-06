@@ -1,4 +1,4 @@
-from nexus_sim.simulator.spatial.spatialSim import SpatialSimVec
+from nexus_sim.simulator.spatial.spatialSim import SpatialSim
 import numpy as np
 import os
 from hydra import initialize_config_dir, compose
@@ -19,7 +19,7 @@ class TestSpatial:
         base_config.spatial_sim.cycle_bool = False
 
         try:
-            s = SpatialSimVec(base_config.spatial_sim)
+            s = SpatialSim(base_config.spatial_sim)
             s.run_sim()
             if s.mesh.n_fields < 2:
                 s.cleanup()
@@ -56,7 +56,7 @@ class TestSpatial:
         base_config.spatial_sim.n_steps = 30
 
         try:
-            s = SpatialSimVec(base_config.spatial_sim)
+            s = SpatialSim(base_config.spatial_sim)
 
             def calc_mass():
                 mass = 0
@@ -83,7 +83,7 @@ class TestSpatial:
         base_config.spatial_sim.diffusion_bool = False
         base_config.spatial_sim.cycle_bool = False
 
-        s = SpatialSimVec(base_config.spatial_sim)
+        s = SpatialSim(base_config.spatial_sim)
         s.run_sim()
         chem_id = [1, 2]
         field_id = random.randint(a=0, b=s.mesh.n_fields - 1)

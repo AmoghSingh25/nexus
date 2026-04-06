@@ -7,7 +7,7 @@ import time
 import os
 
 
-class SpatialSimVec:
+class SpatialSim:
     """
     Spatial Simulator Class. Creates the mesh, initialized data using config, creates logger and runs the simulation.
     """
@@ -100,7 +100,7 @@ class SpatialSimVec:
         """
         Deletes the log files generated during the run
 
-        :param self: SpatialSimVec
+        :param self: SpatialSim
         """
         if self.logger is not None:
             self.logger.cleanup()

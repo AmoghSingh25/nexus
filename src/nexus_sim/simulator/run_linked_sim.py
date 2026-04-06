@@ -3,7 +3,7 @@ from tqdm import tqdm
 import jax.numpy as jnp
 import time
 from nexus_sim.simulator.grn.grnSim import GRNSim
-from nexus_sim.simulator.spatial.spatialSim import SpatialSimVec
+from nexus_sim.simulator.spatial.spatialSim import SpatialSim
 import hydra
 from omegaconf import DictConfig, open_dict
 from nexus_sim.simulator.utils.file_manager import _save_file
@@ -40,7 +40,7 @@ def run_sim(cfg: DictConfig) -> None:
         cfg.spatial_sim.chemical["name"] = chem_names
         cfg.spatial_sim.chemical["mol_mass"] = chem_mol_mass
 
-    spatial_sim = SpatialSimVec(cfg.spatial_sim)
+    spatial_sim = SpatialSim(cfg.spatial_sim)
     check_config(spatial_sim=spatial_sim, grn_sim=grn_sim, cfg=cfg)
 
     cell_concs = [grn_sim.prot_conc]
@@ -104,9 +104,11 @@ def run_sim(cfg: DictConfig) -> None:
         spatial_sim.run_sim(step=_i)
         grn_sim.run_sim(step=_i)
 
-    _save_file("src/simulator/spatial_vec/logs/cell_concs.pkl", cell_concs)
-    _save_file("src/simulator/spatial_vec/logs/field_concs.pkl", field_concs)
-    _save_file("src/simulator/spatial_vec/logs/field_cell_assgn.pkl", field_cell_assgns)
+    _save_file("src/nexus_sim/simulator/spatial/logs/cell_concs.pkl", cell_concs)
+    _save_file("src/nexus_sim/simulator/spatial/logs/field_concs.pkl", field_concs)
+    _save_file(
+        "src/nexus_sim/simulator/spatial/logs/field_cell_assgn.pkl", field_cell_assgns
+    )
 
 
 def check_config(spatial_sim, grn_sim, cfg):

@@ -31,7 +31,12 @@ def _read_txt(mr_file, gene_file, n_cells):
             }
         )
 
-    gene_data = pl.read_csv(gene_file, separator=",", has_header=False).to_jax()
+    gene_data = (
+        pl.read_csv(gene_file, separator=",", has_header=False)
+        .fill_nan(0)
+        .fill_null(0)
+        .to_jax()
+    )
     gene_nodes = []
     edges = []
     for i in gene_data:

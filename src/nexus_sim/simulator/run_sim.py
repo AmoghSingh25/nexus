@@ -1,7 +1,7 @@
 from tqdm import tqdm
 import time
 from nexus_sim.simulator.grn.grnSim import GRNSim
-from nexus_sim.simulator.spatial.spatialSim import SpatialSimVec
+from nexus_sim.simulator.spatial.spatialSim import SpatialSim
 import hydra
 from omegaconf import DictConfig, open_dict
 from nexus_sim.simulator.intervention.intervention import InterventionManager
@@ -19,11 +19,8 @@ def run_sim(cfg: DictConfig) -> None:
     with open_dict(cfg):
         cfg.spatial_sim["log_file_name"] = timestep
         cfg.grn["log_file_name"] = timestep
-
-        # cfg.grn["n_steps"] = 1
-        # cfg.spatial_sim["n_steps"] = 1
     grn_sim = GRNSim(cfg.grn)
-    spatial_sim = SpatialSimVec(cfg.spatial_sim)
+    spatial_sim = SpatialSim(cfg.spatial_sim)
     intervention_flag = False
     if cfg.get("intervention") is not None:
         interven_manager = InterventionManager(
@@ -38,6 +35,7 @@ def run_sim(cfg: DictConfig) -> None:
         intervention_flag and interven_manager.check(i)
         grn_sim.run_sim(step=i)
         spatial_sim.run_sim(step=i)
+    return timestep
 
 
 def check_config(spatial_sim, cfg):

@@ -1,3 +1,4 @@
+from pathlib import Path
 from nexus_sim.simulator.grn.grnSim import GRNSim
 import jax.numpy as jnp
 import os
@@ -18,7 +19,7 @@ def read_pickle(file_name):
     return var
 
 
-class TestFile:
+class TestGRN:
     config_files = [
         "configs/sample_data/sample_network_2cell.yaml",
         "configs/sample_data/sample_network_1cell.yaml",
@@ -50,13 +51,14 @@ class TestFile:
             assert gene_conc.shape == (4, self.cell_no[i], 1)
             assert prot_conc.shape == (4, self.cell_no[i], 1)
 
-    def validate_sergio_output(self):
-        base_config = get_config()
+    def test_sergio_output(self):
+        DATA_DIR = Path(__file__).parent
+        base_config = get_config("config")
         base_config.grn.protein_sim = False
         base_config.grn.logging = False
 
-        node_mapping = read_pickle("saved_outputs/node_mapping.pkl")
-        sergio_output = read_pickle("saved_outputs/saved_output.pkl")
+        node_mapping = read_pickle(DATA_DIR / "saved_outputs/node_mapping.pkl")
+        sergio_output = read_pickle(DATA_DIR / "saved_outputs/saved_output.pkl")
         sim = GRNSim(base_config.grn)
         gene_conc = sim.gene_conc.reshape((100, 2700))
         reordered_output_1 = jnp.zeros_like(gene_conc)
