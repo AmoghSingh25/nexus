@@ -23,7 +23,7 @@ uv sync
 
 ## Code Structure
 
-- `src/`
+- `src/nexus_sim/`
   - `simulator/` - Core simulation engine
     - `dynamics/` - Mathematical models for simulator dynamics
     - `noise_models/` - Noise processes, random seeds
@@ -36,11 +36,21 @@ uv sync
     - `identification/` - Algorithms for structure/parameter learning
     - `evaluation/` - Evaluation scripts
   - `experiments/` - Scripts for running experiments
-  - `visualization/` - Plotting, analysis, dashboards
+  - `dashboard/` - Plotting, analysis, dashboards
+    - `web/` - Next.JS website for visualization of simulator outputs
+    - `retrieve_logger_api.py` - Flask API to serve data to the website
   - `tests/` - Unit & integration tests
 - `configs/` - Config files for runs
 - `notebooks/` - Exploratory analyses and demos
   - `testing.py` - Notebook to check working of GeneProtSim
+- `docs/` - Documentation
+  - `config_desc.md` - Configuration parameters and their description
+  - `intervention_api.md` - Working of intervention API and its configuration
+  - `simulator.md` - Working of the GRN simulator
+  - `spatial_simulator.md` - Working of the spatial simulator
+- `examples/` - Examples scripts
+  - `marimo_example.py` - Marimo notebook containing example scripts
+  - `ipynb_example.py` - IPYNB notebook containing example scripts
 - `pyproject.toml` - For package/dependency management
 - `README.md`
 
@@ -54,7 +64,7 @@ The visualization can be run by the running the two commands in seperate termina
 
 ```bash
 ## Runs the API for fetching the data from TileDB
-uv run src/nexus_sim/dashboad/retrieve_logger_api.py
+uv run src/nexus_sim/dashboard/retrieve_logger_api.py
 
 ## Runs the website to visualize the data
 cd src/nexus_sim/dashboard/web/
@@ -62,7 +72,7 @@ npm install # If the packages are not installed
 npm run dev
 ```
 
-After running these two commands, open the link `http://localhost:3000` and selecting a log file from the dropdown. This log file should be present inside `src/simulator/grn/logs/` and `src/simulator/spatial_vec/logs/`.
+After running these two commands, open the link `http://localhost:3000` and select a log file from the dropdown. This log file should be present inside `src/simulator/grn/logs/` and `src/simulator/spatial_vec/logs/`.
 
 The colors indicate the states of the cell, yellow indicating live cells, blue indicating cells undergoing programmed cell death and red are the cells undergoing sudden cell death.
 
