@@ -204,7 +204,6 @@ class Mesh:
 
         ## Movement
         self.movement_bool = cfg.movement_bool
-        self.debug_plot = cfg.debug_plot
 
         curr_id = 0
         self.delta_m = 0  # Adjust mass of chemicals if there is a mismatch in previous and current mass
@@ -787,7 +786,9 @@ class Mesh:
         # Perform diffusion
         if self.diffusion_bool:
             self.calc_conc_change()
-            self.debug_plot and print(f"Step - {step_i}, Delta M = {self.delta_m:.4e}")
+            logger is not None and print(
+                f"Step - {step_i}, Delta M = {self.delta_m:.4e}"
+            )
 
         # Perform reactions
         if self.reaction_bool:

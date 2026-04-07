@@ -31,7 +31,6 @@ spatial_sim:
   width: 3
   depth: 3
   mesh_type: "grid"
-  sparse_cells: true
   cell_num: 10
 
   ## Diffusion related

@@ -16,7 +16,6 @@ def check_cell_type_data(key, sub_key, n_cells, cfg):
 
     req_keys_movement = set(
         [
-            "qty_ratio",
             "attraction_coeff",
             "repulsion_coeff",
             "drift_vel_coeff",

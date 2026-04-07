@@ -31,7 +31,6 @@ spatial_sim:
   width: 2
   depth: 2
   mesh_type: "lattice-free"
-  sparse_cells: true
   field_resolution: 2 # Divide into X divisions along each axis
   cell_concentration: 1 # Default value is 10
   field_vol: 1.0
@@ -56,13 +55,11 @@ spatial_sim:
   movement_bool: true
   movement:
     cell1:
-      qty_ratio: 0.8
       attraction_coeff: 1
       repulsion_coeff: 0.1
       drift_vel_coeff: 0.01
       random_vel_coeff: 0.01
     cell2:
-      qty_ratio: 0.2
       attraction_coeff: 2
       repulsion_coeff: 0.2
       drift_vel_coeff: 0.02

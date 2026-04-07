@@ -5,9 +5,9 @@
 ## Table of contents
 
 - [Setup](#setup)
-- [Description](#description)
+- [Code Structure](#code-structure)
 - [Usage](#usage)
-  - [Simulator](#simulator)
+- [Visualization](#visualization)
 
 ## Setup
 
@@ -46,7 +46,7 @@ uv sync
 
 ## Usage
 
-Examples for running the simulator are given in a [Marimo notebook](examples/marimo_example.py) and a [IPYNB notebook](examples/ipynb_example.ipynb).
+Examples for running the simulator are given in a [Marimo notebook](examples/marimo_example.py) and a [IPYNB notebook](examples/ipynb_example.ipynb). The simulator uses Hydra configs for the simulation parameters and the description of the config files are given in [Config Description](docs/config_desc.md).
 
 ## Visualization
 
