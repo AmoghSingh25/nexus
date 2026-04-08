@@ -27,7 +27,6 @@ spatial_sim:
   width: 1
   depth: 1
   mesh_type: "lattice-free"
-  sparse_cells: true
   field_resolution: 3 # Divide into X divisions along each axis
   cell_concentration: 1 # Default value is 10
   field_vol: 1.0
@@ -45,7 +44,6 @@ spatial_sim:
   n_steps: 10
   random_key: 42
   logging: false
-  debug_plot: false
 
   ## Movement related
   movement_bool: true

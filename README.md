@@ -5,9 +5,9 @@
 ## Table of contents
 
 - [Setup](#setup)
-- [Description](#description)
+- [Code Structure](#code-structure)
 - [Usage](#usage)
-  - [Simulator](#simulator)
+- [Visualization](#visualization)
 
 ## Setup
 
@@ -23,7 +23,7 @@ uv sync
 
 ## Code Structure
 
-- `src/`
+- `src/nexus/`
   - `simulator/` - Core simulation engine
     - `dynamics/` - Mathematical models for simulator dynamics
     - `noise_models/` - Noise processes, random seeds
@@ -36,36 +36,44 @@ uv sync
     - `identification/` - Algorithms for structure/parameter learning
     - `evaluation/` - Evaluation scripts
   - `experiments/` - Scripts for running experiments
-  - `visualization/` - Plotting, analysis, dashboards
+  - `dashboard/` - Plotting, analysis, dashboards
+    - `web/` - Next.JS website for visualization of simulator outputs
+    - `retrieve_logger_api.py` - Flask API to serve data to the website
   - `tests/` - Unit & integration tests
 - `configs/` - Config files for runs
 - `notebooks/` - Exploratory analyses and demos
   - `testing.py` - Notebook to check working of GeneProtSim
+- `docs/` - Documentation
+  - `config_desc.md` - Configuration parameters and their description
+  - `intervention_api.md` - Working of intervention API and its configuration
+  - `simulator.md` - Working of the GRN simulator
+  - `spatial_simulator.md` - Working of the spatial simulator
+- `examples/` - Examples scripts
+  - `marimo_example.py` - Marimo notebook containing example scripts
+  - `ipynb_example.py` - IPYNB notebook containing example scripts
 - `pyproject.toml` - For package/dependency management
 - `README.md`
 
 ## Usage
 
-### Simulator
+Examples for running the simulator are given in a [Marimo notebook](examples/marimo_example.py) and a [IPYNB notebook](examples/ipynb_example.ipynb). The simulator uses Hydra configs for the simulation parameters and the description of the config files are given in [Config Description](docs/config_desc.md).
 
-```bash
-## Runs the GRN Sim and the spatial sim with the default config 'freemesh_config.yaml'
-uv run src/simulator/run_sim.py
-```
-### Visualization
+## Visualization
 
 The visualization can be run by the running the two commands in seperate terminal windows.
 
 ```bash
 ## Runs the API for fetching the data from TileDB
-uv run src/visualization/retrieve_logger_api.py
+uv run src/nexus/dashboard/retrieve_logger_api.py
 
 ## Runs the website to visualize the data
-cd src/visualization/visualization_web/
+cd dashboard/web/
 npm install # If the packages are not installed
 npm run dev
 ```
 
-After running these two commands, open the link `http://localhost:3000/vis?file_name={FILE_NAME}` and inserting the name of the log file to be visualized at `{FILE_NAME}`. This log file should be present inside `src/simulator/grn/logs/` and `src/simulator/spatial_vec/logs/`.
+After running these two commands, open the link `http://localhost:3000` and select a log file from the dropdown. This log file should be present inside `src/simulator/grn/logs/` and `src/simulator/spatial_vec/logs/`.
 
 The colors indicate the states of the cell, yellow indicating live cells, blue indicating cells undergoing programmed cell death and red are the cells undergoing sudden cell death.
+
+Further instructions on using the dashboard is given in [README](src/nexus/dashboard/web/README.md)

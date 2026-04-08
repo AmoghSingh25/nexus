@@ -6,7 +6,7 @@ grn:
   n_cells: 8
   delta: 0.01
   n_steps: 10
-  config_file: "configs/sample_data/sample_network_1cell.yaml"
+  config_file: "sample_data/sample_network_1cell.yaml"
   random_key: 42
   logging: true
   learn_params: false
