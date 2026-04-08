@@ -12,7 +12,6 @@ def _():
     import networkx as nx
     import matplotlib
     from tqdm import tqdm
-    from pympler.classtracker import asizeof
     import jax.numpy as jnp
     import numpy as np
     import matplotlib.pyplot as plt
