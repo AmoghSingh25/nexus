@@ -4,10 +4,10 @@ grn:
   n_cells: 2700
   delta: 0.01
   n_steps: 10
-  gene_data: "configs/sample_data/Interaction_cID_4.txt"
-  mr_data: "configs/sample_data/Regs_cID_4.txt"
+  gene_data: "sample_data/Interaction_cID_4.txt"
+  mr_data: "sample_data/Regs_cID_4.txt"
   config_file: ""
-  logging: false
+  logging: true
   learn_params: false
   epochs: 10
   lr: 1
@@ -41,7 +41,7 @@ spatial_sim:
   delta: 0.01
   n_steps: 10
   random_key: 42
-  logging: false
+  logging: true
   
   ## Chemicals
   chemical:
