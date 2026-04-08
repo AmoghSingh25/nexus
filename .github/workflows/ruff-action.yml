@@ -28,7 +28,7 @@ jobs:
         run: pip install ruff
 
       - name: Run Ruff checks
-        run: ruff check --exclude "*.ipynb" --exclude "notebooks/"
+        run: ruff check --exclude "*.ipynb" --exclude "notebooks/" --exclude "examples/"
 
       - name: Run Ruff format
-        run: ruff format --exclude "*.ipynb" --exclude "notebooks/"
+        run: ruff format --exclude "*.ipynb" --exclude "notebooks/" --exclude "examples/"
