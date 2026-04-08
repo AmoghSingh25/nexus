@@ -2,7 +2,6 @@ from flask import Flask, request, make_response
 from flask_cors import CORS
 import os
 import argparse
-import pandas as pd
 import numpy as np
 
 from nexus.simulator.spatial.logger.mesh_logger import FieldLogger as DataLoggerVec
@@ -178,19 +177,3 @@ if __name__ == "__main__":
     #     raise FileNotFoundError("Log file does not exist")
 
     app.run(port=8080, debug=True)
-
-
-def format_data(inp_data, chem_id, multicell=False, cell_id=None):
-    prefix = "Chem- "
-    if multicell:
-        prefix = "Cell - " + str(cell_id) + "." + prefix
-    chem_arr = np.zeros((logger_inst.n_steps, logger_inst.n_chems))
-    for t_i, chem_i, idx in zip(
-        inp_data["t"], inp_data["chem"], list(range(len(inp_data["conc"])))
-    ):
-        if int(chem_i) in chem_id:
-            chem_arr[t_i][int(chem_i)] = inp_data["conc"][idx]
-    chem_arr = chem_arr[:, chem_id]
-    ret_df = pd.DataFrame(chem_arr, columns=[prefix + str(i) for i in chem_id])
-    ret_df.index.name = "Step"
-    return ret_df
