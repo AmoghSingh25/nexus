@@ -23,7 +23,7 @@ uv sync
 
 ## Code Structure
 
-- `src/nexus_sim/`
+- `src/nexus/`
   - `simulator/` - Core simulation engine
     - `dynamics/` - Mathematical models for simulator dynamics
     - `noise_models/` - Noise processes, random seeds
@@ -64,10 +64,10 @@ The visualization can be run by the running the two commands in seperate termina
 
 ```bash
 ## Runs the API for fetching the data from TileDB
-uv run src/nexus_sim/dashboard/retrieve_logger_api.py
+uv run src/nexus/dashboard/retrieve_logger_api.py
 
 ## Runs the website to visualize the data
-cd src/nexus_sim/dashboard/web/
+cd dashboard/web/
 npm install # If the packages are not installed
 npm run dev
 ```
@@ -76,4 +76,4 @@ After running these two commands, open the link `http://localhost:3000` and sele
 
 The colors indicate the states of the cell, yellow indicating live cells, blue indicating cells undergoing programmed cell death and red are the cells undergoing sudden cell death.
 
-Further instructions on using the dashboard is given in [README](src/nexus_sim/dashboard/web/README.md)
+Further instructions on using the dashboard is given in [README](src/nexus/dashboard/web/README.md)

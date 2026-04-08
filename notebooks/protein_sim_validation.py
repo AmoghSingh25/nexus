@@ -238,7 +238,6 @@ def _(conc_dict, g, random, tqdm):
             nodes_names.append(_i)
 
         elif _i in g.nodes():
-            # print("Gene")
             _gene_entry = {}
             n_regs = len(list(g.successors(_i)))
 

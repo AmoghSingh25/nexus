@@ -56,6 +56,9 @@ build-backend = "setuptools.build_meta"
 [tool.ruff]
 exclude = ["notebooks/", "examples/"]
 
+[tool.setuptools.package-dir]
+nexus = "src/nexus"
+
 [tool.setuptools.packages.find]
 where = ["src"]
 exclude = [

@@ -3,7 +3,7 @@
 
 __pycache__/
 __marimo__/
-src/nexus_sim/simulator/archive
+src/nexus/simulator/archive
 .DS_Store
 notebooks/protein_rna_test_data/
 .idea/
@@ -11,10 +11,9 @@ notebooks/protein_rna_test_data/
 .ruff_cache/
 .venv/
 outputs/
-src/nexus_sim/simulator/spatial/logs/
-src/nexus_sim/simulator/spatial_vec/logs/
-src/nexus_sim/simulator/grn/logs/
+logs/
 
 notebooks/testing_triangulation.py
 *.egg-info/
 pytestdebug.log
+node_modules/

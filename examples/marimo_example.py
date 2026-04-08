@@ -8,10 +8,10 @@ app = marimo.App(width="medium")
 def _():
     import marimo as mo
     import os
-    from nexus_sim.simulator.run_linked_sim import run_sim
-    from nexus_sim.simulator.grn.grnSim import GRNSim
-    from nexus_sim.simulator.spatial.spatialSim import SpatialSim
-    from nexus_sim.simulator.utils.file_manager import _read_file
+    from nexus.simulator.run_linked_sim import run_sim
+    from nexus.simulator.grn.grnSim import GRNSim
+    from nexus.simulator.spatial.spatialSim import SpatialSim
+    from nexus.simulator.utils.file_manager import _read_file
     from hydra import initialize_config_dir, compose
     from omegaconf import OmegaConf
     import pprint
@@ -127,7 +127,7 @@ def _(mo):
 
 @app.cell
 def _(pprint, yaml):
-    with open("configs/sample_data/sample_network_1cell.yaml", "r") as file:
+    with open("sample_data/sample_network_1cell.yaml", "r") as file:
         node_set, edge_set = yaml.safe_load(file)
     print("RNA and protein configuration")
     pprint.pprint(node_set)
@@ -247,7 +247,7 @@ def _(cfg4, run_sim):
 
 @app.cell
 def _():
-    field_conc = _read_file("src/nexus_sim/simulator/spatial/logs/field_concs.pkl")
+    field_conc = _read_file("outputs/field_concs.pkl")
     return (field_conc,)
 
 
@@ -267,6 +267,11 @@ def _(field_conc, plt):
     plt.ylabel("Conc")
     plt.xticks(_ticks)
     plt.gca()
+    return
+
+
+@app.cell
+def _():
     return
 
 
