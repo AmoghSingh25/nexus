@@ -33,7 +33,7 @@ class GRNLogger:
         if not os.path.exists(os.path.join(self.log_dir, file_name)) and not read_only:
             os.makedirs(os.path.join(self.log_dir, file_name), exist_ok=True)
         self.base_path = os.path.join(self.log_dir, file_name)
-        self.prop_pkl = os.path.join(self.base_path, "properties.pkl")
+        self.prop_pkl = os.path.join(self.base_path, "properties_grn.pkl")
         self.conc_arr = os.path.join(self.base_path, "conc_arr.tldb")
 
         if not read_only:

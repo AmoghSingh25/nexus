@@ -7,7 +7,7 @@ grn:
   n_steps: 20
   config_file: "configs/sample_data/sample_network_1cell.yaml"
   random_key: 42
-  logging: false
+  logging: true
   
   ## Gene related
   non_mr_basal: false
@@ -44,7 +44,7 @@ spatial_sim:
   delta: 0.01
   n_steps: 20
   random_key: 42
-  logging: false
+  logging: true
   debug_plot: false
 
   ## Movement related

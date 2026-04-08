@@ -8,7 +8,9 @@ from nexus.simulator.intervention.intervention import InterventionManager
 
 
 @hydra.main(
-    version_base=None, config_path="../../configs", config_name="freemesh_config.yaml"
+    version_base=None,
+    config_path="../../../configs",
+    config_name="freemesh_config.yaml",
 )
 def run_sim(cfg: DictConfig) -> None:
     ## Checking configs

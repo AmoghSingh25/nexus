@@ -246,16 +246,23 @@ function Visualization() {
     }
   }, [currVis, selectedID]);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setStepid((prev) => {
+        if (prev >= data.length - 1) {
+          return 0; // stay at last value
+        }
+        return prev + 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [data.length]);
+
   if (!dataReady) {
     get_data(setDataReady, currVis);
     return <CircularProgress />;
   }
-
-  // const ambient_light = new AmbientLight({
-  //   color: [255, 255, 255],
-  //   intensity: 10.0,
-  // });
-  // const lighting_effect = new LightingEffect({ ambient_light });
 
   const view = new OrbitView({
     orbitAxis: "Y",
