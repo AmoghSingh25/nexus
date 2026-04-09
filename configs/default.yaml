@@ -1,4 +1,7 @@
 # Default config for GRN and Spatial sim
+defaults:
+  - _self_
+
 grn:
   ## Simulation related
   n_cells: 1
@@ -7,7 +10,10 @@ grn:
   config_file: "configs/sample_data/sample_network_1cell.yaml"
   random_key: 42
   logging: true
+  log_dir: "logs"
   learn_params: false
+  epochs: 0
+  lr: 0.01
 
   ## Gene related
   non_mr_basal: false
@@ -32,8 +38,6 @@ spatial_sim:
   cell_concentration: 1 # Default value is 10
   field_vol: 1.0
   n_cell_type: 1
-  cell_qty:
-    cell1: 1.0
 
   ## Diffusion related
   D: 0.5
@@ -45,12 +49,13 @@ spatial_sim:
   n_steps: 10
   random_key: 42
   logging: true
+  log_dir: "logs"
 
   ## Movement related
   movement_bool: true
   movement:
     cell1:
-      qty_ratio: 0.8
+      qty_ratio: 1.0
       attraction_coeff: 1
       repulsion_coeff: 0.1
       drift_vel_coeff: 0.01

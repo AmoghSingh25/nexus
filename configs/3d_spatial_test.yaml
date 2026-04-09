@@ -1,4 +1,5 @@
-# Config for GRN set to simulate SERGIO configuration
+defaults:
+  - _self_
 grn:
   ## Simulation related
   n_cells: 250
@@ -7,9 +8,11 @@ grn:
   config_file: "configs/sample_data/sample_network_1cell.yaml"
   random_key: 42
   logging: true
+  log_dir: "logs"
   learn_params: false
   epochs: 10
-  
+  lr: 0.01
+
   ## Gene related
   non_mr_basal: false
   noise: false
@@ -21,7 +24,7 @@ grn:
 
   ## Protein related
   protein_sim: false
-  
+
 # Lattice free setup
 spatial_sim:
   ## Mesh related
@@ -33,19 +36,18 @@ spatial_sim:
   cell_concentration: 2 # Default value is 10
   field_vol: 1.0
   n_cell_type: 1
-  cell_qty:
-    cell1: 1.0
 
   ## Diffusion related
   D: 0.5
   diffusion_bool: true
   n_neighbours: 3
-  
+
   ## Simulation Related
   delta: 0.01
   n_steps: 20
   random_key: 42
   logging: true
+  log_dir: "logs"
 
   ## Movement related
   movement_bool: true
@@ -63,15 +65,13 @@ spatial_sim:
     cell1:
       cycle_len: 10
       interphase_len: 0.9
-
       necrosis_death_prob: 0.1
       apoptosis_death_prob: 0.1
-      cell_decay_rate: 0.5
-      
       cell_target_vol: 10.0
       cell_density: 1.0
       cell_vol_growth_rate: 1.0
-  
+      cell_decay_rate: 0.5
+
   ## Chemicals
   chemical:
     name:
@@ -82,7 +82,7 @@ spatial_sim:
       - 1
       - 2
       - 3
-  
+
   ## Reactions
   reaction_bool: true
   reaction_prob: false

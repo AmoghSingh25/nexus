@@ -10,9 +10,6 @@ from nexus.simulator.grn.logger.grnLogger import GRNLogger
 
 app = Flask(__name__)
 CORS(app, origins="*")
-# data_base_dir = os.path.join(
-#     os.path.dirname(os.path.abspath(__file__)), "../simulator/spatial/logs"
-# )
 spatial_base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../logs")
 grn_base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../logs")
 logger_inst = None

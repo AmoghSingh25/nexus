@@ -16,6 +16,7 @@ def check_cell_type_data(key, sub_key, n_cells, cfg):
 
     req_keys_movement = set(
         [
+            "qty_ratio",
             "attraction_coeff",
             "repulsion_coeff",
             "drift_vel_coeff",
@@ -60,11 +61,11 @@ def check_cell_type_data(key, sub_key, n_cells, cfg):
 
     if check_movement_flag != -1:
         raise ValueError(
-            f"Incorrect keys for movement config. Missing {set(req_keys_cycle) - set(cfg.cycle.get(check_movement_flag))}"
+            f"Incorrect keys for movement config. Missing {set(req_keys_cycle) - set(cfg.cycle.get(check_movement_flag))} for {check_movement_flag}"
         )
     if check_cycle_flag != -1:
         raise ValueError(
-            f"Incorrect keys for cycle config. Missing {set(req_keys_cycle) - set(cfg.cycle.get(check_cycle_flag))}"
+            f"Incorrect keys for cycle config. Missing {set(req_keys_cycle) - set(cfg.cycle.get(check_cycle_flag))} for {check_movement_flag}"
         )
 
     ## Generate mask and arrays
@@ -86,8 +87,9 @@ def check_cell_type_data(key, sub_key, n_cells, cfg):
     cell_mask = np.zeros((n_cells, 1), dtype=np.int16)
     total_qty = 0.0
     cell_type = 0
-    for i in cfg.cell_qty:
-        proportions.append(total_qty + cfg.cell_qty.get(i))
+    cell_qty = {i: param_dict[i]["qty_ratio"] for i in param_dict}
+    for i in cell_qty:
+        proportions.append(total_qty + cell_qty.get(i))
         start, end = (
             int(total_qty * n_cells),
             int((total_qty + proportions[-1]) * n_cells),

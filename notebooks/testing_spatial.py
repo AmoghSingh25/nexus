@@ -240,7 +240,6 @@ def _(SpatialSimVec, get_config):
     _config.spatial_sim.movement_bool = True
     _config.spatial_sim.cycle_bool = True
     _config.spatial_sim.logging = True
-    _config.spatial_sim.debug_plot = False
     _s1 = SpatialSimVec(_config.spatial_sim)
     _s1.run_sim()
     # _s1.cleanup()

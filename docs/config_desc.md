@@ -14,8 +14,10 @@ grn:
   config_file: "configs/sample_data/sample_network_1cell.yaml" # Path to the config file. Can be a .yaml consisting of RNA and protein parameters or two files like SERGIO for MR and Gene parameters.
   random_key: 42 # Random key for jax.random
   logging: true # Flag to enable logging of the data to a TileDB array
+  log_dir: "logs" # Directory for storing GRN simulator logs
   learn_params: false # Flag to perform backpropagation on a target_gene and target_prot values to learn the parameters.
   epochs: 0 # Number of epochs for backpropagation
+  lr: 1 # Learning rate for backpropagation
   
   ## Gene related
   non_mr_basal: false # Flag to indicate if non Master Regulators have a basal rate
@@ -40,10 +42,7 @@ spatial_sim:
   cell_concentration: 1 # Number of cells per field
   field_vol: 1.0 # Volume of each field
   n_cell_type: 2 # Number of types of cell. Each type of cell is characterized by a different set of parameters.
-  cell_qty: # Proportion of each type of cell
-    cell1: 0.8
-    cell2: 0.2
-
+  
   ## Diffusion related
   D: 0.5 # Value of the diffusion constant to be used
   diffusion_bool: true # Flag to enable diffusion
@@ -54,16 +53,19 @@ spatial_sim:
   n_steps: 10 # Number of steps
   random_key: 42 # Random key for jax.random
   logging: true # Flag to enable logging of the data to a TileDB array
+  log_dir: "logs" # Directory for storing spatial simulator logs
 
   ## Movement related
   movement_bool: true # Flag to enable movement of cells in field
   movement: # Movement parameters for each type of cell
     cell1:
+      qty_ratio: 0.8 # Proportion of each type of cell
       attraction_coeff: 1 # Coefficient for the attractive force between the cells
       repulsion_coeff: 0.1 # Coefficient for repulsive force between cells for overlaps and at short distances
       drift_vel_coeff: 0.01 # Coefficient for the drift velocity, added to the velocity for t+1
       random_vel_coeff: 0.01 # Coefficient for additive random velocity
     cell2:
+      qty_ratio: 0.2
       attraction_coeff: 2
       repulsion_coeff: 0.2
       drift_vel_coeff: 0.02
@@ -76,7 +78,7 @@ spatial_sim:
       cycle_len: 10 # Length of the cell cycle
       interphase_len: 0.9 # Length of the cell's interphase
       necrosis_death_prob: 0.0001 # Probability of sudden death of the cell at each timestep
-      apoptosis_death_prob: 0.001 # Probability 
+      apoptosis_death_prob: 0.001 # Probability of programmed cell death
       cell_target_vol: 1.0 # Target volume for the cell
       cell_density: 1.0 # Density of the cell. Used to compute mass of the cell from the volume
       cell_vol_growth_rate: 1.0 # Growth rate of the cell volume

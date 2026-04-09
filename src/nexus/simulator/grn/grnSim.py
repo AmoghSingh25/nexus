@@ -71,10 +71,11 @@ class GRNSim:
 
         ## Setting up logger
         self.is_logging = cfg.get("logging", False)
+        self.log_dir = os.path.join(cfg.get("log_dir", "logs"))
         if self.is_logging:
             self.timestamp = cfg.get("log_file_name", str(int(time.time())))
             self.logger = GRNLogger(
-                log_dir=os.path.join("logs"),
+                log_dir=self.log_dir,
                 file_name=self.timestamp,
                 n_steps=self.n_steps,
                 n_cells=self.n_cells,
