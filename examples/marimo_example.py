@@ -54,7 +54,7 @@ def _(compose, initialize_config_dir, os):
 
 @app.cell
 def _(get_config):
-    cfg = get_config("config")
+    cfg = get_config("grn_config")
     return (cfg,)
 
 
@@ -139,7 +139,7 @@ def _(pprint, yaml):
 
 @app.cell
 def _(get_config):
-    cfg2 = get_config()
+    cfg2 = get_config("grn_prot_config")
     return (cfg2,)
 
 
@@ -192,7 +192,7 @@ def _(mo):
 
 @app.cell
 def _(OmegaConf, get_config):
-    cfg3 = get_config("test_config")
+    cfg3 = get_config("spatial_config")
     print(OmegaConf.to_yaml(cfg3.spatial_sim))
     return (cfg3,)
 
@@ -235,7 +235,7 @@ def _(mo):
 
 @app.cell
 def _(get_config):
-    cfg4 = get_config("cell_field_test")
+    cfg4 = get_config("cell_field_config")
     return (cfg4,)
 
 
@@ -267,11 +267,6 @@ def _(field_conc, plt):
     plt.ylabel("Conc")
     plt.xticks(_ticks)
     plt.gca()
-    return
-
-
-@app.cell
-def _():
     return
 
 
