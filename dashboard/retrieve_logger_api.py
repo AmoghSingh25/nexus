@@ -35,6 +35,7 @@ def structure_positions_data(pos):
     no_steps = len(set(pos["t"]))
     pos_arr = []
     opacity = 255
+    prev_state = {}
     for i in range(len(pos["cells"])):
         step_i = int(pos["t"][i])
         state_i = int(pos["state"][i])
@@ -42,6 +43,11 @@ def structure_positions_data(pos):
         pos_i = np.array(np.array(pos["pos"][i]).tolist())
         pos_i = pos_i
         pos_i = pos_i.tolist()
+        cell_id = int(pos["cells"][i])
+        if cell_id in prev_state and prev_state[cell_id] == -1:
+            prev_state[cell_id] = state_i
+            continue
+
         color_i = [255, 255, 0, opacity]
         if state_i == -1:
             color_i = [255, 0, 0, opacity]
@@ -58,6 +64,7 @@ def structure_positions_data(pos):
                 "radius": radius_i if radius_i > 0 else 0.2,
             }
         )
+        prev_state[cell_id] = state_i
     return {"data": pos_arr}
 
 
