@@ -3,7 +3,6 @@ import jax.numpy as jnp
 from nexus.simulator.run_sim import run_sim, check_config
 import os
 from hydra import initialize_config_dir, compose
-import random
 from nexus.simulator.grn.grnSim import GRNSim
 from nexus.simulator.spatial.spatialSim import SpatialSim
 from nexus.simulator.intervention.intervention import InterventionManager
@@ -42,7 +41,7 @@ class TestInterventions:
 
         base_config["grn"]["n_steps"] = n_steps
         base_config["spatial_sim"]["n_steps"] = n_steps
-        val_set = random.randint(1, 10)
+        val_set = 10
         n_cell_ = 3
         cell_range = list(range(3))
 

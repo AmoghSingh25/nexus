@@ -88,7 +88,7 @@ def _(GRNSim, cfg):
 
 @app.cell
 def _(grn_sim):
-    rna_conc, prot_conc = grn_sim.run_sim(10)
+    rna_conc, prot_conc = grn_sim.run_sim()
     return prot_conc, rna_conc
 
 
@@ -157,7 +157,7 @@ def _(GRNSim, cfg2):
 
 @app.cell
 def _(grn_sim2):
-    rna_conc2, prot_conc2 = grn_sim2.run_sim(10)
+    rna_conc2, prot_conc2 = grn_sim2.run_sim()
     return prot_conc2, rna_conc2
 
 
