@@ -16,6 +16,16 @@ import {
 } from "@mui/material";
 import { CubeGeometry, SphereGeometry } from "@luma.gl/engine";
 import { useSearchParams } from "next/navigation";
+import html2canvas from "html2canvas";
+
+const waitForRender = () =>
+  new Promise((resolve) => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(resolve);
+    });
+  });
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 var file_name = null;
 
@@ -100,7 +110,7 @@ function Legend({ currVis }) {
     marginRight: "8px",
     borderRadius: "50%",
     background: `radial-gradient(circle at 30% 30%, white, ${color})`,
-    boxShadow: "inset -2px -2px 4px rgba(0,0,0,0.6)",
+    // boxShadow: "inset -2px -2px 4px rgba(0,0,0,0.6)",
   });
 
   const cube3D = (color) => ({
@@ -108,7 +118,7 @@ function Legend({ currVis }) {
     height: "16px",
     marginRight: "8px",
     background: color,
-    boxShadow: "inset -2px -2px 4px rgba(0,0,0,0.8)",
+    // boxShadow: "inset -2px -2px 4px rgba(0,0,0,0.8)",
   });
 
   return (
@@ -191,11 +201,51 @@ function Visualization() {
   const searchParams = useSearchParams();
   const [cellConcLoading, setCellConcLoading] = new React.useState(false);
   const [cellConcData, setCellConcData] = new React.useState(null);
+  const ffmpegRef = React.useRef(null);
 
   file_name = searchParams.get("file_name");
   if (file_name == null) {
     return <></>;
   }
+  
+  const captureFramesToDisk = async () => {
+  const element = document.getElementById("capture-root");
+  const SCALE = 3;
+  const prevOverflow = document.body.style.overflow;
+  document.body.style.overflow = "hidden";
+
+  for (let i = 0; i < data.length; i++) {
+    setStepid(i);
+    await waitForRender();
+
+    const canvas = await html2canvas(element, {
+      useCORS: true,
+      scale: SCALE,
+      backgroundColor: "#ffffff",
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: document.documentElement.clientWidth,
+      windowHeight: document.documentElement.clientHeight,
+    });
+
+    const blob = await new Promise((resolve) =>
+      canvas.toBlob(resolve, "image/png", 1.0)
+    );
+
+    if (blob) {
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `frame_${String(i).padStart(5, "0")}.png`;
+      a.click();
+
+      URL.revokeObjectURL(url);
+    }
+  }
+  document.body.style.overflow = prevOverflow;
+  console.log("Frames exported");
+};
 
   const layers = React.useMemo(() => {
     if (!dataReady) {
@@ -281,19 +331,6 @@ function Visualization() {
     }
   }, [currVis, selectedID]);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setStepid((prev) => {
-        if (prev >= data.length - 1) {
-          return 0; // stay at last value
-        }
-        return prev + 1;
-      });
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, [data.length]);
-
   if (!dataReady) {
     get_data(setDataReady, currVis);
     return <CircularProgress />;
@@ -305,32 +342,49 @@ function Visualization() {
 
   return (
     <div
+      id="capture-root"
       style={{
-        display: "flex",
-        height: "150vh",
-        flexDirection: "column",
-        overflow: "scroll",
+        display: "block",
+        height: "100vh",
+        width:"100vw",
+        overflow:"scroll",
+        flexDirection:"column",
       }}
     >
-      <Slider
+      <div
+        style={{
+          position: "relative",
+          height: "100%",
+          width: "100%",
+        }}
+      >
+        <Slider
         min={0}
         max={data.length - 1}
         step={1}
         marks
         defaultValue={0}
         valueLabelDisplay="on"
-        style={{ width: "90vw", zIndex: 2, margin: "2%" }}
+        style={{ width: "90vw", margin: "2%" }}
         value={step_id}
         onChange={(e, v) => {
           setStepid(v);
         }}
       />
-      <div
-        style={{
-          position: "relative",
-          height: "80vh",
-        }}
-      >
+        <button
+          onClick={captureFramesToDisk}
+          style={{
+            position: "absolute",
+            top: 20,
+            left: 20,
+            zIndex: 20,
+            padding: "10px 16px",
+            borderRadius: "6px",
+            cursor: "pointer",
+          }}
+        >
+          Export
+        </button>
         <DeckGL
           layers={layers}
           // widgets={[new ZoomWidget(), new ResetViewWidget()]}
@@ -344,14 +398,18 @@ function Visualization() {
             maxRotationX: 90,
             minZoom: -10,
             maxZoom: 10,
+            zIndex: 40
           }}
           views={view}
           controller={true}
-          style={{ height: "80vh", backgroundColor: "white" }}
+          style={{ height: "100vh", backgroundColor: "white" }}
+          useDevicePixels={3}
+          parameters={{ antialias: true }}
         />
         <Legend currVis={currVis} />
       </div>
-      <div>
+      <div style={{
+      }}>
         <FormControl>
           <FormLabel
             id="demo-radio-buttons-group-label"
