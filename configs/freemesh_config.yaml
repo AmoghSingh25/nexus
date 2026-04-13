@@ -2,7 +2,7 @@ defaults:
   - _self_
 grn:
   ## Simulation related
-  n_cells: 250
+  n_cells: 125
   delta: 0.01
   n_steps: 20
   config_file: "configs/sample_data/sample_network_1cell.yaml"
@@ -33,7 +33,7 @@ spatial_sim:
   depth: 5
   mesh_type: "lattice-free"
   field_resolution: 2 # Divide into X divisions along each axis
-  cell_concentration: 2 # Default value is 10
+  cell_concentration: 1 # Default value is 10
   field_vol: 1.0
   n_cell_type: 2
 
@@ -51,6 +51,7 @@ spatial_sim:
 
   ## Movement related
   movement_bool: true
+  neighbour_algo: "k-closest"
   movement:
     cell1:
       qty_ratio: 0.8

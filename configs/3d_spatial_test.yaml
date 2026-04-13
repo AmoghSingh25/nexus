@@ -33,7 +33,7 @@ spatial_sim:
   depth: 5
   mesh_type: "lattice-free"
   field_resolution: 2 # Divide into X divisions along each axis
-  cell_concentration: 2 # Default value is 10
+  cell_concentration: 1 # Default value is 10
   field_vol: 1.0
   n_cell_type: 1
 
