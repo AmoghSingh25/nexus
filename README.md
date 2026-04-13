@@ -1,6 +1,6 @@
-# CORTEX
+# Nexus
 
-## Causal Omics Reasoning in Temporal Experiments
+Nexus is a JAX-accelerated multi-scale simulator for biological control and causal discovery, capable of generating biologically-realistic data.
 
 ## Table of contents
 
