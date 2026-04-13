@@ -1,0 +1,25 @@
+# Config for GRN set to simulate SERGIO configuration
+defaults:
+  - _self_
+grn:
+  ## Simulation related
+  n_cells: 8
+  delta: 0.01
+  n_steps: 10
+  config_file: "sample_data/sample_network_1cell.yaml"
+  random_key: 42
+  logging: true
+  learn_params: false
+  epochs: 0
+
+  ## Gene related
+  non_mr_basal: false
+  noise: false
+  noise_amplitude: 0.1
+  decay:
+    - 0.8
+  hill_coeffs:
+    - 1.0
+
+  ## Protein related
+  protein_sim: true
