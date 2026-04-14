@@ -4,7 +4,7 @@ on: push
 
 jobs:
   build:
-    name: Run code test
+    name: Build distribution
     runs-on: ubuntu-latest
 
     steps:
