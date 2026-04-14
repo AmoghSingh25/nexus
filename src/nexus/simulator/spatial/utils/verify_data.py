@@ -61,11 +61,11 @@ def check_cell_type_data(key, sub_key, n_cells, cfg):
 
     if check_movement_flag != -1:
         raise ValueError(
-            f"Incorrect keys for movement config. Missing {set(req_keys_cycle) - set(cfg.cycle.get(check_movement_flag))} for {check_movement_flag}"
+            f"Incorrect keys for movement config. Missing {set(req_keys_movement) - set(cfg.cycle.get(check_movement_flag))} for {check_movement_flag}"
         )
     if check_cycle_flag != -1:
         raise ValueError(
-            f"Incorrect keys for cycle config. Missing {set(req_keys_cycle) - set(cfg.cycle.get(check_cycle_flag))} for {check_movement_flag}"
+            f"Incorrect keys for cycle config. Missing {set(req_keys_cycle) - set(cfg.cycle.get(check_cycle_flag))} for {check_cycle_flag}"
         )
 
     ## Generate mask and arrays
