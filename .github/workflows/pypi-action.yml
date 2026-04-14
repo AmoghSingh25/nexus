@@ -4,7 +4,7 @@ on: push
 
 jobs:
   build:
-    name: Build package
+    name: Run code test
     runs-on: ubuntu-latest
 
     steps:
