@@ -4,7 +4,11 @@ on: push
 
 jobs:
   build:
+<<<<<<< HEAD
     name: Build package
+=======
+    name: Build distribution
+>>>>>>> 4f5f92b4168d5847ecdbac913d686d2a27bbf129
     runs-on: ubuntu-latest
 
     steps:
@@ -40,7 +44,11 @@ jobs:
 
     environment:
       name: pypi
+<<<<<<< HEAD
       url: https://pypi.org/p/nexus-simulator/
+=======
+      url: https://pypi.org/p/nexusim/
+>>>>>>> 4f5f92b4168d5847ecdbac913d686d2a27bbf129
 
     permissions:
       id-token: write
@@ -63,7 +71,7 @@ jobs:
 
     environment:
       name: testpypi
-      url: https://test.pypi.org/p/nexus-simulator/
+      url: https://test.pypi.org/p/nexusim/
 
     permissions:
       id-token: write

@@ -17,6 +17,7 @@ def _():
     import pprint
     import yaml
     import matplotlib.pyplot as plt
+    import jax.numpy as jnp
 
     return (
         GRNSim,
@@ -24,6 +25,7 @@ def _():
         SpatialSim,
         compose,
         initialize_config_dir,
+        jnp,
         mo,
         os,
         plt,
@@ -87,19 +89,17 @@ def _(GRNSim, cfg):
 
 
 @app.cell
-def _(grn_sim):
+def _(grn_sim, jnp):
     rna_conc, prot_conc = grn_sim.run_sim()
+    rna_conc = jnp.array(rna_conc)
+    prot_conc = jnp.array(prot_conc)
     return prot_conc, rna_conc
 
 
 @app.cell
 def _(prot_conc, rna_conc):
-    print(
-        rna_conc.shape
-    )  ## RNA concentration after running simulator (No. of RNAs, No. of Cells, 1)
-    print(
-        prot_conc.shape
-    )  ## Protein concentration after running simulator (No. of Proteins, No. of Cells, 1)
+    print(rna_conc.shape)  ## RNA concentration after running simulator (No. of steps, No. of RNAs, No. of Cells, 1)
+    print(prot_conc.shape) ## Protein concentration after running simulator (No. of steps, No. of Proteins, No. of Cells, 1)
     return
 
 
@@ -108,7 +108,7 @@ def _(plt, rna_conc):
     ## Plot concentration of RNAs in cell 0
     fig = plt.figure(figsize=(12, 6))
     _ticks = list(range(rna_conc.shape[0]))
-    plt.plot(rna_conc[:, 0])
+    plt.plot(rna_conc[-1, :, 0])
     plt.ylabel("Conc.")
     plt.xlabel("RNA Idx")
     plt.title("Concentration of RNAs in cell 0")
@@ -156,8 +156,10 @@ def _(GRNSim, cfg2):
 
 
 @app.cell
-def _(grn_sim2):
+def _(grn_sim2, jnp):
     rna_conc2, prot_conc2 = grn_sim2.run_sim()
+    rna_conc2 = jnp.array(rna_conc2)
+    prot_conc2 = jnp.array(prot_conc2)
     return prot_conc2, rna_conc2
 
 
@@ -168,14 +170,14 @@ def _(plt, prot_conc2, rna_conc2):
     _subplots = _fig.subfigures(1, 2)
 
     ax1 = _subplots[0].subplots()
-    _ticks = list(range(rna_conc2.shape[0]))
-    ax1.plot(rna_conc2[:, 0])
+    _ticks = list(range(rna_conc2.shape[1]))
+    ax1.plot(rna_conc2[-1, :, 0])
     ax1.set_ylabel("Conc.")
     ax1.set_xlabel("RNA Idx")
     ax1.set_title("Concentration of RNAs in cell 0")
 
     ax2 = _subplots[1].subplots()
-    ax2.plot(prot_conc2[:, 0])
+    ax2.plot(prot_conc2[-1, :, 0])
     ax2.set_ylabel("Conc.")
     ax2.set_xlabel("Prot Idx")
     ax2.set_title("Concentration of Protein in cell 0")
@@ -267,6 +269,11 @@ def _(field_conc, plt):
     plt.ylabel("Conc")
     plt.xticks(_ticks)
     plt.gca()
+    return
+
+
+@app.cell
+def _():
     return
 
 

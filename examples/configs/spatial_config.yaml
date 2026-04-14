@@ -11,7 +11,7 @@ grn:
   logging: true
   learn_params: false
   epochs: 0
-  
+
   ## Gene related
   non_mr_basal: false
   noise: false
@@ -43,7 +43,7 @@ spatial_sim:
   D: 0.5
   diffusion_bool: true
   n_neighbours: 1
-  
+
   ## Simulation Related
   delta: 0.01
   n_steps: 10
@@ -55,11 +55,13 @@ spatial_sim:
   movement_bool: true
   movement:
     cell1:
+      qty_ratio: 0.8
       attraction_coeff: 1
       repulsion_coeff: 0.1
       drift_vel_coeff: 0.01
       random_vel_coeff: 0.01
     cell2:
+      qty_ratio: 0.2
       attraction_coeff: 2
       repulsion_coeff: 0.2
       drift_vel_coeff: 0.02
@@ -86,7 +88,7 @@ spatial_sim:
       cell_density: 2.0
       cell_vol_growth_rate: 1.5
       cell_decay_rate: 0.5
-  
+
   ## Chemicals
   chemical:
     name:
@@ -97,7 +99,7 @@ spatial_sim:
       - 1
       - 2
       - 3
-  
+
   ## Reactions
   reaction_bool: true
   reaction_prob: false
@@ -111,15 +113,15 @@ spatial_sim:
         - 3
       products:
       products_exponent:
-  
+
 intervention:
-    spatial_sim:
-      - - "D"
-        - 2
-        - ["loop", 1, 2, 4]  # Type(Loop), Loop start time, loop length, gap between loops
-        - ["global", [1,2,3]]
-    grn:
-      - - "decay"
-        - 0.8
-        - ["scheduled", 1]  # Type(Loop), Loop start time, loop length, gap between loops
-        - ["global"]
+  spatial_sim:
+    - - "D"
+      - 2
+      - ["loop", 1, 2, 4] # Type(Loop), Loop start time, loop length, gap between loops
+      - ["global", [1, 2, 3]]
+  grn:
+    - - "decay"
+      - 0.8
+      - ["scheduled", 1] # Type(Loop), Loop start time, loop length, gap between loops
+      - ["global"]

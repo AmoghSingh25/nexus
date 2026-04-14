@@ -14,10 +14,15 @@ Nexus is a JAX-accelerated multi-scale simulator for biological control and caus
 Install [uv](https://docs.astral.sh/uv/getting-started/installation/) package manager before running the setup
 
 ```bash
-# Clone repository
+# Install using pip
+pip install nexusim
+
+# (OR)
+# Clone repo and build the package in uv
+## Clone repository and 
 git clone https://github.com/AmoghSingh25/GeneProtSim.git
 
-# Create venv and download packages
+## Create venv and download packages
 uv sync
 ```
 
@@ -78,6 +83,10 @@ spatial_sim.run_sim()
 ```
 
 Examples for running the simulator are given in a [Marimo notebook](examples/marimo_example.py) and a [IPYNB notebook](examples/ipynb_example.ipynb). The simulator uses Hydra configs for the simulation parameters and the description of the config files are given in [Config Description](docs/config_desc.md).
+
+## Intervention API
+
+The simulator also supports interventions on the parameters that allows for generating interventional data for causal discovery and analysis. Guidance on using interventions is given in the [Intervention Doc](docs/intevention_api.md).
 
 ## Visualization
 
