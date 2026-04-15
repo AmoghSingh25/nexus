@@ -10,7 +10,9 @@ from nexus.simulator.utils.file_manager import _save_file
 
 
 @hydra.main(
-    version_base=None, config_path="../../configs", config_name="freemesh_config.yaml"
+    version_base=None,
+    config_path="../../../configs",
+    config_name="cell_field_test.yaml",
 )
 def run_sim(cfg: DictConfig) -> None:
     ## Checking configs
@@ -21,27 +23,8 @@ def run_sim(cfg: DictConfig) -> None:
         cfg.grn["log_file_name"] = timestep
     grn_sim = GRNSim(cfg.grn)
 
-    n_prots = grn_sim.n_genes
-    chemicals = cfg.spatial_sim.chemical
-    chem_names = []
-    chem_mol_mass = []
-    if chemicals is not None:
-        chem_names = chemicals.name
-        chem_mol_mass = chemicals.mol_mass
-
     if not os.path.exists("outputs/"):
         os.mkdir("outputs")
-
-    for i in range(n_prots):
-        chem_names.append(f"Protein-{i}")
-        chem_mol_mass.append(
-            1
-        )  ## TODO: Modify mol mass to protein mol mass, currently set to 1
-
-    with open_dict(cfg):
-        cfg.spatial_sim["chemical"] = {}
-        cfg.spatial_sim.chemical["name"] = chem_names
-        cfg.spatial_sim.chemical["mol_mass"] = chem_mol_mass
 
     spatial_sim = SpatialSim(cfg.spatial_sim)
     check_config(spatial_sim=spatial_sim, grn_sim=grn_sim, cfg=cfg)
