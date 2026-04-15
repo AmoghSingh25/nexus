@@ -114,12 +114,12 @@ spatial_sim:
 
 intervention:
   spatial_sim:
-    - - "D"
+    - - "cell_target_vol"
       - 2
       - ["loop", 1, 2, 4] # Type(Loop), Loop start time, loop length, gap between loops
-      - ["global", [1, 2, 3]]
+      - ["index", [1, 2, 3]]
   grn:
     - - "decay"
-      - 0.8
+      - 0.7
       - ["scheduled", 1] # Type(Loop), Loop start time, loop length, gap between loops
       - ["global"]
