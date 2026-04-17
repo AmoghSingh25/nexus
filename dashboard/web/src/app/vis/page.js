@@ -3,10 +3,7 @@ import React, { Suspense, useEffect } from "react";
 import dynamic from "next/dynamic";
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 import { DeckGL } from "@deck.gl/react";
-import {
-  COORDINATE_SYSTEM,
-  OrbitView,
-} from "@deck.gl/core";
+import { COORDINATE_SYSTEM, OrbitView } from "@deck.gl/core";
 import { SimpleMeshLayer, ZoomWidget } from "deck.gl";
 import {
   CircularProgress,
@@ -19,6 +16,16 @@ import {
 } from "@mui/material";
 import { CubeGeometry, SphereGeometry } from "@luma.gl/engine";
 import { useSearchParams } from "next/navigation";
+import html2canvas from "html2canvas";
+
+const waitForRender = () =>
+  new Promise((resolve) => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(resolve);
+    });
+  });
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 var file_name = null;
 
@@ -75,6 +82,66 @@ async function get_data(indicateReady, currVis) {
   field_divs = field_pos["field_divs"];
   field_pos = field_pos["pos_data"];
   indicateReady(true);
+}
+
+function Legend({ currVis }) {
+  const legendStyle = {
+    position: "absolute",
+    top: 20,
+    right: 20,
+    background: "rgba(0,0,0,0.9)",
+    padding: "12px",
+    borderRadius: "8px",
+    boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
+    color: "white",
+    zIndex: 10,
+    fontSize: "14px",
+  };
+
+  const itemStyle = {
+    display: "flex",
+    alignItems: "center",
+    marginBottom: "6px",
+  };
+
+  const sphere3D = (color) => ({
+    width: "16px",
+    height: "16px",
+    marginRight: "8px",
+    borderRadius: "50%",
+    background: `radial-gradient(circle at 30% 30%, white, ${color})`,
+    // boxShadow: "inset -2px -2px 4px rgba(0,0,0,0.6)",
+  });
+
+  const cube3D = (color) => ({
+    width: "16px",
+    height: "16px",
+    marginRight: "8px",
+    background: color,
+    // boxShadow: "inset -2px -2px 4px rgba(0,0,0,0.8)",
+  });
+
+  return (
+    <div style={legendStyle}>
+      <strong>Legend</strong>
+      <div style={itemStyle}>
+        <div style={cube3D("rgba(255,0,0,1)")} />
+        Field
+      </div>
+      <div style={itemStyle}>
+        <div style={sphere3D("rgb(255, 255, 0.5)")} />
+        Live Cell
+      </div>
+      <div style={itemStyle}>
+        <div style={sphere3D("rgba(0,0,255,1)")} />
+        Cell undergoing apoptosis
+      </div>
+      <div style={itemStyle}>
+        <div style={sphere3D("rgba(255,0,0,1)")} />
+        Dead cell
+      </div>
+    </div>
+  );
 }
 
 function compute_ds(currVis) {
@@ -134,35 +201,65 @@ function Visualization() {
   const searchParams = useSearchParams();
   const [cellConcLoading, setCellConcLoading] = new React.useState(false);
   const [cellConcData, setCellConcData] = new React.useState(null);
+  const ffmpegRef = React.useRef(null);
 
   file_name = searchParams.get("file_name");
   if (file_name == null) {
     return <></>;
   }
+  
+  const captureFramesToDisk = async () => {
+  const element = document.getElementById("capture-root");
+  const SCALE = 3;
+  const prevOverflow = document.body.style.overflow;
+  document.body.style.overflow = "hidden";
+
+  for (let i = 0; i < data.length; i++) {
+    setStepid(i);
+    await waitForRender();
+
+    const canvas = await html2canvas(element, {
+      useCORS: true,
+      scale: SCALE,
+      backgroundColor: "#ffffff",
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: document.documentElement.clientWidth,
+      windowHeight: document.documentElement.clientHeight,
+    });
+
+    const blob = await new Promise((resolve) =>
+      canvas.toBlob(resolve, "image/png", 1.0)
+    );
+
+    if (blob) {
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `frame_${String(i).padStart(5, "0")}.png`;
+      a.click();
+
+      URL.revokeObjectURL(url);
+    }
+  }
+  document.body.style.overflow = prevOverflow;
+  console.log("Frames exported");
+};
 
   const layers = React.useMemo(() => {
     if (!dataReady) {
       return [];
     }
-
-    const sphereLayers = sphere_timesteps[step_id]?.map((sphere, i) => {
-      return new SimpleMeshLayer({
-        id: `${i}`,
-        data: [0],
-        mesh: new SphereGeometry({
-          radius: data[step_id][i].radius,
-          nlat: 10,
-          nlong: 10,
-        }),
-        getPosition: data[step_id][i].position,
-        getColor: data[step_id][i].color,
-        coordinateOrigin: [0, 0, 0],
-        coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
-        pickable: currVis == 1,
-        onClick: (d) => {
-          setSelectedId(d.layer.id);
-        },
-      });
+    const sphereLayers = new SimpleMeshLayer({
+      id: "cells",
+      data: data[step_id], // ALL cells at once
+      mesh: new SphereGeometry({ nlat: 10, nlong: 10 }),
+      getPosition: (d) => d.position,
+      getScale: (d) => [d.radius, d.radius, d.radius],
+      getColor: (d) => d.color,
+      pickable: currVis === 1,
+      onClick: (info) => setSelectedId(info.index),
     });
 
     const fieldLayer = new SimpleMeshLayer({
@@ -179,19 +276,7 @@ function Visualization() {
       },
     });
 
-    const cubeLayer = new SimpleMeshLayer({
-      id: "bg",
-      data: {
-        position: [0, 0, 0],
-      },
-      mesh: new CubeGeometry({}),
-      getPosition: (d) => d,
-      getScale: [5, 5, 5],
-      getColor: [255, 255, 255, 50],
-      coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
-      pickable: false,
-    });
-    return [...sphereLayers, fieldLayer];
+    return [sphereLayers, fieldLayer];
   }, [currVis, step_id, dataReady]);
 
   useEffect(() => {
@@ -251,44 +336,55 @@ function Visualization() {
     return <CircularProgress />;
   }
 
-  // const ambient_light = new AmbientLight({
-  //   color: [255, 255, 255],
-  //   intensity: 10.0,
-  // });
-  // const lighting_effect = new LightingEffect({ ambient_light });
-
   const view = new OrbitView({
     orbitAxis: "Y",
   });
 
   return (
     <div
+      id="capture-root"
       style={{
-        display: "flex",
-        height: "150vh",
-        flexDirection: "column",
-        overflow: "scroll",
+        display: "block",
+        height: "100vh",
+        width:"100vw",
+        overflow:"scroll",
+        flexDirection:"column",
       }}
     >
-      <Slider
+      <div
+        style={{
+          position: "relative",
+          height: "100%",
+          width: "100%",
+        }}
+      >
+        <Slider
         min={0}
         max={data.length - 1}
         step={1}
         marks
         defaultValue={0}
         valueLabelDisplay="on"
-        style={{ width: "90vw", zIndex: 2, margin: "2%" }}
+        style={{ width: "90vw", margin: "2%" }}
         value={step_id}
         onChange={(e, v) => {
           setStepid(v);
         }}
       />
-      <div
-        style={{
-          position: "relative",
-          height: "80vh",
-        }}
-      >
+        <button
+          onClick={captureFramesToDisk}
+          style={{
+            position: "absolute",
+            top: 20,
+            left: 20,
+            zIndex: 20,
+            padding: "10px 16px",
+            borderRadius: "6px",
+            cursor: "pointer",
+          }}
+        >
+          Export
+        </button>
         <DeckGL
           layers={layers}
           // widgets={[new ZoomWidget(), new ResetViewWidget()]}
@@ -302,13 +398,18 @@ function Visualization() {
             maxRotationX: 90,
             minZoom: -10,
             maxZoom: 10,
+            zIndex: 40
           }}
           views={view}
           controller={true}
-          style={{ height: "80vh", backgroundColor: "white" }}
+          style={{ height: "100vh", backgroundColor: "white" }}
+          useDevicePixels={3}
+          parameters={{ antialias: true }}
         />
+        <Legend currVis={currVis} />
       </div>
-      <div>
+      <div style={{
+      }}>
         <FormControl>
           <FormLabel
             id="demo-radio-buttons-group-label"
@@ -336,7 +437,7 @@ function Visualization() {
         </FormControl>
       </div>
       {currVis == 0 && !fieldConcLoading ? (
-        <div style={{ height: "50vh", width:"50wh" }}>
+        <div style={{ height: "50vh", width: "50wh" }}>
           <Plot
             data={traces}
             layout={{
@@ -377,8 +478,10 @@ function Visualization() {
   );
 }
 
-export default function App(){
-  return <Suspense>
-    <Visualization />
-  </Suspense>
+export default function App() {
+  return (
+    <Suspense>
+      <Visualization />
+    </Suspense>
+  );
 }

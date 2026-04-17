@@ -27,7 +27,7 @@ class Mesh:
     def __init__(self, cfg, random_key=42, mesh_type="lattice-free"):
         """
 
-        :param self: FreeMesh
+        :param self: Mesh
         :param height: Height of the grid mesh - Y Axis. Must be >0
         :param width: Width of the grid mesh - X Axis. Must be >0
         :param depth: Depth of the grid mesh - Z Axis. Must be >0
@@ -90,7 +90,6 @@ class Mesh:
                     [[self.width / 2.0, self.height / 2.0, self.depth / 2.0]]
                 ),
             )
-            self.cell_positions = jnp.round(self.cell_positions, decimals=2)
         elif mesh_type == "grid":
             n_axis = int(self.n_cells ** (1 / 3))
             nx, ny = (
@@ -104,7 +103,6 @@ class Mesh:
             self.cell_positions = jnp.column_stack(
                 [x_vals.ravel(), y_vals.ravel(), z_vals.ravel()]
             )[: self.n_cells]
-            self.cell_positions = jnp.round(self.cell_positions, decimals=2)
 
         ## Cellular-level attributes
         self.cycle_bool = cfg.get("cycle_bool", False)
@@ -204,6 +202,7 @@ class Mesh:
 
         ## Movement
         self.movement_bool = cfg.movement_bool
+        self.movement_neigh_algo = cfg.get("neighbour_algo", "radial")
 
         curr_id = 0
         self.delta_m = 0  # Adjust mass of chemicals if there is a mismatch in previous and current mass
@@ -382,7 +381,7 @@ class Mesh:
         """
         Calculate change in chemical concentration due to diffusion
 
-        :param self: FreeMesh
+        :param self: Mesh
         :param delta: Simulation delta
         """
 
@@ -443,14 +442,20 @@ class Mesh:
         Compute velocities for all the cells as a function of inter-cellular forces, random forces and drift force.
         Update the positions of the cells based on the forces.
 
-        :param self: Description
+        :param self: Mesh
         """
 
         # Calculate velocities
         for cell_id in jnp.arange(self.n_cells)[self.live_cells_mask.reshape(-1)]:
-            radial_neighs, radial_neigh_dists = self.get_radial_limits(
-                self.cell_positions[cell_id], radius=3
-            )
+            if self.movement_neigh_algo == "radial":
+                radial_neighs, radial_neigh_dists = self.get_radial_limits(
+                    self.cell_positions[cell_id], radius=3
+                )
+            else:
+                radial_neighs, radial_neigh_dists = self.get_closest_cells(
+                    self.cell_positions[cell_id], K=4
+                )
+
             ret_vel = calc_vel(
                 radial_neigh_dists,
                 self.cell_radius[cell_id],
@@ -492,7 +497,7 @@ class Mesh:
         Add a cell with the given parameters to the simulation. Derive growth rate, interphase and mitosis lengths and target volume
         from a normal distribution centered around the respective parameters of the parent cell.
 
-        :param self: FreeMesh
+        :param self: Mesh
         :param pos: Position of the new cell
         :param cell_state: Cell state of the new cell
         :param new_radius: Radius of the new cell
@@ -592,6 +597,11 @@ class Mesh:
             mean=self.cell_prg_death_prob[parent_cell_id],
             shape=(1, 1),
         )
+
+        self.key, self.sub_key, init_vel = generate_uniform(
+            key=self.key, sub_key=self.sub_key, shape=(1, 3)
+        )
+        self.cell_vel = jnp.concatenate([self.cell_vel, init_vel], axis=0)
         if new_mitosis_chkpt < 0:
             new_mitosis_chkpt = 1
         new_mitosis_chkpt = new_interphase_chkpt + jnp.round(new_mitosis_chkpt).astype(
@@ -623,7 +633,7 @@ class Mesh:
         """
         Modify parameters of the cells to be killed - Collapses values to 0 - Sudden death(Necrosis)
 
-        :param self: Description
+        :param self: Mesh
         :param killed_cells_mask: Boolean mask indicating cells to be killed
         """
         self.cell_states = self.cell_states.at[killed_cells_mask].set(-1)
@@ -635,7 +645,7 @@ class Mesh:
         """
         Modify parameters of the cell to perform programmed cell death. Slowly collapse values to 0, (Apoptosis).
 
-        :param self: Description
+        :param self: Mesh
         :param selected_cell_mask: Boolean mask indicating the cells that have to undergo programmed cell death
         """
 
@@ -646,7 +656,7 @@ class Mesh:
         """
         Compute cycling for all cells. Checks for transitions, calls add_cell for cells undergoing split and performs random cell death.
 
-        :param self: Description
+        :param self: Mesh
         """
         split_cells_mask = jnp.array(list(range(len(self.cell_states)))).reshape(-1)[
             (self.cell_states == 2).reshape(-1)
@@ -777,7 +787,7 @@ class Mesh:
         """
         Perform simulation step for the mesh and the cells within.
 
-        :param self: FreeMesh
+        :param self: Mesh
         :param step_i: Step index
         :param delta: Simulation delta
         :param logger: mesh_logger object
@@ -808,13 +818,13 @@ class Mesh:
             self.field_chem = chem_mass_i
             self.field_keys = field_keys_i
 
-        # Perform movement/force calculation
-        if self.movement_bool:
-            self.calc_movement()
-
         # Cell Cycling
         if self.cycle_bool:
             self.calc_cycle()
+
+        # Perform movement/force calculation
+        if self.movement_bool:
+            self.calc_movement()
 
         # Cell Growth
         self.calc_cell_growth()
@@ -835,7 +845,7 @@ class Mesh:
         """
         Get neighbours of the field at pos[idx].
 
-        :param self: FreeMesh
+        :param self: Mesh
         :param idx: index of cell within pos[idx]
         """
         l1_norm = jnp.linalg.norm(pos - self.field_positions, axis=1, ord=norm_ord)
@@ -846,23 +856,34 @@ class Mesh:
         """
         Get cells closest to _pos_ and within _radius_
 
-        :param self: FreeMesh
+        :param self: Mesh
         :param pos: Position of the cell to compute neighbours in the radial limit.
         :param radius: Radius to check for neighbours.
         :param norm_ord: Order of the norm to be used to compute distance.
         """
         l1_norm = jnp.linalg.norm(pos - self.cell_positions, axis=1, ord=norm_ord)
-        radial_neighs = jnp.where((l1_norm < radius) & (l1_norm > 0))
         radial_neighs = jnp.where(
             (l1_norm < radius) & (l1_norm > 0) & (self.live_cells_mask.reshape(-1))
-        )
+        )[0]
         return radial_neighs, l1_norm[radial_neighs]
+
+    def get_closest_cells(self, pos, K=1, norm_ord=1):
+        """
+        Get K closest cells to _pos_
+        :param self: Mesh
+        :param pos: Position of the cell to compute neighbours in the radial limit.
+        :param K: Number of closest neighbours to return
+        :param norm_ord: Order of the norm to be used to compute distance.
+        """
+        l1_norm = jnp.linalg.norm(pos - self.cell_positions, axis=1, ord=norm_ord)
+        neigh_idxs = jnp.argsort(l1_norm)[1 : K + 1]
+        return neigh_idxs, l1_norm[neigh_idxs]
 
     def get_assigned_fields(self, norm_ord=1, clustering_type="norm"):
         """
         Function to return field ID of the field closest to the cell position passed
 
-        :param self: Description
+        :param self: Mesh
         :param cell_pos: Cell position to find the closest field
         """
         if clustering_type == "norm":

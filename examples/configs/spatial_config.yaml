@@ -3,16 +3,14 @@ defaults:
   - _self_
 grn:
   ## Simulation related
-  n_cells: 2700
+  n_cells: 8
   delta: 0.01
   n_steps: 10
-  gene_data: "configs/sample_data/Interaction_cID_4.txt"
-  mr_data: "configs/sample_data/Regs_cID_4.txt"
-  config_file: ""
-  logging: false
+  config_file: "configs/sample_data/sample_network_1cell.yaml"
+  random_key: 42
+  logging: true
   learn_params: false
-  epochs: 10
-  lr: 0.01
+  epochs: 0
 
   ## Gene related
   non_mr_basal: false
@@ -24,18 +22,22 @@ grn:
     - 1.0
 
   ## Protein related
-  protein_sim: false
+  protein_sim: true
 
+# Lattice free setup
 spatial_sim:
   ## Mesh related
-  height: 3
-  width: 3
-  depth: 3
-  mesh_type: "grid"
-  field_resolution: 2
-  cell_concentration: 1
+  height: 2
+  width: 2
+  depth: 2
+  mesh_type: "lattice-free"
+  field_resolution: 2 # Divide into X divisions along each axis
+  cell_concentration: 1 # Default value is 10
   field_vol: 1.0
   n_cell_type: 2
+  cell_qty:
+    cell1: 0.8
+    cell2: 0.2
 
   ## Diffusion related
   D: 0.5
@@ -46,8 +48,8 @@ spatial_sim:
   delta: 0.01
   n_steps: 10
   random_key: 42
-  logging: false
-  log_dir: "logs"
+  logging: true
+  debug_plot: true
 
   ## Movement related
   movement_bool: true
@@ -100,29 +102,26 @@ spatial_sim:
 
   ## Reactions
   reaction_bool: true
+  reaction_prob: false
   reaction:
-    reac_1:
-      order: 2
-      rate_coeff: 3
-      reactants:
-        - - "chem1"
-          - 1
-        - - "chem2"
-          - 2
-      products:
-        - - "chem3"
-          - 3
-    reac_2: # Production of chemical
-      order: 0
-      rate_coeff: 1
-      reactants:
-      products:
-        - - "chem3"
-          - 3
     reac_3: # Decay of chemical
       order: 0
       rate_coeff: 1
       reactants:
-        - - "chem2"
-          - 3
+        - "chem2"
+      reactants_exponent:
+        - 3
       products:
+      products_exponent:
+
+intervention:
+  spatial_sim:
+    - - "D"
+      - 2
+      - ["loop", 1, 2, 4] # Type(Loop), Loop start time, loop length, gap between loops
+      - ["global", [1, 2, 3]]
+  grn:
+    - - "decay"
+      - 0.8
+      - ["scheduled", 1] # Type(Loop), Loop start time, loop length, gap between loops
+      - ["global"]

@@ -25,6 +25,7 @@ class SpatialSim:
         self.delta = cfg.delta
         self.mesh_type = cfg.mesh_type
         self.D = cfg.D
+        self.base_log_dir = os.path.join(cfg.get("log_dir", "logs"))
 
         self.timestamp = cfg.get("log_file_name", str(int(time.time())))
 
@@ -36,7 +37,7 @@ class SpatialSim:
         self.logging = cfg.get("logging", True)
         if self.logging:
             self.logger = FieldLogger(
-                log_dir=os.path.join("logs"),
+                log_dir=self.base_log_dir,
                 file_name=self.timestamp,
                 n_steps=cfg.n_steps,
                 n_cells=self.mesh.n_fields,
@@ -47,7 +48,7 @@ class SpatialSim:
                 field_res=cfg.field_resolution,
             )
             self.pos_logger = SpatialLogger(
-                log_dir=os.path.join("logs"),
+                log_dir=self.base_log_dir,
                 file_name=self.timestamp,
                 n_steps=cfg.n_steps,
                 n_cells=self.mesh.n_cells,

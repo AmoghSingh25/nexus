@@ -1,6 +1,6 @@
 [project]
-name = "nexus-sim"
-version = "0.1.0a1"
+name = "nexusim"
+version = "0.1.0b2"
 description = "JAX-accelerated multi-scale simulator for biological control and causal discovery"
 keywords = [
     "biology",
@@ -51,6 +51,12 @@ build-backend = "setuptools.build_meta"
 
 [tool.ruff]
 exclude = ["notebooks/", "examples/"]
+
+[[tool.uv.index]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
+publish-url = "https://test.pypi.org/legacy/"
+explicit = true
 
 [tool.setuptools.package-dir]
 nexus = "src/nexus"

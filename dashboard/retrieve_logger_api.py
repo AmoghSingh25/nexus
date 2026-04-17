@@ -10,15 +10,8 @@ from nexus.simulator.grn.logger.grnLogger import GRNLogger
 
 app = Flask(__name__)
 CORS(app, origins="*")
-# data_base_dir = os.path.join(
-#     os.path.dirname(os.path.abspath(__file__)), "../simulator/spatial/logs"
-# )
-spatial_base_dir = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "../src/nexus/simulator/spatial/logs"
-)
-grn_base_dir = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "../src/nexus/simulator/grn/logs"
-)
+spatial_base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../logs")
+grn_base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../logs")
 logger_inst = None
 spatial_logger_inst = None
 grn_logger_inst = None
@@ -42,6 +35,7 @@ def structure_positions_data(pos):
     no_steps = len(set(pos["t"]))
     pos_arr = []
     opacity = 255
+    prev_state = {}
     for i in range(len(pos["cells"])):
         step_i = int(pos["t"][i])
         state_i = int(pos["state"][i])
@@ -49,6 +43,11 @@ def structure_positions_data(pos):
         pos_i = np.array(np.array(pos["pos"][i]).tolist())
         pos_i = pos_i
         pos_i = pos_i.tolist()
+        cell_id = int(pos["cells"][i])
+        if cell_id in prev_state and prev_state[cell_id] == -1:
+            prev_state[cell_id] = state_i
+            continue
+
         color_i = [255, 255, 0, opacity]
         if state_i == -1:
             color_i = [255, 0, 0, opacity]
@@ -65,6 +64,7 @@ def structure_positions_data(pos):
                 "radius": radius_i if radius_i > 0 else 0.2,
             }
         )
+        prev_state[cell_id] = state_i
     return {"data": pos_arr}
 
 

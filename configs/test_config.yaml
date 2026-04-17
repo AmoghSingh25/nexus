@@ -1,4 +1,3 @@
-# Config for GRN set to simulate SERGIO configuration
 defaults:
   - _self_
 grn:
@@ -9,9 +8,11 @@ grn:
   config_file: "configs/sample_data/sample_network_1cell.yaml"
   random_key: 42
   logging: true
+  log_dir: "logs"
   learn_params: false
   epochs: 0
-  
+  lr: 0.01
+
   ## Gene related
   non_mr_basal: false
   noise: false
@@ -35,31 +36,30 @@ spatial_sim:
   cell_concentration: 1 # Default value is 10
   field_vol: 1.0
   n_cell_type: 2
-  cell_qty:
-    cell1: 0.8
-    cell2: 0.2
 
   ## Diffusion related
   D: 0.5
   diffusion_bool: true
   n_neighbours: 1
-  
+
   ## Simulation Related
   delta: 0.01
   n_steps: 10
   random_key: 42
   logging: true
-  debug_plot: true
+  log_dir: "logs"
 
   ## Movement related
   movement_bool: true
   movement:
     cell1:
+      qty_ratio: 0.6
       attraction_coeff: 1
       repulsion_coeff: 0.1
       drift_vel_coeff: 0.01
       random_vel_coeff: 0.01
     cell2:
+      qty_ratio: 0.4
       attraction_coeff: 2
       repulsion_coeff: 0.2
       drift_vel_coeff: 0.02
@@ -86,7 +86,7 @@ spatial_sim:
       cell_density: 2.0
       cell_vol_growth_rate: 1.5
       cell_decay_rate: 0.5
-  
+
   ## Chemicals
   chemical:
     name:
@@ -97,7 +97,7 @@ spatial_sim:
       - 1
       - 2
       - 3
-  
+
   ## Reactions
   reaction_bool: true
   reaction_prob: false
@@ -111,15 +111,15 @@ spatial_sim:
         - 3
       products:
       products_exponent:
-  
+
 intervention:
-    spatial_sim:
-      - - "D"
-        - 2
-        - ["loop", 1, 2, 4]  # Type(Loop), Loop start time, loop length, gap between loops
-        - ["global", [1,2,3]]
-    grn:
-      - - "decay"
-        - 0.8
-        - ["scheduled", 1]  # Type(Loop), Loop start time, loop length, gap between loops
-        - ["global"]
+  spatial_sim:
+    - - "cell_target_vol"
+      - 2
+      - ["loop", 1, 2, 4] # Type(Loop), Loop start time, loop length, gap between loops
+      - ["index", [1, 2, 3]]
+  grn:
+    - - "decay"
+      - 0.7
+      - ["scheduled", 1] # Type(Loop), Loop start time, loop length, gap between loops
+      - ["global"]

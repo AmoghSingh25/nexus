@@ -1602,8 +1602,8 @@ wheels = [
 ]
 
 [[package]]
-name = "nexus-sim"
-version = "0.1.0a1"
+name = "nexusim"
+version = "0.1.0b2"
 source = { editable = "." }
 dependencies = [
     { name = "fastexcel" },

@@ -41,16 +41,17 @@ def calc_inter_cell_force(
     unit_force_vectors = (
         force_vectors / jnp.linalg.norm(force_vectors, axis=1, ord=2)[:, None]
     )
+    eps = 1e12
 
     # Calculate force so cells do not overlap in 1 simulation step after delta multiplication
     repulsion_acc = overlap_cells_mask * (combined_cell_sizes - dists) * 2.0 / delta
     repulsion_force = repulsion_coeff * repulsion_acc * combined_cell_masses
 
     attraction_force = (
-        jnp.invert(overlap_cells_mask)
+        jnp.logical_not(overlap_cells_mask)
         * attraction_coeff
         * (source_cell_mass * neighbour_cell_masses).reshape(-1)
-        / dists**2
+        / (dists + eps) ** 2
     )
 
     repulsion_force_component = repulsion_force @ (-1 * unit_force_vectors)

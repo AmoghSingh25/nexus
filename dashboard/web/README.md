@@ -4,15 +4,15 @@ The visualization can be run by the running the two commands in seperate termina
 
 ```bash
 ## Runs the API for fetching the data from TileDB
-uv run src/nexus/dashboad/retrieve_logger_api.py
+uv run dashboad/retrieve_logger_api.py
 
 ## Runs the website to visualize the data
-cd src/nexus/dashboard/web/
+cd dashboard/web/
 npm install # If the packages are not installed
 npm run dev
 ```
 
-After running these two commands, open the link `http://localhost:3000` and selecting a log file from the dropdown. This log file should be present inside `src/simulator/grn/logs/` and `src/simulator/spatial_vec/logs/`.
+After running these two commands, open the link `http://localhost:3000` and selecting a log file from the dropdown. This log file should be present inside the relative directory `logs/`.
 
 The colors indicate the states of the cell, yellow indicating live cells, blue indicating cells undergoing programmed cell death and red are the cells undergoing sudden cell death.
 

@@ -18,6 +18,8 @@ The intervention API supports changing the parameters of the simulator by specif
 - `pulse`
   - `["pulse", a, b]`: `a` - Pulse start time, `b` - Pulse end time
 
+Note: For parameters like `cell_positions` which change during the simulation, using a `loop` or `pulse` will modify the value to the given intervention value and then revert back to the **value at initialisation**. Using `scheduled` will modify the value at the specified timestep and not revert the values back.
+
 ## Spatial scopes
 
 - `global`

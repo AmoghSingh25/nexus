@@ -3,7 +3,6 @@
 
 __pycache__/
 __marimo__/
-src/nexus/simulator/archive
 .DS_Store
 notebooks/protein_rna_test_data/
 .idea/
@@ -12,7 +11,7 @@ notebooks/protein_rna_test_data/
 .venv/
 outputs/
 logs/
-
+archive/
 notebooks/testing_triangulation.py
 *.egg-info/
 pytestdebug.log

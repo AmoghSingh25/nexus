@@ -8,7 +8,9 @@ from nexus.simulator.intervention.intervention import InterventionManager
 
 
 @hydra.main(
-    version_base=None, config_path="../../configs", config_name="freemesh_config.yaml"
+    version_base=None,
+    config_path="../../../configs",
+    config_name="freemesh_config.yaml",
 )
 def run_sim(cfg: DictConfig) -> None:
     ## Checking configs
@@ -40,7 +42,7 @@ def run_sim(cfg: DictConfig) -> None:
 def check_config(spatial_sim, cfg):
     if not (cfg.grn.n_cells == spatial_sim.mesh.n_cells):
         raise ValueError(
-            "Config values incorrect, no. of cells in spatial sim and GRN sim to be run together"
+            "Config values incorrect, no. of cells in spatial sim and GRN sim are not equal"
         )
     if not (cfg.spatial_sim.n_steps == cfg.grn.n_steps):
         raise ValueError("Number of steps in both simulators must be equal.")

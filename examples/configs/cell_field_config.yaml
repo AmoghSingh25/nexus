@@ -1,18 +1,13 @@
+# Config for GRN set to simulate SERGIO configuration with inter-field and reactions set to false
 # Confirmation of cell-field diffusion
-defaults:
-  - _self_
 grn:
   ## Simulation related
   n_cells: 8
   delta: 0.01
   n_steps: 20
-  config_file: "configs/sample_data/sample_network_1cell.yaml"
+  config_file: "sample_data/sample_network_1cell.yaml"
   random_key: 42
   logging: true
-  log_dir: "logs"
-  learn_params: false
-  epochs: 0
-  lr: 0.01
 
   ## Gene related
   non_mr_basal: false
@@ -37,6 +32,8 @@ spatial_sim:
   cell_concentration: 1 # Default value is 10
   field_vol: 1.0
   n_cell_type: 1
+  cell_qty:
+    cell1: 1.0
 
   ## Diffusion related
   D: 0.5
@@ -48,7 +45,6 @@ spatial_sim:
   n_steps: 20
   random_key: 42
   logging: true
-  log_dir: "logs"
 
   ## Movement related
   movement_bool: true
@@ -66,12 +62,14 @@ spatial_sim:
     cell1:
       cycle_len: 10
       interphase_len: 0.9
+
       necrosis_death_prob: 0.1
       apoptosis_death_prob: 0.1
+      cell_decay_rate: 0.5
+
       cell_target_vol: 10.0
       cell_density: 1.0
       cell_vol_growth_rate: 1.0
-      cell_decay_rate: 0.5
 
   ## Chemicals
   chemical:
