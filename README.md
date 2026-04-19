@@ -20,7 +20,7 @@ pip install nexusim
 # (OR)
 # Clone repo and build the package in uv
 ## Clone repository and 
-git clone https://github.com/AmoghSingh25/GeneProtSim.git
+git clone https://github.com/AmoghSingh25/nexus.git
 
 ## Create venv and download packages
 uv sync
