@@ -103,7 +103,7 @@ class GRNLogger:
 
     """ Logger functions """
 
-    def log_conc(self, step, cell, gene_conc, prot_conc):
+    def log_conc(self, step, gene_conc, prot_conc):
         """
         Logs the concentrations of protein and gene.
 
