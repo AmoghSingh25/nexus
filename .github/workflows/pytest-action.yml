@@ -1,6 +1,8 @@
 name: Pytest-check
 
-on: push
+on:
+  push:
+  pull_request:
 
 jobs:
   run-test:
@@ -21,7 +23,7 @@ jobs:
 
       - name: Download packages using uv
         run: uv sync
-        
+
       - name: Download local package
         run: uv pip install -e .
 
