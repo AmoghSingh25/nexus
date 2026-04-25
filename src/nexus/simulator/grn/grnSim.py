@@ -6,7 +6,7 @@ import os
 import time
 import networkx as nx
 import jax.numpy as jnp
-from jax import vmap, random, lax, jit, clear_caches, grad, config, nn
+from jax import vmap, lax, jit, clear_caches, grad, config, nn
 from nexus.simulator.utils.read_network import _read_data
 from tqdm import tqdm
 import logging
@@ -16,6 +16,15 @@ from nexus.simulator.utils.verify_network import _copy_param_vals
 from omegaconf import DictConfig
 from nexus.simulator.grn.logger.grnLogger import GRNLogger
 import optax
+from dataclasses import dataclass
+from typing import List
+
+
+@dataclass
+class GRNOutput:
+    gene_traj: List
+    prot_traj: List
+    noise_trace: jnp.array
 
 
 class GRNSim:
@@ -103,10 +112,14 @@ class GRNSim:
             n_genes=self.n_genes,
         )
 
-        self.key, self.sub_key = random.split(random.key(cfg.get("random_key", 42)))
+        self.key = cfg.get("random_key", 42)
 
-        self.noise_a = WienerNoise(delta=self.delta)
-        self.noise_b = WienerNoise(delta=self.delta, random_key=43)
+        self.noise_a = WienerNoise(
+            delta=self.delta, random_key=self.key
+        ).generate_noise(shape=(self.n_steps, self.n_cells, self.n_genes))
+        self.noise_b = WienerNoise(
+            delta=self.delta, random_key=self.key
+        ).generate_noise(shape=(self.n_steps, self.n_cells, self.n_genes))
 
         self.basal_rates = []
         self.ki_values = []
@@ -702,7 +715,7 @@ class GRNSim:
         p_t = p_t.reshape((self.n_cells, self.n_genes)).T
         return x_t, p_t
 
-    def run_sim(self, step=None):
+    def run_sim(self, step=None, noise_trace=None):
         """
         Run the simulation for n_steps
 
@@ -713,15 +726,12 @@ class GRNSim:
             logging.info("Running simulator...")
             gene_conc_history = []
             prot_conc_history = []
+            wiener_noise_a = self.noise_a
+            wiener_noise_b = self.noise_b
+            if noise_trace is not None:
+                wiener_noise_a = noise_trace[0]
+                wiener_noise_b = noise_trace[1]
             for t_i in tqdm(range(self.n_steps)):
-                wiener_noise_a = self.noise_a.generate_noise(
-                    shape=(self.n_cells, self.n_genes)
-                )
-                wiener_noise_b = self.noise_b.generate_noise(
-                    shape=(self.n_cells, self.n_genes)
-                )
-
-                self.key, self.sub_key = random.split(self.key)
                 _gene_conc, _prot_conc = self.jit_x_t(
                     self.gene_conc,
                     self.prot_conc,
@@ -734,8 +744,8 @@ class GRNSim:
                     self.hill_coeffs,
                     self.prot_tran_rates,
                     self.prot_decay,
-                    wiener_noise_a,
-                    wiener_noise_b,
+                    wiener_noise_a[t_i],
+                    wiener_noise_b[t_i],
                 )
                 _gene_conc = _gene_conc.reshape(*_gene_conc.shape, 1)
                 _prot_conc = _prot_conc.reshape(*_prot_conc.shape, 1)
@@ -743,8 +753,7 @@ class GRNSim:
                 self.prot_conc = self.prot_conc.at[:].set(_prot_conc)
                 if self.is_logging:
                     self.logger.log_conc(
-                        step=t_i if step is None else step,
-                        cell=None,
+                        step=t_i,
                         gene_conc=self.gene_conc,
                         prot_conc=self.prot_conc,
                     )
@@ -752,16 +761,16 @@ class GRNSim:
                 gene_conc_history.append(self.gene_conc)
                 prot_conc_history.append(self.prot_conc)
             logging.info("Simulation ended...")
-            return gene_conc_history, prot_conc_history
+            ret = GRNOutput(
+                gene_traj=gene_conc_history,
+                prot_traj=prot_conc_history,
+                noise_trace=jnp.array([self.noise_a, self.noise_b]),
+            )
+            return ret
         else:
-            wiener_noise_a = self.noise_a.generate_noise(
-                shape=(self.n_cells, self.n_genes)
-            )
-            wiener_noise_b = self.noise_b.generate_noise(
-                shape=(self.n_cells, self.n_genes)
-            )
+            wiener_noise_a = self.noise_a[step]
+            wiener_noise_b = self.noise_b[step]
 
-            self.key, self.sub_key = random.split(self.key)
             _gene_conc, _prot_conc = self.jit_x_t(
                 self.gene_conc,
                 self.prot_conc,
@@ -783,8 +792,7 @@ class GRNSim:
             self.prot_conc = self.prot_conc.at[:].set(_prot_conc)
             if self.is_logging:
                 self.logger.log_conc(
-                    step=t_i if step is None else step,
-                    cell=None,
+                    step=step,
                     gene_conc=self.gene_conc,
                     prot_conc=self.prot_conc,
                 )

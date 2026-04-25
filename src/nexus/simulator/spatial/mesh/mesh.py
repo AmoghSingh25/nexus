@@ -24,7 +24,7 @@ class Mesh:
     Create a mesh of grid cells for 3D space. Performs flux and diffusion calculation, reaction, updates cells during simulation and other mesh and cell related functions.
     """
 
-    def __init__(self, cfg, random_key=42, mesh_type="lattice-free"):
+    def __init__(self, cfg, mesh_type="lattice-free"):
         """
 
         :param self: Mesh
@@ -50,7 +50,7 @@ class Mesh:
             self.n_chemicals = 0
         self.n_cell_types = cfg["n_cell_type"]
 
-        self.key, self.sub_key = random.split(random.key(random_key))
+        self.key, self.sub_key = random.split(random.key(cfg.get("random_key", 42)))
 
         self.param_field_resolution = cfg.get("field_resolution", 2)
 

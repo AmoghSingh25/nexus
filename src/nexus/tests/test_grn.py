@@ -71,9 +71,8 @@ class TestGRN:
 
     def test_rna_backprop(self):
         base_config = get_config()
-        base_config.grn.logging = False
         base_config.grn.non_mr_basal = False
-        base_config.grn.logging = True
+        base_config.grn.logging = False
         base_config.grn.learn_params = True  # Toggle if disabling backprop
         base_config.grn.epochs = 500
 
@@ -109,11 +108,52 @@ class TestGRN:
         _loss, _idx = _calc_mse(sim.target_gene_conc, sim.steady_states)
         _loss2, _idx = _calc_mse(sim.target_gene_conc, prev_gene_conc)
 
-        ## Just check if loss is lower as checking changes in array gives False for hill_coeffs
         assert _loss2 > _loss
-        # assert (
-        #     jnp.any(sim.basal_rates != prev_params[0])
-        #     and jnp.any(sim.decay != prev_params[1])
-        #     and jnp.any(sim.ki_matrix != prev_params[2])
-        #     and jnp.any(sim.hill_coeffs != prev_params[3])
-        # )
+
+    def test_noise_replay(self):
+        ## Test on default configs
+        base_config = get_config()
+        base_config.grn.protein_sim = False
+        base_config.grn.random_key = 100
+        base_config.grn.noise = True
+
+        def _compare_runs(inp_cfg):
+            run1 = GRNSim(cfg=inp_cfg.grn)
+            ret1 = run1.run_sim()
+            run1_gene_traj = jnp.array(ret1.gene_traj)
+            run1_prot_traj = jnp.array(ret1.prot_traj)
+
+            run2 = GRNSim(cfg=inp_cfg.grn)
+            ret2 = run2.run_sim()
+            run2_gene_traj = jnp.array(ret2.gene_traj)
+            run2_prot_traj = jnp.array(ret2.prot_traj)
+
+            ## Check using `noise_trace` gives same output
+            print(run1_gene_traj.shape)
+            inp_cfg.grn.random_key = 42
+            run3 = GRNSim(cfg=inp_cfg.grn)
+            ret3 = run3.run_sim(noise_trace=ret2.noise_trace)
+            run3_gene_traj = jnp.array(ret3.gene_traj)
+            run3_prot_traj = jnp.array(ret3.prot_traj)
+
+            assert (
+                jnp.all(run1_gene_traj == run2_gene_traj)
+                and jnp.all(run1_prot_traj == run2_prot_traj)
+                and jnp.all(ret1.noise_trace == ret2.noise_trace)
+                and jnp.all(run3_gene_traj == run2_gene_traj)
+                and jnp.all(run3_prot_traj == run2_prot_traj)
+            )
+
+        for i in range(len(self.config_files)):
+            base_config.grn.config_file = self.config_files[i]
+            base_config.grn.n_cells = self.cell_no[i]
+            _compare_runs(base_config)
+
+        ## Test on SERGIO config
+        base_config = get_config("config")
+        base_config.grn.protein_sim = False
+        base_config.grn.logging = False
+        base_config.grn.noise = True
+        base_config.grn.random_key = 101
+
+        _compare_runs(base_config)
