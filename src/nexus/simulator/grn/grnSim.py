@@ -91,9 +91,14 @@ class GRNSim:
                 n_genes=self.n_genes,
             )
 
+        self.learn_gene = False
+        self.learn_prot = False
         if target_gene_conc is not None:
             self.target_gene_conc = target_gene_conc.reshape(self.n_genes, 1)
+            self.learn_gene = True
+        if target_prot_conc is not None:
             self.target_prot_conc = target_prot_conc.reshape(self.n_genes, 1)
+            self.learn_prot = True
 
         self.decay = _copy_param_vals(
             var=self.decay, var_name="Decay", n_cells=self.n_cells, n_genes=self.n_genes
@@ -373,6 +378,7 @@ class GRNSim:
 
         ## Copy params to shift values
 
+        print(" -- ", self.learn_params, learn_params)
         if self.learn_params and learn_params:
             logging.info("Running backpropagation to learn parameters...")
 
@@ -512,20 +518,8 @@ class GRNSim:
 
             for e_i in range(self.epochs):
                 logging.info(f"\tEpoch - {e_i}")
-                grad_gene = grad_loss_gene(
-                    params_gene,
-                    params_prot,
-                    jnp.arange(self.n_cells),
-                    jnp.arange(self.n_genes),
-                    self.is_mr,
-                    self.gene_conc,
-                    target_conc=self.target_gene_conc,
-                    prot_tran_rates=prot_tran_rates,
-                )
-                updates, opt_state = optimizer.update(grad_gene, opt_state)
-                params_gene = optax.apply_updates(params_gene, updates)
-                if e_i % 50 == 0:
-                    loss_i = calc_loss(
+                if self.learn_gene:
+                    grad_gene = grad_loss_gene(
                         params_gene,
                         params_prot,
                         jnp.arange(self.n_cells),
@@ -535,7 +529,40 @@ class GRNSim:
                         target_conc=self.target_gene_conc,
                         prot_tran_rates=prot_tran_rates,
                     )
-                    loss_i_prot = calc_loss(
+                    updates, opt_state = optimizer.update(grad_gene, opt_state)
+                    params_gene = optax.apply_updates(params_gene, updates)
+                if e_i % 50 == 0:
+                    if self.learn_gene:
+                        loss_i = calc_loss(
+                            params_gene,
+                            params_prot,
+                            jnp.arange(self.n_cells),
+                            jnp.arange(self.n_genes),
+                            self.is_mr,
+                            self.gene_conc,
+                            target_conc=self.target_gene_conc,
+                            prot_tran_rates=prot_tran_rates,
+                        )
+                        print(
+                            f"Epoch - {e_i} Loss = {loss_i} Learing rate = {opt_state.hyperparams['learning_rate']}"
+                        )
+                    if self.learn_prot:
+                        loss_i_prot = calc_loss(
+                            params_gene,
+                            params_prot,
+                            jnp.arange(self.n_cells),
+                            jnp.arange(self.n_genes),
+                            self.is_mr,
+                            self.gene_conc,
+                            target_conc=self.target_prot_conc,
+                            prot_tran_rates=prot_tran_rates,
+                            target_gene=False,
+                        )
+                        print(f"Prot loss = {loss_i_prot}")
+                    losses.append(loss_i)
+
+                if self.learn_prot:
+                    grad_prot = grad_loss_prot(
                         params_gene,
                         params_prot,
                         jnp.arange(self.n_cells),
@@ -546,26 +573,10 @@ class GRNSim:
                         prot_tran_rates=prot_tran_rates,
                         target_gene=False,
                     )
-                    losses.append(loss_i)
-                    print(
-                        f"Epoch - {e_i} Loss = {loss_i} Protein loss = {loss_i_prot} Learing rate = {opt_state.hyperparams['learning_rate']}"
+                    updates, opt_state_prot = optimizer_prot.update(
+                        grad_prot, opt_state_prot
                     )
-
-                grad_prot = grad_loss_prot(
-                    params_gene,
-                    params_prot,
-                    jnp.arange(self.n_cells),
-                    jnp.arange(self.n_genes),
-                    self.is_mr,
-                    self.gene_conc,
-                    target_conc=self.target_prot_conc,
-                    prot_tran_rates=prot_tran_rates,
-                    target_gene=False,
-                )
-                updates, opt_state_prot = optimizer_prot.update(
-                    grad_prot, opt_state_prot
-                )
-                params_prot = optax.apply_updates(params_prot, updates)
+                    params_prot = optax.apply_updates(params_prot, updates)
             return gene_conc, prot_conc, params_gene, params_prot
         else:
             return gene_conc, prot_conc, {}, {}

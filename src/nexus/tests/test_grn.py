@@ -129,7 +129,6 @@ class TestGRN:
             run2_prot_traj = jnp.array(ret2.prot_traj)
 
             ## Check using `noise_trace` gives same output
-            print(run1_gene_traj.shape)
             inp_cfg.grn.random_key = 42
             run3 = GRNSim(cfg=inp_cfg.grn)
             ret3 = run3.run_sim(noise_trace=ret2.noise_trace)
