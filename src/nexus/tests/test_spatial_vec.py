@@ -1,3 +1,5 @@
+import jax.numpy as jnp
+import jax
 from nexus.simulator.spatial.spatialSim import SpatialSim
 import numpy as np
 import os
@@ -99,3 +101,21 @@ class TestSpatial:
             assert True
         else:
             assert False
+
+    def test_consistent_noise(self):
+        base_config = get_config("freemesh_config")
+        base_config.spatial_sim.diffusion_bool = False
+        base_config.spatial_sim.cycle_bool = False
+        base_config.spatial_sim.random_key = 100
+
+        s = SpatialSim(base_config.spatial_sim)
+        s.run_sim()
+
+        s2 = SpatialSim(base_config.spatial_sim)
+        s2.run_sim()
+
+        for attr in s.mesh.__dict__:
+            if isinstance(getattr(s.mesh, attr), jax.Array):
+                arr1 = getattr(s.mesh, attr)
+                arr2 = getattr(s2.mesh, attr)
+                assert jnp.all(arr1 == arr2)
