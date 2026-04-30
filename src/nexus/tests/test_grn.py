@@ -1,3 +1,4 @@
+import functools
 from pathlib import Path
 from nexus.simulator.grn.grnSim import GRNSim
 import jax.numpy as jnp
@@ -20,6 +21,19 @@ def read_pickle(file_name):
     return var
 
 
+def log_cleanup(test_func):
+    @functools.wraps(test_func)
+    def test_wrapper(self, *args, **kwargs):
+        try:
+            return test_func(self, *args, **kwargs)
+        finally:
+            if hasattr(self, "sim") and self.sim is not None:
+                self.sim.cleanup()
+                self.sim = None
+
+    return test_wrapper
+
+
 class TestGRN:
     config_files = [
         "configs/sample_data/sample_network_2cell.yaml",
@@ -27,6 +41,7 @@ class TestGRN:
     ]
     cell_no = [2, 1]
 
+    @log_cleanup
     def test_calc_steady_states(self):
         base_config = get_config()
         base_config.grn.protein_sim = True
@@ -34,24 +49,26 @@ class TestGRN:
         for i in range(len(self.config_files)):
             base_config.grn.config_file = self.config_files[i]
             base_config.grn.n_cells = self.cell_no[i]
-            sim = GRNSim(base_config.grn)
-            sim.run_sim()
-            gene_conc, prot_conc = sim.gene_conc, sim.prot_conc
+            self.sim = GRNSim(base_config.grn)
+            self.sim.run_sim()
+            gene_conc, prot_conc = self.sim.gene_conc, self.sim.prot_conc
             assert gene_conc.shape == (4, self.cell_no[i], 1)
             assert prot_conc.shape == (4, self.cell_no[i], 1)
 
+    @log_cleanup
     def test_gene_only(self):
         base_config = get_config()
         base_config.grn.protein_sim = False
         for i in range(len(self.config_files)):
             base_config.grn.config_file = self.config_files[i]
             base_config.grn.n_cells = self.cell_no[i]
-            sim = GRNSim(cfg=base_config.grn)
-            sim.run_sim()
-            gene_conc, prot_conc = sim.gene_conc, sim.prot_conc
+            self.sim = GRNSim(cfg=base_config.grn)
+            self.sim.run_sim()
+            gene_conc, prot_conc = self.sim.gene_conc, self.sim.prot_conc
             assert gene_conc.shape == (4, self.cell_no[i], 1)
             assert prot_conc.shape == (4, self.cell_no[i], 1)
 
+    @log_cleanup
     def test_sergio_output(self):
         DATA_DIR = Path(__file__).parent
         base_config = get_config("config")
@@ -60,8 +77,8 @@ class TestGRN:
 
         node_mapping = read_pickle(DATA_DIR / "saved_outputs/node_mapping.pkl")
         sergio_output = read_pickle(DATA_DIR / "saved_outputs/saved_output.pkl")
-        sim = GRNSim(base_config.grn)
-        gene_conc = sim.gene_conc.reshape((100, 2700))
+        self.sim = GRNSim(base_config.grn)
+        gene_conc = self.sim.gene_conc.reshape((100, 2700))
         reordered_output_1 = jnp.zeros_like(gene_conc)
         for i in node_mapping:
             reordered_output_1 = reordered_output_1.at[i].set(
@@ -69,6 +86,7 @@ class TestGRN:
             )
         assert jnp.allclose(reordered_output_1, sergio_output, rtol=1e-6, atol=1e-32)
 
+    @log_cleanup
     def test_rna_backprop(self):
         base_config = get_config()
         base_config.grn.non_mr_basal = False
@@ -76,21 +94,25 @@ class TestGRN:
         base_config.grn.learn_params = True  # Toggle if disabling backprop
         base_config.grn.epochs = 500
 
-        sim = GRNSim(
+        self.sim = GRNSim(
             cfg=base_config.grn,
             target_gene_conc=jnp.ones((4)),
             target_prot_conc=jnp.ones((4)),
         )
-        prev_gene_conc, _ = sim.gene_conc, sim.prot_conc
+        prev_gene_conc, _ = self.sim.gene_conc, self.sim.prot_conc
         if base_config.grn.learn_params:
-            sim.basal_rates = nn.softplus(sim.learnt_gene_params["basal_rates"])
-            sim.decay = nn.softplus(sim.learnt_gene_params["decay"])
-            sim.ki_matrix = sim.learnt_gene_params["ki_matrix"]
-            sim.hill_coeffs = sim.learnt_gene_params["hill_coeffs"]
-            sim.prot_tran_rates = nn.softplus(sim.learnt_prot_params["prot_tran_rates"])
-            sim.prot_decay = nn.softplus(sim.learnt_prot_params["prot_decay"])
-            sim.steady_states, sim.prot_steady_state, _, _ = sim.calc_steady_states(
-                learn_params=False
+            self.sim.basal_rates = nn.softplus(
+                self.sim.learnt_gene_params["basal_rates"]
+            )
+            self.sim.decay = nn.softplus(self.sim.learnt_gene_params["decay"])
+            self.sim.ki_matrix = self.sim.learnt_gene_params["ki_matrix"]
+            self.sim.hill_coeffs = self.sim.learnt_gene_params["hill_coeffs"]
+            self.sim.prot_tran_rates = nn.softplus(
+                self.sim.learnt_prot_params["prot_tran_rates"]
+            )
+            self.sim.prot_decay = nn.softplus(self.sim.learnt_prot_params["prot_decay"])
+            self.sim.steady_states, self.sim.prot_steady_state, _, _ = (
+                self.sim.calc_steady_states(learn_params=False)
             )
 
         def _calc_mse(_target, _pred):
@@ -105,11 +127,12 @@ class TestGRN:
                     idx = _i
             return _min_loss, idx
 
-        _loss, _idx = _calc_mse(sim.target_gene_conc, sim.steady_states)
-        _loss2, _idx = _calc_mse(sim.target_gene_conc, prev_gene_conc)
+        _loss, _idx = _calc_mse(self.sim.target_gene_conc, self.sim.steady_states)
+        _loss2, _idx = _calc_mse(self.sim.target_gene_conc, prev_gene_conc)
 
         assert _loss2 > _loss
 
+    @log_cleanup
     def test_noise_replay(self):
         ## Test on default configs
         base_config = get_config()
@@ -122,11 +145,13 @@ class TestGRN:
             ret1 = run1.run_sim()
             run1_gene_traj = jnp.array(ret1.gene_traj)
             run1_prot_traj = jnp.array(ret1.prot_traj)
+            run1.cleanup()
 
             run2 = GRNSim(cfg=inp_cfg.grn)
             ret2 = run2.run_sim()
             run2_gene_traj = jnp.array(ret2.gene_traj)
             run2_prot_traj = jnp.array(ret2.prot_traj)
+            run2.cleanup()
 
             ## Check using `noise_trace` gives same output
             inp_cfg.grn.random_key = 42
@@ -134,6 +159,7 @@ class TestGRN:
             ret3 = run3.run_sim(noise_trace=ret2.noise_trace)
             run3_gene_traj = jnp.array(ret3.gene_traj)
             run3_prot_traj = jnp.array(ret3.prot_traj)
+            run3.cleanup()
 
             assert (
                 jnp.all(run1_gene_traj == run2_gene_traj)

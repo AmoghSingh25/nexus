@@ -378,7 +378,6 @@ class GRNSim:
 
         ## Copy params to shift values
 
-        print(" -- ", self.learn_params, learn_params)
         if self.learn_params and learn_params:
             logging.info("Running backpropagation to learn parameters...")
 
@@ -740,8 +739,6 @@ class GRNSim:
         ):
             wiener_noise_a = self.noise_a
             wiener_noise_b = self.noise_b
-            # params["hill_coeffs"] = jnp.clip(params["hill_coeffs"], 1.0, 4.0)
-            print("USING PARAMS")
             _gene_conc, _prot_conc = self.jit_x_t(
                 self.gene_conc,
                 self.prot_conc,
@@ -979,3 +976,7 @@ class GRNSim:
                 )
             clear_caches()
             return self.gene_conc, self.prot_conc
+
+    def cleanup(self):
+        if self.is_logging and self.logger is not None:
+            self.logger.cleanup()
