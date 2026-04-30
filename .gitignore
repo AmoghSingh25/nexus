@@ -16,3 +16,4 @@ notebooks/testing_triangulation.py
 *.egg-info/
 pytestdebug.log
 node_modules/
+ST_Data/
