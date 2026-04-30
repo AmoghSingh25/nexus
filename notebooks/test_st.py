@@ -21,6 +21,11 @@ def _():
     import jax.numpy as jnp
     from omegaconf import OmegaConf
 
+    import os
+    import sys
+
+    sys.path.append(os.getcwd())
+
     from src.nexus.simulator.spatial.spatialSim import SpatialSim
     from src.nexus.simulator.grn.grnSim import GRNSim
 
@@ -93,7 +98,7 @@ def _():
                 "lr": 1,
                 "logging": False,
                 "log_dir": "logs",
-                "learn_params": True,
+                "learn_params": False,
                 "non_mr_basal": True,
                 "noise": False,
                 "noise_amplitude": 0.1,
@@ -171,8 +176,8 @@ def _():
 
 @app.cell
 def _(SpatialSim, generate_config, jnp, load_st_data):
-    cells_path = "ST_Data/cells.parquet"
-    transcripts_path = "ST_Data/transcripts.parquet"
+    cells_path = "../ST_Data/cells.parquet"
+    transcripts_path = "../ST_Data/transcripts.parquet"
 
     n_cells_target = 500
     n_genes_target = 100
@@ -281,6 +286,18 @@ def _(
 
 
 @app.cell
+def _(grn_sim):
+    grn_sim.gene_conc.shape
+    return
+
+
+@app.cell
+def _(grn_sim):
+    learn_gene, learn_prot = grn_sim.learn_params_fn()
+    return
+
+
+@app.cell
 def _():
     from jax import nn
 
@@ -330,11 +347,6 @@ def _(grn_sim, mean_gene, plt, target_matrix):
     plt.plot(target_matrix[:, 0], label="Target single")
     plt.legend()
     plt.show()
-    return
-
-
-@app.cell
-def _():
     return
 
 

@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.18.4"
+__generated_with = "0.22.4"
 app = marimo.App(width="medium")
 
 
@@ -46,6 +46,7 @@ def _(compose, initialize_config_dir, os):
         with initialize_config_dir(version_base=None, config_dir=conf_path):
             cfg = compose(config_name=config_name)
         return cfg
+
     return (get_config,)
 
 
@@ -353,11 +354,20 @@ def _(jnp):
         min_d = jnp.min(inp)
         denom = max_d - min_d
         return (inp - min_d.reshape(-1,1)) / denom
-    return (zero_one_norm,)
+
+    return
+
+
+@app.cell
+def _():
+    from nexus.simulator.grn.grnSim import GRNSim
+
+    return (GRNSim,)
 
 
 @app.cell
 def _(
+    GRNSim,
     edges_set,
     get_config,
     ids,
@@ -370,7 +380,6 @@ def _(
     random,
     rna_conc,
     time,
-    zero_one_norm,
 ):
     _prot_conc_target = []
     _output_rna_names = np.array([_i["name"] for _i in node_set])
@@ -379,11 +388,9 @@ def _(
     for _i in range(len(node_set)):
         _prot_conc_target.append(prot_conc[list(ids).index(node_set[_i]["name"])])
 
-    _prot_conc_target = zero_one_norm(jnp.array(_prot_conc_target))
+    _prot_conc_target = jnp.array(_prot_conc_target)
 
-    _rna_target = zero_one_norm(rna_conc.to_numpy()[_target_rna_ids])
-
-    from simulator.grn.grnSim import GRNSim
+    _rna_target = rna_conc.to_numpy()[_target_rna_ids]
 
     _key, _sub_key = random.split(random.key(42))
     _mu_decay = 5.4
@@ -400,6 +407,7 @@ def _(
     cfg.grn.logging = True
     cfg.grn.learn_params = True  # Toggle if disabling backprop
     cfg.grn.epochs = 500
+    cfg.grn.lr = 1
 
     _t1 = time.time()
     sim = GRNSim(
@@ -442,7 +450,7 @@ def _(plt, prev_params, sim):
 
 @app.cell
 def _(jnp, n_cells, plt, sim):
-    def _calc_mse(_target, _pred):
+    def calc_mse(_target, _pred):
         _min_loss = jnp.inf
         idx = 0
         for _i in range(n_cells):
@@ -453,8 +461,8 @@ def _(jnp, n_cells, plt, sim):
                 _min_loss = min(_min_loss, _mse_loss)
                 idx = _i
         return _min_loss, idx
-    _loss, _idx = _calc_mse(sim.target_gene_conc, sim.steady_states)
-    _loss2, _idx = _calc_mse(sim.target_gene_conc, jnp.clip(sim.steady_states, min=min(sim.target_gene_conc)))
+    _loss, _idx = calc_mse(sim.target_gene_conc, sim.steady_states)
+    _loss2, _idx = calc_mse(sim.target_gene_conc, jnp.clip(sim.steady_states, min=min(sim.target_gene_conc)))
     print("MSE Loss = ", _loss)
     print("MSE Loss with clipping = ", _loss2)
     print("Min idx = ", _idx)
@@ -471,6 +479,27 @@ def _(jnp, n_cells, plt, sim):
     plt.legend()
 
     plt.show()
+    return (calc_mse,)
+
+
+@app.cell
+def _(sim):
+    sim.learn_params_fn()
+    return
+
+
+@app.cell
+def _(calc_mse, jnp, sim):
+    _loss, _idx = calc_mse(sim.gene_conc, sim.steady_states)
+    _loss2, _idx = calc_mse(sim.gene_conc, jnp.clip(sim.steady_states, min=min(sim.target_gene_conc)))
+    return
+
+
+@app.cell
+def _(jnp, plt, sim):
+    _idx = 0
+    plt.plot(sim.target_gene_conc, label="Target")
+    plt.plot(jnp.clip(sim.gene_conc[:, _idx], min=min(sim.target_gene_conc)), label="Pred")
     return
 
 
@@ -531,6 +560,7 @@ def _(jnp, nn):
         std = jnp.std(inp, axis=axis)
         inp = (inp - mean) / std
         return inp
+
     return (z_score_norm,)
 
 
