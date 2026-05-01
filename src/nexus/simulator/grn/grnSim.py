@@ -94,7 +94,15 @@ class GRNSim:
         self.learn_gene = False
         self.learn_prot = False
         if target_gene_conc is not None:
-            self.target_gene_conc = target_gene_conc.reshape(self.n_genes, 1)
+            if target_gene_conc.ndim == 1:
+                self.target_gene_conc = target_gene_conc.reshape(self.n_genes, 1)
+            elif target_gene_conc.ndim == 2:
+                self.target_gene_conc = target_gene_conc.reshape(
+                    self.n_cells, self.n_genes, 1
+                )
+            else:
+                assert target_gene_conc.shape == (self.n_genes, self.n_cells, 1)
+                self.target_gene_conc = target_gene_conc
             self.learn_gene = True
         if target_prot_conc is not None:
             self.target_prot_conc = target_prot_conc.reshape(self.n_genes, 1)
@@ -442,17 +450,14 @@ class GRNSim:
 
                 l2_gene_coeff = 1e-4
                 l2_prot_coeff = 1e-4
+                if target_conc.ndim == 3:
+                    target_conc = target_conc.squeeze(2)
                 loss = lax.cond(
                     target_gene,
                     lambda _: (
                         jnp.sqrt(
                             jnp.sum(
-                                (
-                                    jnp.log1p(
-                                        target_conc.repeat(axis=1, repeats=n_cells)
-                                    )
-                                    - jnp.log1p(g_conc.squeeze(2))
-                                )
+                                (jnp.log1p(target_conc) - jnp.log1p(g_conc.squeeze(2)))
                                 ** 2,
                                 dtype=jnp.float32,
                             )
@@ -462,12 +467,7 @@ class GRNSim:
                     lambda _: (
                         jnp.sqrt(
                             jnp.sum(
-                                (
-                                    jnp.log1p(
-                                        target_conc.repeat(axis=1, repeats=n_cells)
-                                    )
-                                    - jnp.log1p(p_conc.squeeze(2))
-                                )
+                                (jnp.log1p(target_conc) - jnp.log1p(p_conc.squeeze(2)))
                                 ** 2,
                                 dtype=jnp.float32,
                             )
@@ -725,7 +725,10 @@ class GRNSim:
         p_t = p_t.reshape((self.n_cells, self.n_genes)).T
         return x_t, p_t
 
-    def learn_params_fn(self):
+    def learn_params_fn(self, epochs=None):
+        if epochs is None:
+            epochs = self.epochs
+
         def loss_target(
             params,
             params_prot,
@@ -765,11 +768,7 @@ class GRNSim:
                 lambda _: (
                     jnp.sqrt(
                         jnp.sum(
-                            (
-                                jnp.log1p(target_conc.repeat(axis=1, repeats=n_cells))
-                                - jnp.log1p(_gene_conc)
-                            )
-                            ** 2,
+                            (jnp.log1p(target_conc) - jnp.log1p(_gene_conc)) ** 2,
                             dtype=jnp.float32,
                         )
                     ).astype(jnp.float32)
@@ -778,11 +777,7 @@ class GRNSim:
                 lambda _: (
                     jnp.sqrt(
                         jnp.sum(
-                            (
-                                jnp.log1p(target_conc.repeat(axis=1, repeats=n_cells))
-                                - jnp.log1p(p_conc)
-                            )
-                            ** 2,
+                            (jnp.log1p(target_conc) - jnp.log1p(p_conc)) ** 2,
                             dtype=jnp.float32,
                         )
                     ).astype(jnp.float32)
@@ -813,11 +808,9 @@ class GRNSim:
             "prot_tran_rates": prot_tran_rates,
             "prot_decay": prot_decay,
         }
-        scheduler = optax.cosine_decay_schedule(
-            init_value=self.lr, decay_steps=self.epochs
-        )
+        scheduler = optax.cosine_decay_schedule(init_value=self.lr, decay_steps=epochs)
         scheduler_prot = optax.cosine_decay_schedule(
-            init_value=self.lr, decay_steps=self.epochs
+            init_value=self.lr, decay_steps=epochs
         )
 
         optimizer = optax.inject_hyperparams(optax.adam)(learning_rate=scheduler)
@@ -830,7 +823,7 @@ class GRNSim:
         opt_state_prot = optimizer_prot.init(params_prot)
         losses = []
 
-        for e_i in range(self.epochs):
+        for e_i in range(epochs):
             logging.info(f"\tEpoch - {e_i}")
             if self.learn_gene:
                 grad_gene = grad_loss_gene(

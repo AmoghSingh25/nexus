@@ -98,7 +98,7 @@ def _():
                 "lr": 1,
                 "logging": False,
                 "log_dir": "logs",
-                "learn_params": False,
+                "learn_params": True,
                 "non_mr_basal": True,
                 "noise": False,
                 "noise_amplitude": 0.1,
@@ -279,29 +279,10 @@ def _(
         cfg.grn,
         node_set=node_set,
         edges_set=edges_set,
-        target_gene_conc=target_matrix[:, 0],
+        target_gene_conc=target_matrix,
         target_prot_conc=None,
     )
     return grn_sim, mean_gene, target_matrix
-
-
-@app.cell
-def _(grn_sim):
-    grn_sim.gene_conc.shape
-    return
-
-
-@app.cell
-def _(grn_sim):
-    learn_gene, learn_prot = grn_sim.learn_params_fn()
-    return
-
-
-@app.cell
-def _():
-    from jax import nn
-
-    return (nn,)
 
 
 @app.cell
@@ -318,10 +299,64 @@ def _(grn_sim, nn):
 
 @app.cell
 def _(grn_sim, plt, target_matrix):
-    plt.plot(grn_sim.steady_states[:, 0], label="Pred")
-    plt.plot(target_matrix[:, 0], label="Actual")
+    for _i in range(10):
+        plt.plot(target_matrix[:, _i], label="Orig")
+        plt.show()
+        plt.plot(grn_sim.steady_states[:, _i], label="Pred")
+        plt.legend()
+        plt.show()
+    return
+
+
+@app.cell
+def _():
+    from jax import nn
+
+    return (nn,)
+
+
+@app.cell
+def _(grn_sim):
+    learn_gene, learn_prot = grn_sim.learn_params_fn(epochs=3000)
+    return (learn_gene,)
+
+
+@app.cell
+def _(grn_sim, learn_gene, nn):
+    grn_sim.basal_rates = nn.softplus(learn_gene["basal_rates"])
+    grn_sim.decay = nn.softplus(learn_gene["decay"])
+    grn_sim.ki_matrix = learn_gene["ki_matrix"]
+    grn_sim.hill_coeffs = learn_gene["hill_coeffs"]
+    grn_sim.steady_states, grn_sim.prot_steady_state, _, _ = (
+        grn_sim.calc_steady_states(learn_params=False)
+    )
+    return
+
+
+@app.cell
+def _(grn_sim, plt):
+    plt.plot(grn_sim.steady_states[:, 0])
+    return
+
+
+@app.cell
+def _(grn_sim, plt, target_matrix):
+    plt.plot(grn_sim.steady_states[0, :], label="Pred")
+    plt.plot(target_matrix[0, :], label="Actual")
     plt.legend()
     plt.show()
+    return
+
+
+@app.cell
+def _(grn_sim):
+    grn_sim.gene_conc.shape
+    return
+
+
+@app.cell
+def _(grn_sim):
+    grn_sim.target_gene_conc.shape
     return
 
 
@@ -332,9 +367,40 @@ def _(grn_sim):
 
 
 @app.cell
+def _(target_matrix):
+    target_matrix.shape
+    return
+
+
+@app.cell
+def _(plt, target_matrix):
+    plt.plot(target_matrix[:, 0])
+    plt.plot(target_matrix[:, 1])
+    return
+
+
+@app.cell
+def _():
+    # 500 - N Genes
+    # 100 - N cells
+    return
+
+
+@app.cell
+def _(grn_sim):
+    grn_sim.gene_conc.shape
+    return
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
 def _(grn_sim, plt, target_matrix):
-    plt.plot(grn_sim.gene_conc[:, 0], label="Pred")
-    plt.plot(target_matrix[:, 0], label="Target")
+    plt.plot(grn_sim.gene_conc[0, :], label="Pred")
+    plt.plot(target_matrix[0, :], label="Target")
     plt.legend()
     plt.show()
     return
