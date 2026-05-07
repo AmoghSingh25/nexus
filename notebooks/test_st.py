@@ -176,8 +176,8 @@ def _():
 
 @app.cell
 def _(SpatialSim, generate_config, jnp, load_st_data):
-    cells_path = "../ST_Data/cells.parquet"
-    transcripts_path = "../ST_Data/transcripts.parquet"
+    cells_path = "ST_Data/cells.parquet"
+    transcripts_path = "ST_Data/transcripts.parquet"
 
     n_cells_target = 500
     n_genes_target = 100
@@ -286,9 +286,21 @@ def _(
 
 
 @app.cell
+def _(grn_sim):
+    grn_sim.run_sim()
+    return
+
+
+@app.cell
+def _(grn_sim, plt):
+    plt.plot(grn_sim.gene_conc[:, 0])
+    return
+
+
+@app.cell
 def _(grn_sim, nn):
-    grn_sim.basal_rates = nn.softplus(grn_sim.learnt_gene_params["basal_rates"])
-    grn_sim.decay = nn.softplus(grn_sim.learnt_gene_params["decay"])
+    grn_sim.basal_rates = nn.sigmoid(grn_sim.learnt_gene_params["basal_rates"])
+    grn_sim.decay = nn.sigmoid(grn_sim.learnt_gene_params["decay"])
     grn_sim.ki_matrix = grn_sim.learnt_gene_params["ki_matrix"]
     grn_sim.hill_coeffs = grn_sim.learnt_gene_params["hill_coeffs"]
     grn_sim.steady_states, grn_sim.prot_steady_state, _, _ = (
@@ -309,6 +321,25 @@ def _(grn_sim, plt, target_matrix):
 
 
 @app.cell
+def _(grn_sim):
+    grn_sim.run_sim()
+    return
+
+
+@app.cell
+def _(grn_sim, plt):
+    plt.plot(grn_sim.basal_rates[:, 0])
+    plt.plot(grn_sim.decay[0, :])
+    return
+
+
+@app.cell
+def _(grn_sim, plt):
+    plt.plot(grn_sim.gene_conc[:, 0])
+    return
+
+
+@app.cell
 def _():
     from jax import nn
 
@@ -317,58 +348,56 @@ def _():
 
 @app.cell
 def _(grn_sim):
-    learn_gene, learn_prot = grn_sim.learn_params_fn(epochs=3000)
+    learn_gene, learn_prot = grn_sim.learn_params_fn(epochs=500)
     return (learn_gene,)
 
 
 @app.cell
 def _(grn_sim, learn_gene, nn):
-    grn_sim.basal_rates = nn.softplus(learn_gene["basal_rates"])
-    grn_sim.decay = nn.softplus(learn_gene["decay"])
+    grn_sim.basal_rates = nn.sigmoid(learn_gene["basal_rates"])
+    grn_sim.decay = nn.sigmoid(learn_gene["decay"])
     grn_sim.ki_matrix = learn_gene["ki_matrix"]
     grn_sim.hill_coeffs = learn_gene["hill_coeffs"]
-    grn_sim.steady_states, grn_sim.prot_steady_state, _, _ = (
-        grn_sim.calc_steady_states(learn_params=False)
-    )
+    # grn_sim.steady_states, grn_sim.prot_steady_state, _, _ = (
+    #     grn_sim.calc_steady_states(learn_params=False)
+    # )
     return
 
 
 @app.cell
 def _(grn_sim, plt):
-    plt.plot(grn_sim.steady_states[:, 0])
+    plt.plot(grn_sim.gene_conc[:, 0])
     return
 
 
 @app.cell
-def _(grn_sim, plt, target_matrix):
-    plt.plot(grn_sim.steady_states[0, :], label="Pred")
-    plt.plot(target_matrix[0, :], label="Actual")
-    plt.legend()
-    plt.show()
-    return
-
-
-@app.cell
-def _(grn_sim):
-    grn_sim.gene_conc.shape
+def _(grn_sim, plt):
+    plt.plot(grn_sim.basal_rates[:, 0])
+    plt.plot(grn_sim.decay[0, :])
     return
 
 
 @app.cell
 def _(grn_sim):
-    grn_sim.target_gene_conc.shape
+    ret = grn_sim.run_sim()
+    return (ret,)
+
+
+@app.cell
+def _(grn_sim, plt):
+    plt.plot(grn_sim.target_gene_conc[:, 1])
     return
 
 
 @app.cell
-def _(grn_sim):
-    grn_sim.run_sim()
+def _(ret):
+    ret.gene_traj[-1].shape
     return
 
 
 @app.cell
-def _(target_matrix):
-    target_matrix.shape
+def _(plt, ret):
+    plt.plot(ret.gene_traj[0][:, 1, 0])
     return
 
 
@@ -383,17 +412,6 @@ def _(plt, target_matrix):
 def _():
     # 500 - N Genes
     # 100 - N cells
-    return
-
-
-@app.cell
-def _(grn_sim):
-    grn_sim.gene_conc.shape
-    return
-
-
-@app.cell
-def _():
     return
 
 

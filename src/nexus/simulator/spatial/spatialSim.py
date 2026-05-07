@@ -58,7 +58,7 @@ class SpatialSim:
             self.logger = None
             self.pos_logger = None
 
-    def run_sim(self, step=None):
+    def run_sim(self, step: int = None) -> None:
         """
         Run the spatial simulation
 
@@ -93,7 +93,7 @@ class SpatialSim:
                     self.mesh.cell_states,
                 )
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """
         Deletes the log files generated during the run
 

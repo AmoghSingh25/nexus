@@ -2,6 +2,7 @@
 # - Simulation starts from steady state calculation
 # - Basal rates of non-MR is 0 (from SERGIO) - Can also be configured for non zero basal rates
 
+import jax
 import os
 import time
 import networkx as nx
@@ -17,24 +18,26 @@ from omegaconf import DictConfig
 from nexus.simulator.grn.logger.grnLogger import GRNLogger
 import optax
 from dataclasses import dataclass
-from typing import List
+from jaxtyping import Float, Array, jaxtyped, Bool
+from beartype import beartype
+from beartype.typing import Tuple, List
 
 
 @dataclass
 class GRNOutput:
-    gene_traj: List
-    prot_traj: List
-    noise_trace: jnp.array
+    gene_traj: Float[Array, "steps genes cells 1"]
+    prot_traj: Float[Array, "steps genes cells 1"]
+    noise_trace: Float[Array, "2 steps cells genes"]
 
 
 class GRNSim:
     def __init__(
         self,
         cfg: DictConfig,
-        node_set=None,
-        edges_set=None,
-        target_gene_conc=None,
-        target_prot_conc=None,
+        node_set: List | None = None,
+        edges_set: List | None = None,
+        target_gene_conc: Float[Array, "..."] | None = None,
+        target_prot_conc: Float[Array, "..."] | None = None,
     ):
         """
         Shapes of variables :
@@ -272,7 +275,7 @@ class GRNSim:
 
         return e_x, p_c
 
-    def calc_steady_states(self, learn_params=True):
+    def calc_steady_states(self, learn_params: bool = True) -> Tuple:
         """Calculates the steady state concentrations for the MR and Gene nodes.
         The steady state concentrations are calculated using the method mentioned in Equation 8 and Equation 10 in
         Dibaeinia, P., & Sinha, S. (2020). SERGIO: A Single-Cell Expression Simulator Guided by Gene Regulatory Networks.
@@ -437,15 +440,14 @@ class GRNSim:
                     n_cells_range,
                     n_genes_range,
                     is_mr,
-                    nn.softplus(params["basal_rates"]),
-                    nn.softplus(params["decay"]),
+                    nn.sigmoid(params["basal_rates"]),
+                    nn.sigmoid(params["decay"]),
                     params["ki_matrix"],
                     gene_conc,
                     params["hill_coeffs"],
                     nn.softplus(params_prot["prot_tran_rates"]),
-                    nn.softplus(params_prot["prot_decay"]),
+                    nn.sigmoid(params_prot["prot_decay"]),
                 )
-                n_cells = len(n_cells_range)
                 p_conc = jnp.clip(p_conc, min=jnp.min(target_conc))
 
                 l2_gene_coeff = 1e-4
@@ -581,8 +583,15 @@ class GRNSim:
             return gene_conc, prot_conc, {}, {}
 
     def calc_pij(
-        self, is_mr, idx, basal_rates, gene_conc, gene_cell_mean, k_i, _hill=1
-    ):
+        self,
+        is_mr,
+        idx,
+        basal_rates,
+        gene_conc,
+        gene_cell_mean,
+        k_i,
+        _hill=1.0,
+    ) -> jax.Array:
         """Calculates the production rate of each gene as a function of its regulator genes as given in Equation 5, Equation 6 and Equation 7 in
         Dibaeinia, P., & Sinha, S. (2020). SERGIO: A Single-Cell Expression Simulator Guided by Gene Regulatory Networks.
 
@@ -591,7 +600,12 @@ class GRNSim:
 
         """
 
-        def _calc_pij_g(gene_conc, gene_cell_mean, k_i, _hill=1):
+        def _calc_pij_g(
+            gene_conc: Float[Array, "..."],
+            gene_cell_mean: Float[Array, "..."],
+            k_i: Float[Array, "..."],
+            _hill: Float[Array, "..."] = 1,
+        ):
             eps = 1e-8
             num = jnp.pow(gene_conc, _hill)
             frac = num / (jnp.pow(gene_cell_mean, _hill) + num + eps)
@@ -625,19 +639,19 @@ class GRNSim:
 
     def calc_x_t(
         self,
-        gene_conc,
-        prot_conc,
-        delta,
-        decay,
-        basal_rates,
-        k_i,
-        is_mr,
-        noise_amp,
-        hill_coeff,
-        prot_kt,
-        prot_kd,
-        noise_a,
-        noise_b,
+        gene_conc: Float[Array, "genes cells 1"],
+        prot_conc: Float[Array, "genes cells 1"],
+        delta: Float[Array, ""],
+        decay: Float[Array, "cells genes 1"],
+        basal_rates: Float[Array, "genes cells"],
+        k_i: Float[Array, "cells genes genes"],
+        is_mr: Bool[Array, " genes"],
+        noise_amp: Float[Array, "cells genes 1"],
+        hill_coeff: Float[Array, "cells genes 1"],
+        prot_kt: Float[Array, "cells genes 1"],
+        prot_kd: Float[Array, "cells genes 1"],
+        noise_a: Float[Array, "cells genes"],
+        noise_b: Float[Array, "cells genes"],
     ):
         """Estimate the concentration of each gene and protein at the next time step.
 
@@ -746,22 +760,23 @@ class GRNSim:
                 self.gene_conc,
                 self.prot_conc,
                 self.delta,
-                params["decay"],
-                params["basal_rates"],
+                nn.sigmoid(params["decay"]),
+                nn.softplus(params["basal_rates"]),
                 params["ki_matrix"],
                 self.is_mr,
                 self.noise_amp,
                 params["hill_coeffs"],
-                params_prot["prot_tran_rates"],
-                params_prot["prot_decay"],
+                nn.softplus(params_prot["prot_tran_rates"]),
+                nn.sigmoid(params_prot["prot_decay"]),
                 wiener_noise_a[0],
                 wiener_noise_b[0],
             )
-            n_cells = len(n_cells_range)
             p_conc = jnp.clip(_prot_conc, min=jnp.min(target_conc))
 
             l2_gene_coeff = 1e-4
             l2_prot_coeff = 1e-4
+            if target_conc.ndim == 3:
+                target_conc = target_conc.squeeze(2)
 
             loss = lax.cond(
                 target_gene,
@@ -808,12 +823,12 @@ class GRNSim:
             "prot_tran_rates": prot_tran_rates,
             "prot_decay": prot_decay,
         }
-        scheduler = optax.cosine_decay_schedule(init_value=self.lr, decay_steps=epochs)
+        # scheduler = optax.cosine_decay_schedule(init_value=self.lr, decay_steps=epochs)
         scheduler_prot = optax.cosine_decay_schedule(
             init_value=self.lr, decay_steps=epochs
         )
 
-        optimizer = optax.inject_hyperparams(optax.adam)(learning_rate=scheduler)
+        optimizer = optax.inject_hyperparams(optax.adam)(learning_rate=self.lr)
         optimizer_prot = optax.chain(
             optax.clip_by_global_norm(1.0),
             optax.inject_hyperparams(optax.adam)(learning_rate=scheduler_prot),
@@ -886,7 +901,12 @@ class GRNSim:
                 params_prot = optax.apply_updates(params_prot, updates)
         return params_gene, params_prot
 
-    def run_sim(self, step=None, noise_trace=None):
+    @jaxtyped(typechecker=beartype)
+    def run_sim(
+        self,
+        step: int | None = None,
+        noise_trace: Float[Array, "2 steps cells genes"] | None = None,
+    ) -> GRNOutput | Tuple:
         """
         Run the simulation for n_steps
 
@@ -933,8 +953,8 @@ class GRNSim:
                 prot_conc_history.append(self.prot_conc)
             logging.info("Simulation ended...")
             ret = GRNOutput(
-                gene_traj=gene_conc_history,
-                prot_traj=prot_conc_history,
+                gene_traj=jnp.stack(gene_conc_history),
+                prot_traj=jnp.stack(prot_conc_history),
                 noise_trace=jnp.array([self.noise_a, self.noise_b]),
             )
             return ret

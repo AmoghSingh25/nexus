@@ -1,3 +1,4 @@
+from jaxtyping import Array, Float, Bool, Int
 import jax.numpy as jnp
 import jax
 from jax import random
@@ -24,7 +25,7 @@ class Mesh:
     Create a mesh of grid cells for 3D space. Performs flux and diffusion calculation, reaction, updates cells during simulation and other mesh and cell related functions.
     """
 
-    def __init__(self, cfg, mesh_type="lattice-free"):
+    def __init__(self, cfg, mesh_type: str = "lattice-free"):
         """
 
         :param self: Mesh
@@ -488,10 +489,10 @@ class Mesh:
 
     def add_cell(
         self,
-        pos,
-        cell_state,
-        new_radius,
-        parent_cell_id,
+        pos: Float[Array, "2"],
+        cell_state: int,
+        new_radius: float,
+        parent_cell_id: int,
     ):
         """
         Add a cell with the given parameters to the simulation. Derive growth rate, interphase and mitosis lengths and target volume
@@ -629,7 +630,7 @@ class Mesh:
         )
         self.n_cells += 1
 
-    def kill_cells(self, killed_cells_mask):
+    def kill_cells(self, killed_cells_mask: Bool[Array, "..."]):
         """
         Modify parameters of the cells to be killed - Collapses values to 0 - Sudden death(Necrosis)
 
@@ -641,7 +642,7 @@ class Mesh:
         self.cell_radius = self.cell_radius.at[killed_cells_mask].set(0)
         self.cell_vol = self.cell_vol.at[killed_cells_mask].set(0)
 
-    def prg_death_cell(self, selected_cell_mask):
+    def prg_death_cell(self, selected_cell_mask: Bool[Array, "..."]):
         """
         Modify parameters of the cell to perform programmed cell death. Slowly collapse values to 0, (Apoptosis).
 
@@ -783,7 +784,7 @@ class Mesh:
             * self.cell_density[self.live_cells_mask | self.prg_cells_mask].reshape(-1)
         )
 
-    def step(self, step_i, logger: FieldLogger):
+    def step(self, step_i: int, logger: FieldLogger | None):
         """
         Perform simulation step for the mesh and the cells within.
 
@@ -833,7 +834,7 @@ class Mesh:
             step=step_i, field_chem=self.field_chem
         )
 
-    def get_cell_id(self, pos):
+    def get_cell_id(self, pos: Float[Array, "2"]) -> int:
         """
         Returns an ID of a cell, useful for an order of cells to compute flux i->j and uniquely identify cells
 
@@ -841,7 +842,9 @@ class Mesh:
         """
         return pos[0] + self.height * pos[1] + (self.height * self.depth) * pos[2]
 
-    def get_field_neighbours(self, pos, norm_ord=1):
+    def get_field_neighbours(
+        self, pos: Float[Array, " axes"], norm_ord: int = 1
+    ) -> Int[Array, "..."]:
         """
         Get neighbours of the field at pos[idx].
 
@@ -852,7 +855,9 @@ class Mesh:
         neigh_idxs = jnp.argsort(l1_norm)[1 : self.n_neighbours + 1]
         return neigh_idxs
 
-    def get_radial_limits(self, pos, radius=1, norm_ord=1):
+    def get_radial_limits(
+        self, pos: Float[Array, " axes"], radius: float | int = 1, norm_ord: int = 1
+    ):
         """
         Get cells closest to _pos_ and within _radius_
 
@@ -867,7 +872,9 @@ class Mesh:
         )[0]
         return radial_neighs, l1_norm[radial_neighs]
 
-    def get_closest_cells(self, pos, K=1, norm_ord=1):
+    def get_closest_cells(
+        self, pos: Float[Array, " axes"], K: int = 1, norm_ord: int = 1
+    ):
         """
         Get K closest cells to _pos_
         :param self: Mesh
@@ -879,7 +886,7 @@ class Mesh:
         neigh_idxs = jnp.argsort(l1_norm)[1 : K + 1]
         return neigh_idxs, l1_norm[neigh_idxs]
 
-    def get_assigned_fields(self, norm_ord=1, clustering_type="norm"):
+    def get_assigned_fields(self, norm_ord: int = 1, clustering_type: str = "norm"):
         """
         Function to return field ID of the field closest to the cell position passed
 

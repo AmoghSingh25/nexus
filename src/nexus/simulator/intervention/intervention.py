@@ -1,12 +1,12 @@
 import copy
-from nexus.simulator.spatial import spatialSim
-from nexus.simulator.grn import grnSim
+from nexus.simulator.spatial.spatialSim import SpatialSim
+from nexus.simulator.grn.grnSim import GRNSim
 import jax.numpy as jnp
 import jax
 
 
 class InterventionManager:
-    def __init__(self, cfg, spatial_obj: spatialSim, grn_obj: grnSim):
+    def __init__(self, cfg, spatial_obj: SpatialSim, grn_obj: GRNSim):
         self.spatial_interventions = cfg.intervention.get("spatial_sim", [])
         self.grn_interventions = cfg.intervention.get("grn", [])
 
