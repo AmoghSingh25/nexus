@@ -123,3 +123,10 @@ intervention:
       - 0.7
       - ["scheduled", 1] # Type(Loop), Loop start time, loop length, gap between loops
       - ["global"]
+  other: ## Add_cell intervention - Data required - Time, cell config
+    - - "add_cell"
+      - ["scheduled", 2] # Temporal param
+      - [[1, 1, 1], 0, 0.4, 0] ## Other Params - Position, cell_state of new cell, radius of new cell, parent cell id (to inherit other cell related parameters)
+    - - "ablate" ## alias remove_cell
+      - ["scheduled", 2]
+      - [[2], -1] # Cell id, Death type (-1 for sudden death, -2 for programmed cell death)

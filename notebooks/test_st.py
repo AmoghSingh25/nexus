@@ -127,9 +127,9 @@ def _():
                 "movement": {
                     "cell1": {
                         "qty_ratio": 1.0,
-                        "attraction_coeff": 1.0,
-                        "repulsion_coeff": 0.1,
-                        "drift_vel_coeff": 0.01,
+                        "attraction_coeff": 2.0,
+                        "repulsion_coeff": 0.5,
+                        "drift_vel_coeff": 0.1,
                         "random_vel_coeff": 0.01,
                     }
                 },
@@ -240,6 +240,7 @@ def _(SpatialSim, generate_config, jnp, load_st_data):
                         jnp.concatenate([arr, pad_vals], axis=0),
                     )
     return (
+        centered_positions,
         cfg,
         gene_matrix,
         n_cells_target,
@@ -278,7 +279,32 @@ def _(
         target_gene_conc=target_matrix,
         target_prot_conc=None,
     )
-    return (grn_sim,)
+    return grn_sim, target_matrix
+
+
+@app.cell
+def _(spatial_sim):
+    spatial_sim.run_sim()
+    return
+
+
+@app.cell
+def _(centered_positions, jnp, spatial_sim):
+    jnp.mean(jnp.abs(centered_positions - spatial_sim.mesh.cell_positions))
+    return
+
+
+@app.cell
+def _(centered_positions, plt, spatial_sim):
+    plt.figure(figsize=(12, 6))
+    plt.scatter(centered_positions[:, 0], centered_positions[:, 1], label="Initial position")
+    plt.scatter(spatial_sim.mesh.cell_positions[:, 0], spatial_sim.mesh.cell_positions[:, 1], label="After running sim")
+    plt.xlabel("X axis")
+    plt.ylabel("Y axis")
+    plt.title("Cell positions in spatial sim")
+    plt.legend()
+    plt.savefig("outputs/images/spatial_cell_positions.png", dpi=600)
+    return
 
 
 @app.cell
@@ -313,8 +339,9 @@ def _(grn_sim, nn):
 
 @app.cell
 def _(grn_sim, plt):
-    plt.plot(grn_sim.steady_states[:, 0])
-    plt.plot(grn_sim.target_gene_conc[:, 0])
+    plt.plot(grn_sim.steady_states[:, 0], label="Steady state")
+    plt.plot(grn_sim.target_gene_conc[:, 0], label="Target concentration")
+    plt.legend()
     return
 
 
@@ -325,11 +352,29 @@ def _(grn_sim):
 
 
 @app.cell
+def _(plt, target_matrix):
+    plt.plot(target_matrix[:, 0])
+    # plt.plot(grn_sim.steady_states[:, 0])
+    return
+
+
+@app.cell
+def _(grn_sim):
+    grn_sim.ki_matrix[:, 0]
+    return
+
+
+@app.cell
 def _(grn_sim, plt, ret_2, ret_3):
-    plt.plot(ret_2.gene_traj[-1][:, 0], label="Pred")
-    plt.plot(ret_3.gene_traj[-1][:, 0], label="Pred - 2")
-    plt.plot(grn_sim.target_gene_conc[:, 0], label="Orig")
+    plt.figure(figsize=(12,6))
+    plt.plot(ret_2.gene_traj[-1][:, 0], label="After 10 steps")
+    plt.plot(ret_3.gene_traj[-1][:, 0], label="After 20 steps")
+    plt.plot(grn_sim.steady_states[:, 0], label="Input value/Steady state")
+    plt.title("RNA concentration comparison post learning")
+    plt.xlabel("RNA id")
+    plt.ylabel("Conc.")
     plt.legend()
+    plt.savefig("outputs/images/learning_st_data.png", dpi=600)
     return
 
 

@@ -1,30 +1,48 @@
+from beartype.typing import TypeVar, Union, Tuple, Literal
 import copy
 from nexus.simulator.spatial.spatialSim import SpatialSim
 from nexus.simulator.grn.grnSim import GRNSim
 import jax.numpy as jnp
 import jax
+from beartype import beartype
+from jaxtyping import jaxtyped
+
+ARR = TypeVar("ARR", int, float)
+
+ScheduledInterven = Tuple[Literal["scheduled"], ARR]
+LoopInterven = Tuple[Literal["loop"], ARR, ARR, ARR]
+PulseInterven = Tuple[Literal["pulse"], ARR, ARR]
+
+TemporalIntervention = Union[
+    ScheduledInterven[ARR], LoopInterven[ARR], PulseInterven[ARR]
+]
 
 
+@jaxtyped(typechecker=beartype)
 class InterventionManager:
     def __init__(self, cfg, spatial_obj: SpatialSim, grn_obj: GRNSim):
         self.spatial_interventions = cfg.intervention.get("spatial_sim", [])
         self.grn_interventions = cfg.intervention.get("grn", [])
+        self.other_interventions = cfg.intervention.get("other", [])
 
         self.spatial_checkpoints = {}
         self.grn_checkpoints = {}
+        self.checkpoints = {}
 
         self.grn_obj = grn_obj
         self.spatial_obj = spatial_obj
 
-        self.process_interventions(
+        self.process_sim_interventions(
             cfg.spatial_sim,
             self.spatial_interventions,
             self.add_spatial_checkpoint,
             sim=self.spatial_obj.mesh,
         )
-        self.process_interventions(
+        self.process_sim_interventions(
             cfg.grn, self.grn_interventions, self.add_grn_checkpoint, sim=self.grn_obj
         )
+
+        self.process_interventions(self.other_interventions, self.add_checkpoint)
 
     def add_spatial_checkpoint(self, t, data):
         if self.spatial_checkpoints.get(t) is None:
@@ -38,12 +56,63 @@ class InterventionManager:
         else:
             self.grn_checkpoints[t].append(data)
 
-    def process_interventions(self, cfg, intervention_dict, add_checkpoint_func, sim):
+    def add_checkpoint(self, t, data):
+        if self.checkpoints.get(t) is None:
+            self.checkpoints[t] = [data]
+        else:
+            self.checkpoints[t].append(data)
+
+    def generate_temporal_checkpoints(
+        self,
+        temporal_params: TemporalIntervention,
+        add_checkpoint_func,
+        interven_i,
+        reverse_intervention=None,
+        n_steps=None,
+    ):
+        if temporal_params[0] == "scheduled":
+            add_checkpoint_func(temporal_params[1], interven_i)
+
+        elif temporal_params[0] == "pulse":
+            start_pulse = temporal_params[1]
+            end_pulse = temporal_params[2]
+
+            add_checkpoint_func(start_pulse, interven_i)
+            add_checkpoint_func(end_pulse, reverse_intervention)
+
+        elif temporal_params[0] == "loop":
+            start_loop = temporal_params[1]
+            loop_length = temporal_params[2]
+            gap = temporal_params[3]
+
+            start_i = start_loop
+            while start_i < n_steps:
+                add_checkpoint_func(start_i, interven_i)
+                add_checkpoint_func(start_i + loop_length, reverse_intervention)
+
+                start_i = start_i + loop_length + gap
+
+    def process_interventions(self, intervention_dict, add_checkpoint_func):
+        for intervention_i in intervention_dict:
+            intervention_type_i = intervention_i[0]
+            temporal_params = intervention_i[1]
+            interven_params = intervention_i[2]
+            interven_params.insert(0, intervention_type_i)
+            self.generate_temporal_checkpoints(
+                temporal_params=tuple(temporal_params),
+                add_checkpoint_func=add_checkpoint_func,
+                interven_i=interven_params,
+                reverse_intervention=None,
+            )
+
+    def process_sim_interventions(
+        self, cfg, intervention_dict, add_checkpoint_func, sim
+    ):
         for interven_i_conf in intervention_dict:
             interven_i = list(interven_i_conf)
             interven_param = interven_i[0]
             # interven_val = interven_i[1]
-            temporal_params = interven_i[2]
+            temporal_params: TemporalIntervention = tuple(interven_i[2])
             spatial_params = interven_i[3]
             curr_val = getattr(sim, interven_param)
             if spatial_params[0] == "index":
@@ -51,27 +120,13 @@ class InterventionManager:
             reverse_intervention = copy.deepcopy(interven_i)
             reverse_intervention[1] = curr_val
 
-            if temporal_params[0] == "scheduled":
-                add_checkpoint_func(temporal_params[1], interven_i)
-
-            elif temporal_params[0] == "pulse":
-                start_pulse = temporal_params[1]
-                end_pulse = temporal_params[2]
-
-                add_checkpoint_func(start_pulse, interven_i)
-                add_checkpoint_func(end_pulse, reverse_intervention)
-
-            elif temporal_params[0] == "loop":
-                start_loop = temporal_params[1]
-                loop_length = temporal_params[2]
-                gap = temporal_params[3]
-
-                start_i = start_loop
-                while start_i < cfg.get("n_steps"):
-                    add_checkpoint_func(start_i, interven_i)
-                    add_checkpoint_func(start_i + loop_length, reverse_intervention)
-
-                    start_i = start_i + loop_length + gap
+            self.generate_temporal_checkpoints(
+                temporal_params=tuple(temporal_params),
+                add_checkpoint_func=add_checkpoint_func,
+                interven_i=interven_i,
+                reverse_intervention=reverse_intervention,
+                n_steps=cfg.get("n_steps"),
+            )
 
     def perform_intervention(
         self, sim_obj, interven_param, spatial_scope, interven_val, param
@@ -122,4 +177,28 @@ class InterventionManager:
                 )
 
             # Perform interventions on the grn sim
+        if t in self.checkpoints:
+            for intervention_i in self.checkpoints[t]:
+                intervention_type = intervention_i[0]
+                if intervention_type == "add_cell":
+                    self.spatial_obj.mesh.add_cell(
+                        pos=jnp.array(intervention_i[1]).reshape(1, -1),
+                        cell_state=jnp.array([[intervention_i[2]]]),
+                        new_radius=jnp.array([[intervention_i[3]]]),
+                        parent_cell_id=intervention_i[4],
+                    )
+                elif (
+                    intervention_type == "remove_cell" or intervention_type == "ablate"
+                ):
+                    selected_cells = jnp.zeros_like(
+                        self.spatial_obj.mesh.cell_states
+                    ).astype(jnp.bool)
+                    selected_cells = selected_cells.at[
+                        jnp.array(intervention_i[1])
+                    ].set(1)
+                    if intervention_i[2] == -1:
+                        self.spatial_obj.mesh.kill_cells(selected_cells)
+                    else:
+                        self.spatial_obj.mesh.prg_death_cell(selected_cells)
+
         return self.spatial_obj

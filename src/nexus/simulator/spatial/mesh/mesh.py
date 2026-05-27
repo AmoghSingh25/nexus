@@ -1,4 +1,4 @@
-from jaxtyping import Array, Float, Bool, Int
+from jaxtyping import Array, Float, Bool, Int, Num
 import jax.numpy as jnp
 import jax
 from jax import random
@@ -489,9 +489,9 @@ class Mesh:
 
     def add_cell(
         self,
-        pos: Float[Array, "2"],
-        cell_state: int,
-        new_radius: float,
+        pos: Num[Array, "1 3"],
+        cell_state: Int[Array, "1 1"],
+        new_radius: Float[Array, "1 1"],
         parent_cell_id: int,
     ):
         """
