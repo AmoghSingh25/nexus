@@ -8,9 +8,10 @@ app = marimo.App(width="medium")
 def _():
     import matplotlib.pyplot as plt
     import matplotlib
+    from jax import nn
 
     matplotlib.style.use("default")
-    return (plt,)
+    return nn, plt
 
 
 @app.cell
@@ -26,8 +27,8 @@ def _():
 
     sys.path.append(os.getcwd())
 
-    from src.nexus.simulator.spatial.spatialSim import SpatialSim
-    from src.nexus.simulator.grn.grnSim import GRNSim
+    from nexus.simulator.spatial.spatialSim import SpatialSim
+    from nexus.simulator.grn.grnSim import GRNSim
 
 
     def load_st_data(
@@ -186,15 +187,10 @@ def _(SpatialSim, generate_config, jnp, load_st_data):
         cells_path, transcripts_path, n_cells_target, n_genes_target
     )
 
-    print(f"Extracted positions shape: {positions.shape}")
-    print(f"Extracted gene_matrix shape: {gene_matrix.shape}")
-
     min_x, max_x = jnp.min(positions[:, 0]), jnp.max(positions[:, 0])
     min_y, max_y = jnp.min(positions[:, 1]), jnp.max(positions[:, 1])
-    width = max_x - min_x + 10.0  # Add some padding
+    width = max_x - min_x + 10.0
     height = max_y - min_y + 10.0
-
-    print(f"Spatial Mesh size: width={width:.2f}, height={height:.2f}")
 
     centered_positions = positions - jnp.array(
         [(max_x + min_x) / 2, (max_y + min_y) / 2, 0]
@@ -282,155 +278,58 @@ def _(
         target_gene_conc=target_matrix,
         target_prot_conc=None,
     )
-    return grn_sim, mean_gene, target_matrix
-
-
-@app.cell
-def _(grn_sim):
-    grn_sim.run_sim()
-    return
-
-
-@app.cell
-def _(grn_sim, plt):
-    plt.plot(grn_sim.gene_conc[:, 0])
-    return
+    return (grn_sim,)
 
 
 @app.cell
 def _(grn_sim, nn):
-    grn_sim.basal_rates = nn.sigmoid(grn_sim.learnt_gene_params["basal_rates"])
-    grn_sim.decay = nn.sigmoid(grn_sim.learnt_gene_params["decay"])
+    grn_sim.basal_rates = nn.softplus(grn_sim.learnt_gene_params["basal_rates"])
+    grn_sim.decay = nn.softplus(grn_sim.learnt_gene_params["decay"])
     grn_sim.ki_matrix = grn_sim.learnt_gene_params["ki_matrix"]
     grn_sim.hill_coeffs = grn_sim.learnt_gene_params["hill_coeffs"]
+
     grn_sim.steady_states, grn_sim.prot_steady_state, _, _ = (
         grn_sim.calc_steady_states(learn_params=False)
     )
-    return
+    learnt_gene_params, learnt_prot_params = grn_sim.learn_params_fn()
+
+    # 2. Update the simulator parameters with the optimized values
+    grn_sim.basal_rates = learnt_gene_params["basal_rates"]
+    grn_sim.decay = learnt_gene_params["decay"]
+    grn_sim.ki_matrix = learnt_gene_params["ki_matrix"]
+    grn_sim.hill_coeffs = learnt_gene_params["hill_coeffs"]
+
+    if grn_sim.protein_sim:
+        grn_sim.prot_tran_rates = nn.softplus(learnt_prot_params["prot_tran_rates"])
+        grn_sim.prot_decay = nn.softplus(learnt_prot_params["prot_decay"])
+
+    grn_sim.gene_conc = grn_sim.steady_states
+    if grn_sim.protein_sim:
+        grn_sim.prot_conc = grn_sim.prot_steady_state
+
+    ret_2 = grn_sim.run_sim()
+    return (ret_2,)
 
 
 @app.cell
-def _(grn_sim, plt, target_matrix):
-    for _i in range(10):
-        plt.plot(target_matrix[:, _i], label="Orig")
-        plt.show()
-        plt.plot(grn_sim.steady_states[:, _i], label="Pred")
-        plt.legend()
-        plt.show()
+def _(grn_sim, plt):
+    plt.plot(grn_sim.steady_states[:, 0])
+    plt.plot(grn_sim.target_gene_conc[:, 0])
     return
 
 
 @app.cell
 def _(grn_sim):
-    grn_sim.run_sim()
-    return
+    ret_3 = grn_sim.run_sim()
+    return (ret_3,)
 
 
 @app.cell
-def _(grn_sim, plt):
-    plt.plot(grn_sim.basal_rates[:, 0])
-    plt.plot(grn_sim.decay[0, :])
-    return
-
-
-@app.cell
-def _(grn_sim, plt):
-    plt.plot(grn_sim.gene_conc[:, 0])
-    return
-
-
-@app.cell
-def _():
-    from jax import nn
-
-    return (nn,)
-
-
-@app.cell
-def _(grn_sim):
-    learn_gene, learn_prot = grn_sim.learn_params_fn(epochs=500)
-    return (learn_gene,)
-
-
-@app.cell
-def _(grn_sim, learn_gene, nn):
-    grn_sim.basal_rates = nn.sigmoid(learn_gene["basal_rates"])
-    grn_sim.decay = nn.sigmoid(learn_gene["decay"])
-    grn_sim.ki_matrix = learn_gene["ki_matrix"]
-    grn_sim.hill_coeffs = learn_gene["hill_coeffs"]
-    # grn_sim.steady_states, grn_sim.prot_steady_state, _, _ = (
-    #     grn_sim.calc_steady_states(learn_params=False)
-    # )
-    return
-
-
-@app.cell
-def _(grn_sim, plt):
-    plt.plot(grn_sim.gene_conc[:, 0])
-    return
-
-
-@app.cell
-def _(grn_sim, plt):
-    plt.plot(grn_sim.basal_rates[:, 0])
-    plt.plot(grn_sim.decay[0, :])
-    return
-
-
-@app.cell
-def _(grn_sim):
-    ret = grn_sim.run_sim()
-    return (ret,)
-
-
-@app.cell
-def _(grn_sim, plt):
-    plt.plot(grn_sim.target_gene_conc[:, 1])
-    return
-
-
-@app.cell
-def _(ret):
-    ret.gene_traj[-1].shape
-    return
-
-
-@app.cell
-def _(plt, ret):
-    plt.plot(ret.gene_traj[0][:, 1, 0])
-    return
-
-
-@app.cell
-def _(plt, target_matrix):
-    plt.plot(target_matrix[:, 0])
-    plt.plot(target_matrix[:, 1])
-    return
-
-
-@app.cell
-def _():
-    # 500 - N Genes
-    # 100 - N cells
-    return
-
-
-@app.cell
-def _(grn_sim, plt, target_matrix):
-    plt.plot(grn_sim.gene_conc[0, :], label="Pred")
-    plt.plot(target_matrix[0, :], label="Target")
+def _(grn_sim, plt, ret_2, ret_3):
+    plt.plot(ret_2.gene_traj[-1][:, 0], label="Pred")
+    plt.plot(ret_3.gene_traj[-1][:, 0], label="Pred - 2")
+    plt.plot(grn_sim.target_gene_conc[:, 0], label="Orig")
     plt.legend()
-    plt.show()
-    return
-
-
-@app.cell
-def _(grn_sim, mean_gene, plt, target_matrix):
-    plt.plot(grn_sim.gene_conc[:, 0], label="Pred")
-    plt.plot(mean_gene, label="Target mean")
-    plt.plot(target_matrix[:, 0], label="Target single")
-    plt.legend()
-    plt.show()
     return
 
 

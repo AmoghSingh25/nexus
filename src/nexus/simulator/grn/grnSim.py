@@ -440,13 +440,13 @@ class GRNSim:
                     n_cells_range,
                     n_genes_range,
                     is_mr,
-                    nn.sigmoid(params["basal_rates"]),
-                    nn.sigmoid(params["decay"]),
+                    nn.softplus(params["basal_rates"]),
+                    nn.softplus(params["decay"]),
                     params["ki_matrix"],
                     gene_conc,
                     params["hill_coeffs"],
                     nn.softplus(params_prot["prot_tran_rates"]),
-                    nn.sigmoid(params_prot["prot_decay"]),
+                    nn.softplus(params_prot["prot_decay"]),
                 )
                 p_conc = jnp.clip(p_conc, min=jnp.min(target_conc))
 
@@ -454,6 +454,7 @@ class GRNSim:
                 l2_prot_coeff = 1e-4
                 if target_conc.ndim == 3:
                     target_conc = target_conc.squeeze(2)
+                print(" - ", g_conc.shape, target_conc.shape)
                 loss = lax.cond(
                     target_gene,
                     lambda _: (
@@ -743,47 +744,61 @@ class GRNSim:
         if epochs is None:
             epochs = self.epochs
 
+        start_gene_conc = self.target_gene_conc.reshape(self.n_genes, self.n_cells, 1)
+
+        if self.protein_sim:
+            start_prot_conc = self.target_prot_conc.reshape(
+                self.n_genes, self.n_cells, 1
+            )
+        else:
+            start_prot_conc = jnp.zeros_like(start_gene_conc)
+
         def loss_target(
             params,
             params_prot,
             n_cells_range,
-            n_genes_range,
-            is_mr,
             gene_conc,
+            prot_conc,
             target_conc,
-            prot_tran_rates,
             target_gene=True,
         ):
             wiener_noise_a = self.noise_a
             wiener_noise_b = self.noise_b
+
+            hill_coeffs_clipped = jnp.clip(params["hill_coeffs"], 1.0, 4.0)
+
             _gene_conc, _prot_conc = self.jit_x_t(
-                self.gene_conc,
-                self.prot_conc,
+                gene_conc,
+                prot_conc,
                 self.delta,
-                nn.sigmoid(params["decay"]),
+                nn.softplus(params["decay"]),
                 nn.softplus(params["basal_rates"]),
                 params["ki_matrix"],
                 self.is_mr,
                 self.noise_amp,
-                params["hill_coeffs"],
+                hill_coeffs_clipped,
                 nn.softplus(params_prot["prot_tran_rates"]),
-                nn.sigmoid(params_prot["prot_decay"]),
+                nn.softplus(params_prot["prot_decay"]),
                 wiener_noise_a[0],
                 wiener_noise_b[0],
             )
-            p_conc = jnp.clip(_prot_conc, min=jnp.min(target_conc))
+
+            _gene_conc_clipped = jnp.clip(_gene_conc, min=0.0)
+            _prot_conc_clipped = jnp.clip(_prot_conc, min=jnp.min(target_conc))
 
             l2_gene_coeff = 1e-4
             l2_prot_coeff = 1e-4
-            if target_conc.ndim == 3:
-                target_conc = target_conc.squeeze(2)
 
             loss = lax.cond(
                 target_gene,
                 lambda _: (
                     jnp.sqrt(
                         jnp.sum(
-                            (jnp.log1p(target_conc) - jnp.log1p(_gene_conc)) ** 2,
+                            (
+                                jnp.log1p(target_conc.squeeze(2))
+                                - jnp.log1p(_gene_conc_clipped)
+                            )
+                            ** 2,
                             dtype=jnp.float32,
                         )
                     ).astype(jnp.float32)
@@ -792,7 +807,11 @@ class GRNSim:
                 lambda _: (
                     jnp.sqrt(
                         jnp.sum(
-                            (jnp.log1p(target_conc) - jnp.log1p(p_conc)) ** 2,
+                            (
+                                jnp.log1p(target_conc.squeeze(2))
+                                - jnp.log1p(_prot_conc_clipped)
+                            )
+                            ** 2,
                             dtype=jnp.float32,
                         )
                     ).astype(jnp.float32)
@@ -805,30 +824,26 @@ class GRNSim:
         grad_loss_gene = jit(grad(loss_target, argnums=0))
         grad_loss_prot = jit(grad(loss_target, argnums=1))
         calc_loss = jit(loss_target)
-        calc_loss = jit(loss_target)
-        basal_rates = self.basal_rates
-        decay = self.decay
-        ki_matrix = self.ki_matrix
-        hill_coeffs = self.hill_coeffs
-        prot_tran_rates = self.prot_tran_rates
-        prot_decay = self.prot_decay
 
         params_gene = {
-            "basal_rates": basal_rates,
-            "decay": decay,
-            "ki_matrix": ki_matrix,
-            "hill_coeffs": hill_coeffs,
+            "basal_rates": self.basal_rates,
+            "decay": self.decay,
+            "ki_matrix": self.ki_matrix,
+            "hill_coeffs": self.hill_coeffs,
         }
         params_prot = {
-            "prot_tran_rates": prot_tran_rates,
-            "prot_decay": prot_decay,
+            "prot_tran_rates": self.prot_tran_rates,
+            "prot_decay": self.prot_decay,
         }
-        # scheduler = optax.cosine_decay_schedule(init_value=self.lr, decay_steps=epochs)
+
+        scheduler = optax.cosine_decay_schedule(
+            init_value=self.lr, decay_steps=self.epochs
+        )
         scheduler_prot = optax.cosine_decay_schedule(
-            init_value=self.lr, decay_steps=epochs
+            init_value=self.lr, decay_steps=self.epochs
         )
 
-        optimizer = optax.inject_hyperparams(optax.adam)(learning_rate=self.lr)
+        optimizer = optax.inject_hyperparams(optax.adam)(learning_rate=scheduler)
         optimizer_prot = optax.chain(
             optax.clip_by_global_norm(1.0),
             optax.inject_hyperparams(optax.adam)(learning_rate=scheduler_prot),
@@ -836,69 +851,58 @@ class GRNSim:
 
         opt_state = optimizer.init(params_gene)
         opt_state_prot = optimizer_prot.init(params_prot)
-        losses = []
 
         for e_i in range(epochs):
-            logging.info(f"\tEpoch - {e_i}")
             if self.learn_gene:
                 grad_gene = grad_loss_gene(
                     params_gene,
                     params_prot,
                     jnp.arange(self.n_cells),
-                    jnp.arange(self.n_genes),
-                    self.is_mr,
-                    self.gene_conc,
-                    target_conc=self.target_gene_conc,
-                    prot_tran_rates=prot_tran_rates,
+                    start_gene_conc,
+                    start_prot_conc,
+                    self.target_gene_conc,
                 )
                 updates, opt_state = optimizer.update(grad_gene, opt_state)
                 params_gene = optax.apply_updates(params_gene, updates)
-            if e_i % 50 == 0:
-                if self.learn_gene:
-                    loss_i = calc_loss(
-                        params_gene,
-                        params_prot,
-                        jnp.arange(self.n_cells),
-                        jnp.arange(self.n_genes),
-                        self.is_mr,
-                        self.gene_conc,
-                        target_conc=self.target_gene_conc,
-                        prot_tran_rates=prot_tran_rates,
-                    )
-                    print(
-                        f"Epoch - {e_i} Loss = {loss_i} Learing rate = {opt_state.hyperparams['learning_rate']}"
-                    )
-                if self.learn_prot:
-                    loss_i_prot = calc_loss(
-                        params_gene,
-                        params_prot,
-                        jnp.arange(self.n_cells),
-                        jnp.arange(self.n_genes),
-                        self.is_mr,
-                        self.gene_conc,
-                        target_conc=self.target_prot_conc,
-                        prot_tran_rates=prot_tran_rates,
-                        target_gene=False,
-                    )
-                    print(f"Prot loss = {loss_i_prot}")
-                losses.append(loss_i)
 
             if self.learn_prot:
                 grad_prot = grad_loss_prot(
                     params_gene,
                     params_prot,
                     jnp.arange(self.n_cells),
-                    jnp.arange(self.n_genes),
-                    self.is_mr,
-                    self.gene_conc,
-                    target_conc=self.target_prot_conc,
-                    prot_tran_rates=prot_tran_rates,
-                    target_gene=False,
+                    start_gene_conc,
+                    start_prot_conc,
+                    self.target_prot_conc,
+                    False,
                 )
                 updates, opt_state_prot = optimizer_prot.update(
                     grad_prot, opt_state_prot
                 )
                 params_prot = optax.apply_updates(params_prot, updates)
+
+            if e_i % 50 == 0:
+                if self.learn_gene:
+                    loss_i = calc_loss(
+                        params_gene,
+                        params_prot,
+                        jnp.arange(self.n_cells),
+                        start_gene_conc,
+                        start_prot_conc,
+                        self.target_gene_conc,
+                    )
+                    print(f"Epoch - {e_i} Gene Loss = {loss_i}")
+                if self.learn_prot:
+                    loss_i_prot = calc_loss(
+                        params_gene,
+                        params_prot,
+                        jnp.arange(self.n_cells),
+                        start_gene_conc,
+                        start_prot_conc,
+                        self.target_prot_conc,
+                        False,
+                    )
+                    print(f"Epoch - {e_i} Prot Loss = {loss_i_prot}")
+
         return params_gene, params_prot
 
     @jaxtyped(typechecker=beartype)
