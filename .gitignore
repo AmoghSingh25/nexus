@@ -17,3 +17,4 @@ notebooks/testing_triangulation.py
 pytestdebug.log
 node_modules/
 ST_Data/
+notebooks/test_*/
