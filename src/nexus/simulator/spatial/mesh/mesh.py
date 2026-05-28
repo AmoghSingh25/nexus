@@ -211,6 +211,8 @@ class Mesh:
         self.n_neighbours = cfg.get("n_neighbours", 3)
 
         ## Diffusion
+        self.chem_generators = {}
+
         self.diffusion_bool = cfg.diffusion_bool
         # self.field_D = []
         self.field_vol = []
@@ -432,11 +434,27 @@ class Mesh:
             chem_mass_i = self.field_chem[i]
             prev_mass += jnp.sum(chem_mass_i)
             chem_mass_i += delta_m_l[i]
+
+            if i.item() in self.chem_generators:
+                for chem_i in self.chem_generators[i.item()]:
+                    chem_mass_i = chem_mass_i.at[chem_i[0]].set(
+                        chem_mass_i[chem_i[0]] + chem_mass_i[chem_i[0]] * chem_i[1]
+                    )
+
             self.field_chem = self.field_chem.at[i].set(chem_mass_i)
             new_mass += jnp.sum(chem_mass_i)
             self.field_flux[i] = {}
 
         self.delta_m = prev_mass - new_mass
+
+    def add_chem_generator(
+        self, pos: Float[Array, "1 axes"], compound_id: int, rate: float = 0.0
+    ):
+        field_assigned = self.get_closest_field(pos=pos).item()
+        if self.chem_generators.get(field_assigned) is None:
+            self.chem_generators[field_assigned] = [(compound_id, rate)]
+        else:
+            self.chem_generators[field_assigned].append((compound_id, rate))
 
     def calc_movement(self):
         """
@@ -886,12 +904,28 @@ class Mesh:
         neigh_idxs = jnp.argsort(l1_norm)[1 : K + 1]
         return neigh_idxs, l1_norm[neigh_idxs]
 
+    def get_closest_field(
+        self,
+        pos: Float[Array, "1 axes"],
+        norm_ord: int = 1,
+        clustering_type: str = "norm",
+    ):
+        if clustering_type == "norm":
+            new_field_assgn = jnp.argmin(
+                jnp.linalg.norm(pos - self.field_positions, ord=norm_ord, axis=0),
+            )
+            return new_field_assgn
+        elif clustering_type == "k_mean":
+            assigned_fields, cluster_means = k_mean_clustering(3, self.cell_positions)
+            return assigned_fields
+
     def get_assigned_fields(self, norm_ord: int = 1, clustering_type: str = "norm"):
         """
-        Function to return field ID of the field closest to the cell position passed
+        Calculate field IDs of the field closest to the cell positions
 
         :param self: Mesh
-        :param cell_pos: Cell position to find the closest field
+        :param norm_ord: Order of the norm to be used
+        :param clustering_type: Type of clustering to use for assigning the fields - "norm" | "k_mean"
         """
         if clustering_type == "norm":
             rep_pos = jnp.repeat(

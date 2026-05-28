@@ -130,3 +130,6 @@ intervention:
     - - "ablate" ## alias remove_cell
       - ["scheduled", 2]
       - [[2], -1] # Cell id, Death type (-1 for sudden death, -2 for programmed cell death)
+    - - "add_particle"
+      - ["scheduled", 1]
+      - [[0.1, 0.1, 0.1], 0, 0.1]
