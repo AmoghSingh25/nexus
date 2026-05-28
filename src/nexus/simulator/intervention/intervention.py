@@ -92,6 +92,16 @@ class InterventionManager:
 
                 start_i = start_i + loop_length + gap
 
+    def generate_values(self, intervention_type):
+        if intervention_type[0] == "hard":
+            return ("hard", intervention_type[1])
+        elif intervention_type[0] == "soft":
+            match intervention_type[1]:
+                case "shift":
+                    return ("soft", intervention_type[2])
+                case _:
+                    raise ValueError("Invalid intervention type")
+
     def process_interventions(self, intervention_dict, add_checkpoint_func):
         for intervention_i in intervention_dict:
             intervention_type_i = intervention_i[0]
@@ -111,14 +121,20 @@ class InterventionManager:
         for interven_i_conf in intervention_dict:
             interven_i = list(interven_i_conf)
             interven_param = interven_i[0]
-            # interven_val = interven_i[1]
+            intervention_type = interven_i[1]
             temporal_params: TemporalIntervention = tuple(interven_i[2])
             spatial_params = interven_i[3]
             curr_val = getattr(sim, interven_param)
             if spatial_params[0] == "index":
                 curr_val = curr_val[jnp.array(spatial_params[1])].tolist()
-            reverse_intervention = copy.deepcopy(interven_i)
-            reverse_intervention[1] = curr_val
+
+            ## Only reverse the intervention if it is a hard intervention and is a looped or pulsed intervention
+            reverse_intervention = None
+            if intervention_type[0] == "hard" and (
+                temporal_params[0] == "loop" or temporal_params[0] == "pulse"
+            ):
+                reverse_intervention = copy.deepcopy(interven_i)
+                reverse_intervention[1][1] = curr_val
 
             self.generate_temporal_checkpoints(
                 temporal_params=tuple(temporal_params),
@@ -128,55 +144,59 @@ class InterventionManager:
                 n_steps=cfg.get("n_steps"),
             )
 
-    def perform_intervention(
-        self, sim_obj, interven_param, spatial_scope, interven_val, param
-    ):
+    def perform_intervention(self, sim_obj, interven_type, spatial_scope, param_name):
+        curr_val = getattr(sim_obj, param_name)
         if spatial_scope[0] == "index":
             cell_range = jnp.array(spatial_scope[1])
         else:
-            cell_range = jnp.array(range(len(param)))
-        if isinstance(param, jax.Array):
-            param = param.at[cell_range].set(interven_val)
+            cell_range = jnp.array(range(len(curr_val)))
+
+        if interven_type[0] == "hard":
+            interven_val = interven_type[1]
+        elif interven_type[0] == "soft":
+            match interven_type[1]:
+                case "shift":
+                    interven_val = curr_val[cell_range] + interven_type[2]
+
+        if isinstance(curr_val, jax.Array):
+            curr_val = curr_val.at[cell_range].set(interven_val)
         else:
-            param[cell_range] = interven_val
-        setattr(sim_obj, interven_param, param)
+            curr_val[cell_range] = interven_val
+        setattr(sim_obj, param_name, curr_val)
 
     def check(self, t):
         ## TODO: Fix getting values before intervention
+
+        # Perform interventions on the spatial sim
         if t in self.spatial_checkpoints:
-            # Perform interventions on the spatial sim
             for i in self.spatial_checkpoints[t]:
-                interven_param = i[0]
-                interven_val = i[1]
+                interven_param_name = i[0]
+                interven_type = i[1]
                 # temporal_scope = i[2]
                 spatial_scope = i[3]
 
-                param = getattr(self.spatial_obj.mesh, interven_param)
                 self.perform_intervention(
                     self.spatial_obj.mesh,
-                    interven_param=interven_param,
+                    interven_type=interven_type,
                     spatial_scope=spatial_scope,
-                    interven_val=interven_val,
-                    param=param,
+                    param_name=interven_param_name,
                 )
 
+        # Perform interventions on the grn sim
         if t in self.grn_checkpoints:
             for i in self.grn_checkpoints[t]:
-                interven_param = i[0]
-                interven_val = i[1]
+                interven_param_name = i[0]
+                interven_type = i[1]
                 # temporal_scope = i[2]
                 spatial_scope = i[3]
 
-                param = getattr(self.grn_obj, interven_param)
                 self.perform_intervention(
                     self.grn_obj,
-                    interven_param=interven_param,
+                    interven_type=interven_type,
                     spatial_scope=spatial_scope,
-                    interven_val=interven_val,
-                    param=param,
+                    param_name=interven_param_name,
                 )
 
-            # Perform interventions on the grn sim
         if t in self.checkpoints:
             for intervention_i in self.checkpoints[t]:
                 intervention_type = intervention_i[0]
