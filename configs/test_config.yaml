@@ -4,7 +4,7 @@ grn:
   ## Simulation related
   n_cells: 8
   delta: 0.01
-  n_steps: 5
+  n_steps: 10
   config_file: "configs/sample_data/sample_network_1cell.yaml"
   random_key: 42
   logging: true
@@ -44,7 +44,7 @@ spatial_sim:
 
   ## Simulation Related
   delta: 0.01
-  n_steps: 5
+  n_steps: 10
   random_key: 42
   logging: true
   log_dir: "logs"
@@ -132,4 +132,10 @@ intervention:
       - [[2], -1] # Cell id, Death type (-1 for sudden death, -2 for programmed cell death)
     - - "add_particle"
       - ["scheduled", 3]
-      - [[0.1, 0.1, 0.1], 0, 0.1]
+      - [[0.1, 0.1, 0.1], 0, 0.1] # Pos, Chemical, Ratio of increase/decrease
+    - - "remove_particle"
+      - ["scheduled", 8]
+      - [[0.1, 0.1, 0.1], 0] # Location, chemical_id
+    - - "set_particle"
+      - ["scheduled", 5]
+      - [[0.1, 0.1, 0.1], 0, 0.4] # Location, chemical_id, new rate

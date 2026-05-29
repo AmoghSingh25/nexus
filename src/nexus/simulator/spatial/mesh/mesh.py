@@ -431,6 +431,7 @@ class Mesh:
         prev_mass = 0
         new_mass = 0
 
+        print(self.chem_generators)
         for i in self.field_id:
             chem_mass_i = self.field_chem[i]
             prev_mass += jnp.sum(chem_mass_i)
@@ -457,6 +458,23 @@ class Mesh:
             self.chem_generators[field_assigned] = [(compound_id, rate)]
         else:
             self.chem_generators[field_assigned].append((compound_id, rate))
+
+    def modify_chem_generator(
+        self,
+        pos: Float[Array, "1 axes"],
+        compound_id: int,
+        new_rate: float | None = 0.0,
+        delete_generator: bool = False,
+    ):
+        field_assigned = self.get_closest_field(pos=pos).item()
+        if self.chem_generators.get(field_assigned) is None:
+            return
+
+        for i in range(len(self.chem_generators[field_assigned])):
+            if self.chem_generators[field_assigned][i][0] == compound_id:
+                self.chem_generators[field_assigned].pop(i)
+                if not delete_generator:
+                    self.chem_generators[field_assigned].append((compound_id, new_rate))
 
     def calc_movement(self):
         """
