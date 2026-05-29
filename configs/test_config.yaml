@@ -4,7 +4,7 @@ grn:
   ## Simulation related
   n_cells: 8
   delta: 0.01
-  n_steps: 10
+  n_steps: 5
   config_file: "configs/sample_data/sample_network_1cell.yaml"
   random_key: 42
   logging: true
@@ -39,12 +39,12 @@ spatial_sim:
 
   ## Diffusion related
   D: 0.5
-  diffusion_bool: true
+  diffusion_bool: false
   n_neighbours: 1
 
   ## Simulation Related
   delta: 0.01
-  n_steps: 10
+  n_steps: 5
   random_key: 42
   logging: true
   log_dir: "logs"
@@ -99,7 +99,7 @@ spatial_sim:
       - 3
 
   ## Reactions
-  reaction_bool: true
+  reaction_bool: false
   reaction_prob: false
   reaction:
     reac_3: # Decay of chemical
@@ -131,5 +131,5 @@ intervention:
       - ["scheduled", 2]
       - [[2], -1] # Cell id, Death type (-1 for sudden death, -2 for programmed cell death)
     - - "add_particle"
-      - ["scheduled", 1]
+      - ["scheduled", 3]
       - [[0.1, 0.1, 0.1], 0, 0.1]

@@ -88,7 +88,8 @@ class InterventionManager:
             start_i = start_loop
             while start_i < n_steps:
                 add_checkpoint_func(start_i, interven_i)
-                add_checkpoint_func(start_i + loop_length, reverse_intervention)
+                if reverse_intervention is not None:
+                    add_checkpoint_func(start_i + loop_length, reverse_intervention)
 
                 start_i = start_i + loop_length + gap
 
@@ -221,6 +222,7 @@ class InterventionManager:
                     else:
                         self.spatial_obj.mesh.prg_death_cell(selected_cells)
                 elif intervention_type == "add_particle":
+                    print("ADDING PARTICLE")
                     self.spatial_obj.mesh.add_chem_generator(
                         pos=jnp.array(intervention_i[1]).reshape(1, -1),
                         compound_id=intervention_i[2],

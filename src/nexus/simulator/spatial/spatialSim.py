@@ -39,7 +39,7 @@ class SpatialSim:
             self.logger = FieldLogger(
                 log_dir=self.base_log_dir,
                 file_name=self.timestamp,
-                n_steps=cfg.n_steps,
+                n_steps=cfg.n_steps + 1,
                 n_cells=self.mesh.n_fields,
                 n_chems=len(cfg["chemical"].name),
                 n_reactions=0 if not cfg.reaction_bool else len(cfg.reaction),
@@ -64,13 +64,12 @@ class SpatialSim:
 
         :param self: SpatialSim object
         """
-
-        self.logging and self.logger.log_chem_state(
-            step=0, field_chem=self.mesh.field_chem
-        )
         if step is None:
-            for i in tqdm(range(self.n_steps)):
-                self.mesh.step(step_i=i + 1, logger=self.logger)
+            self.logging and self.logger.log_chem_state(
+                step=0, field_chem=self.mesh.field_chem
+            )
+            for i in tqdm(range(1, self.n_steps + 1)):
+                self.mesh.step(step_i=i, logger=self.logger)
                 if self.logging:
                     self.pos_logger.log_cell_pos(
                         i,
@@ -79,9 +78,8 @@ class SpatialSim:
                         self.mesh.cell_states,
                     )
 
-            ##DEBUG: Error in mesh.field_chem for GridMesh
             self.logging and self.logger.log_chem_state(
-                self.n_steps, field_chem=self.mesh.field_chem
+                self.n_steps + 1, field_chem=self.mesh.field_chem
             )
         else:
             self.mesh.step(step_i=step, logger=self.logger)

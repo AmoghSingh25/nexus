@@ -18,6 +18,7 @@ from nexus.simulator.spatial.layers.chemical import (
 from nexus.simulator.spatial.layers.force import calc_vel
 from nexus.simulator.spatial.utils.verify_data import check_cell_type_data
 from nexus.simulator.spatial.mesh.clustering_field import k_mean_clustering
+from beartype.typing import Dict, Tuple
 
 
 class Mesh:
@@ -211,7 +212,7 @@ class Mesh:
         self.n_neighbours = cfg.get("n_neighbours", 3)
 
         ## Diffusion
-        self.chem_generators = {}
+        self.chem_generators: Dict[int, Tuple[float]] = {}
 
         self.diffusion_bool = cfg.diffusion_bool
         # self.field_D = []
@@ -433,7 +434,8 @@ class Mesh:
         for i in self.field_id:
             chem_mass_i = self.field_chem[i]
             prev_mass += jnp.sum(chem_mass_i)
-            chem_mass_i += delta_m_l[i]
+            if self.diffusion_bool:
+                chem_mass_i += delta_m_l[i]
 
             if i.item() in self.chem_generators:
                 for chem_i in self.chem_generators[i.item()]:
@@ -811,13 +813,9 @@ class Mesh:
         :param delta: Simulation delta
         :param logger: mesh_logger object
         """
-
         # Perform diffusion
-        if self.diffusion_bool:
-            self.calc_conc_change()
-            logger is not None and print(
-                f"Step - {step_i}, Delta M = {self.delta_m:.4e}"
-            )
+        self.calc_conc_change()
+        logger is not None and print(f"Step - {step_i}, Delta M = {self.delta_m:.4e}")
 
         # Perform reactions
         if self.reaction_bool:
