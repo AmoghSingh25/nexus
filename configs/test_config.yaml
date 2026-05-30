@@ -38,7 +38,8 @@ spatial_sim:
   n_cell_type: 2
 
   ## Diffusion related
-  D: 0.5
+  # D: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+  D: 0.2
   diffusion_bool: false
   n_neighbours: 1
 
@@ -117,6 +118,10 @@ intervention:
     - - "cell_target_vol"
       - ["soft", "shift", 0.1]
       - ["loop", 1, 2, 4] # Type(Loop), Loop start time, loop length, gap between loops
+      - ["index", [1, 2, 3]]
+    - - "cell_residual_vel"
+      - ["hard", [[0.1, 0.2, 0.3]]]
+      - ["scheduled", 2]
       - ["index", [1, 2, 3]]
   grn:
     - - "decay"

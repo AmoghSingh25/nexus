@@ -129,6 +129,7 @@ class Mesh:
             self.cell_drift_vel_coeff,
             self.cell_random_vel_coeff,
             self.cell_death_decay_coeff,
+            self.cell_residual_vel,
         ) = check_cell_type_data(
             key=self.key, sub_key=self.sub_key, n_cells=self.n_cells, cfg=cfg
         )
@@ -241,6 +242,13 @@ class Mesh:
         self.field_keys = jnp.array(self.field_keys)
         self.field_id = jnp.array(self.field_id)
 
+        if isinstance(cfg.get("D"), float):
+            self.field_D = jnp.array(cfg.get("D")).repeat(self.field_id.shape[0])
+        else:
+            assert len(cfg.get("D")) == len(self.field_id), (
+                "Number of D values must be equal to the number of fields"
+            )
+            self.field_D = jnp.array(cfg.get("D")).reshape(self.field_id.shape)
         ## Reaction
 
         self.chemicals = []
@@ -337,6 +345,7 @@ class Mesh:
         field_mass = []
         field_vol = []
         flux = jnp.zeros((self.n_chemicals, 1))
+        field_D = []
         for field_i_id in self.field_neighbours[curr_field_id]:
             field_i = self.field_id[int(field_i_id)].item()
             if self.field_flux[curr_field_id].get(field_i) is not None:
@@ -346,6 +355,9 @@ class Mesh:
             field_mass.append(self.field_chem[field_i])
             field_vol.append(self.field_vol[field_i])
             neigh_pos.append(jnp.array(self.field_positions[field_i]))
+            field_D.append(
+                (self.field_D[field_id.item()] + self.field_D[field_i_id.item()]) / 2.0
+            )
 
         if len(neigh_pos) == 0:
             return flux
@@ -353,6 +365,7 @@ class Mesh:
         neigh_pos = jnp.vstack(neigh_pos)
         field_mass = jnp.array(field_mass)
         field_vol = jnp.array(field_vol)
+        field_D = jnp.array(field_D)
         distances = jnp.linalg.norm(
             neigh_pos - jnp.array(self.field_positions[curr_field_id]), axis=1
         )
@@ -362,10 +375,10 @@ class Mesh:
             flux_i = -D * (field2_mass / field2_vol - field1_mass / field1_vol) / dist_i
             return flux_i
 
-        auto_vec_flux = jax.vmap(calc_flux_i, in_axes=(None, 0, 0, None, None, 0))
+        auto_vec_flux = jax.vmap(calc_flux_i, in_axes=(0, 0, 0, None, None, 0))
 
         flux_list = auto_vec_flux(
-            self.D,
+            field_D,
             field_mass,
             field_vol,
             self.field_chem[curr_field_id],
@@ -431,7 +444,6 @@ class Mesh:
         prev_mass = 0
         new_mass = 0
 
-        print(self.chem_generators)
         for i in self.field_id:
             chem_mass_i = self.field_chem[i]
             prev_mass += jnp.sum(chem_mass_i)
@@ -515,8 +527,9 @@ class Mesh:
                 key=self.key, sub_key=self.sub_key, shape=(3)
             )
             random_vel = self.cell_random_vel_coeff[cell_id] * random_vel
-            ret_vel = ret_vel + random_vel
-
+            ret_vel = (
+                ret_vel + random_vel + self.cell_residual_vel[cell_id]
+            )  ## Adding the residual vel which can be controlled by the intervention API
             self.cell_vel = self.cell_vel.at[cell_id].set(ret_vel)
 
         # Compute cell movement
@@ -578,6 +591,9 @@ class Mesh:
             self.cell_random_vel_coeff,
             jnp.array([self.cell_random_vel_coeff[parent_cell_id]]),
             axis=0,
+        )
+        self.cell_residual_vel = jnp.append(
+            self.cell_residual_vel, jnp.zeros((1, 3)), axis=0
         )
         self.cell_death_decay_coeff = jnp.append(
             self.cell_death_decay_coeff,

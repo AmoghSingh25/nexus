@@ -1,3 +1,4 @@
+from nexus.simulator.intervention.interventionVerify import check_intervene_params
 from beartype.typing import TypeVar, Union, Tuple, Literal
 import copy
 from nexus.simulator.spatial.spatialSim import SpatialSim
@@ -6,6 +7,7 @@ import jax.numpy as jnp
 import jax
 from beartype import beartype
 from jaxtyping import jaxtyped
+from omegaconf.listconfig import ListConfig
 
 ARR = TypeVar("ARR", int, float)
 
@@ -158,11 +160,16 @@ class InterventionManager:
             match interven_type[1]:
                 case "shift":
                     interven_val = curr_val[cell_range] + interven_type[2]
+        if isinstance(interven_val, ListConfig):
+            interven_val = jnp.array(interven_val)
 
         if isinstance(curr_val, jax.Array):
             curr_val = curr_val.at[cell_range].set(interven_val)
         else:
             curr_val[cell_range] = interven_val
+        check_intervene_params(
+            sim_obj=sim_obj, curr_val=curr_val, param_name=param_name
+        )
         setattr(sim_obj, param_name, curr_val)
 
     def check(self, t):
@@ -235,7 +242,6 @@ class InterventionManager:
                         delete_generator=True,
                     )
                 elif intervention_type == "set_particle":
-                    print("INTERVENTION - ", intervention_i)
                     self.spatial_obj.mesh.modify_chem_generator(
                         pos=jnp.array(intervention_i[1]).reshape(1, -1),
                         compound_id=intervention_i[2],

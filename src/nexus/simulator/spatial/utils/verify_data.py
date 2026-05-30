@@ -1,3 +1,4 @@
+import jax.numpy as jnp
 import numpy as np
 from nexus.simulator.spatial.utils.random_generators import (
     generate_permutation,
@@ -61,7 +62,7 @@ def check_cell_type_data(key, sub_key, n_cells, cfg):
 
     if check_movement_flag != -1:
         raise ValueError(
-            f"Incorrect keys for movement config. Missing {set(req_keys_movement) - set(cfg.cycle.get(check_movement_flag))} for {check_movement_flag}"
+            f"Incorrect keys for movement config. Missing {set(req_keys_movement) - set(cfg.movement.get(check_movement_flag))} for {check_movement_flag}"
         )
     if check_cycle_flag != -1:
         raise ValueError(
@@ -83,6 +84,7 @@ def check_cell_type_data(key, sub_key, n_cells, cfg):
     cell_drift_vel_coeff = np.zeros((n_cells, 1))
     cell_random_vel_coeff = np.zeros((n_cells, 1))
     cell_death_decay_coeff = np.zeros((n_cells, 1))
+    cell_residual_vel = np.zeros((n_cells, 3))
 
     cell_mask = np.zeros((n_cells, 1), dtype=np.int16)
     total_qty = 0.0
@@ -129,17 +131,18 @@ def check_cell_type_data(key, sub_key, n_cells, cfg):
     return (
         key,
         sub_key,
-        cell_mask,
-        interphase_len,
-        mitosis_len,
-        cell_death_prob,
-        cell_prg_death_prob,
-        cell_target_vol,
-        cell_density,
-        cell_vol_growth_rate,
-        cell_attraction_coeff,
-        cell_repulsion_coeff,
-        cell_drift_vel_coeff,
-        cell_random_vel_coeff,
-        cell_death_decay_coeff,
+        jnp.array(cell_mask),
+        jnp.array(interphase_len),
+        jnp.array(mitosis_len),
+        jnp.array(cell_death_prob),
+        jnp.array(cell_prg_death_prob),
+        jnp.array(cell_target_vol),
+        jnp.array(cell_density),
+        jnp.array(cell_vol_growth_rate),
+        jnp.array(cell_attraction_coeff),
+        jnp.array(cell_repulsion_coeff),
+        jnp.array(cell_drift_vel_coeff),
+        jnp.array(cell_random_vel_coeff),
+        jnp.array(cell_death_decay_coeff),
+        jnp.array(cell_residual_vel),
     )
