@@ -229,7 +229,7 @@ class InterventionManager:
                     else:
                         self.spatial_obj.mesh.prg_death_cell(selected_cells)
                 elif intervention_type == "add_particle":
-                    self.spatial_obj.mesh.add_chem_generator(
+                    self.spatial_obj.mesh.control_chem_generator(
                         pos=jnp.array(intervention_i[1]).reshape(1, -1),
                         compound_id=intervention_i[2],
                         rate=intervention_i[3],
@@ -247,5 +247,15 @@ class InterventionManager:
                         compound_id=intervention_i[2],
                         new_rate=intervention_i[3],
                         delete_generator=False,
+                    )
+                elif intervention_type == "modify_reaction":
+                    reaction_names = list(intervention_i[1].keys())
+                    self.spatial_obj.mesh.modify_reaction(
+                        reaction_names=reaction_names, reaction_obj=intervention_i[1]
+                    )
+                elif intervention_type == "add_reaction":
+                    reaction_names = list(intervention_i[1].keys())
+                    self.spatial_obj.mesh.add_reaction(
+                        reaction_names=reaction_names, reaction_obj=intervention_i[1]
                     )
         return self.spatial_obj

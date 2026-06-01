@@ -144,3 +144,19 @@ intervention:
     - - "set_particle"
       - ["scheduled", 5]
       - [[0.1, 0.1, 0.1], 0, 0.4] # Location, chemical_id, new rate
+      - ["scheduled", 1]
+      - [[0.1, 0.1, 0.1], 0, 0.1]
+    - - "add_reaction"
+      - ["scheduled", 1]
+      - - reac_4:
+            order: 2
+            rate_coeff: 1
+            reactants:
+              - "chem2"
+            reactants_exponent:
+              - 3
+            products:
+              - "chem1"
+            products_exponent:
+              - 1
+          # Reaction name, all details in a dict again

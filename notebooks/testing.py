@@ -41,8 +41,14 @@ def _():
 
 @app.cell
 def _(get_config):
-    cfg = get_config(config_name="config")
+    cfg = get_config(config_name="test_config")
     return (cfg,)
+
+
+@app.cell
+def _(cfg):
+    cfg.intervention.other[-1][2]
+    return
 
 
 @app.cell
@@ -64,9 +70,8 @@ def _(np, plt):
 @app.cell
 def _():
     from nexus.simulator.grn.grnSim import GRNSim
-    from nexus.simulator.grn.grnSim_v1 import GRNSim_v1
 
-    return GRNSim, GRNSim_v1
+    return (GRNSim,)
 
 
 @app.cell
@@ -78,8 +83,44 @@ def _():
 
 
 @app.cell
-def _(GRNSim_v1):
-    sim1 = GRNSim_v1(gene_data="configs/sample_data/Interaction_cID_4.txt",mr_data="configs/sample_data/Regs_cID_4.txt", protein_sim=False, n_cells=2700)
+def _(GRNSim, cfg):
+    sim_= GRNSim(cfg.grn)
+    return (sim_,)
+
+
+@app.cell
+def _(sim_):
+    sim_.is_mr
+    return
+
+
+@app.cell
+def _(sim_):
+    sim_.ki_matrix[0][-1]
+    return
+
+
+@app.cell
+def _(sim_):
+    sim_.ki_matrix[0][0]
+    return
+
+
+@app.cell
+def _(sim_):
+    sim_.ki_matrix[0]
+    return
+
+
+@app.cell
+def _(sim_):
+    sim_.ki_matrix.shape
+    return
+
+
+@app.cell
+def _(GRNSim):
+    sim1 = GRNSim(gene_data="configs/sample_data/Interaction_cID_4.txt",mr_data="configs/sample_data/Regs_cID_4.txt", protein_sim=False, n_cells=2700)
     ret1=sim1.run_sim(20)
     return (sim1,)
 
