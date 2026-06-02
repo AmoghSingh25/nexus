@@ -100,7 +100,7 @@ spatial_sim:
       - 3
 
   ## Reactions
-  reaction_bool: false
+  reaction_bool: true
   reaction_prob: false
   reaction:
     reac_3: # Decay of chemical
@@ -151,3 +151,19 @@ intervention:
     - - "block_edge"
       - ["scheduled", 3]
       - [0, 10, 0.3] # Target gene, Regulator gene, Probability (k) of selecting each cell
+      - ["scheduled", 1]
+      - [[0.1, 0.1, 0.1], 0, 0.1]
+    - - "add_reaction"
+      - ["scheduled", 1]
+      - - reac_4:
+            order: 2
+            rate_coeff: 1
+            reactants:
+              - "chem2"
+            reactants_exponent:
+              - 3
+            products:
+              - "chem1"
+            products_exponent:
+              - 1
+          # Reaction name, all details in a dict again

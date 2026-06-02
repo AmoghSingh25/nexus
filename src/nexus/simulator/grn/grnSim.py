@@ -177,7 +177,7 @@ class GRNSim:
                 basal_rate_i = jnp.zeros((self.n_cells, 1))  # 0 basal rate for non-MRs
                 self.g.add_node(i)
                 ki_vals = jnp.array(node["ki"])
-                if self.non_mr_basal:
+                if self.non_mr_basal:  # Optional non-zero basal rate for non-MRs
                     self.basal_rates.append(
                         jnp.array(node["basal_rate"]).reshape((self.n_cells, 1))
                     )

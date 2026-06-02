@@ -300,24 +300,7 @@ class Mesh:
             self.reaction_order = jnp.array(self.reaction_order)
             self.reaction_matrix = jnp.array(self.reaction_matrix)
             self.reaction_prob = jnp.zeros((self.n_reactions,))
-            for i in range(len(self.reactions)):
-                if self.use_prob:
-                    if self.reaction_order_sum[self.reactions[i].order] > 0.0:
-                        prob_i = (
-                            self.reactions[i].k
-                            * (
-                                1
-                                - jnp.exp(
-                                    -self.delta
-                                    * self.reaction_order_sum[self.reactions[i].order]
-                                )
-                            )
-                        ) / self.reaction_order_sum[self.reactions[i].order]
-                    else:
-                        prob_i = 0.0
-                else:
-                    prob_i = 1.0
-                self.reaction_prob = self.reaction_prob.at[i].set(prob_i)
+            self.calc_reaction_prob()
 
             self.reaction_table = {
                 0: calc_zero_order,
@@ -462,7 +445,7 @@ class Mesh:
 
         self.delta_m = prev_mass - new_mass
 
-    def add_chem_generator(
+    def control_chem_generator(
         self, pos: Float[Array, "1 axes"], compound_id: int, rate: float = 0.0
     ):
         field_assigned = self.get_closest_field(pos=pos).item()
@@ -487,6 +470,100 @@ class Mesh:
                 self.chem_generators[field_assigned].pop(i)
                 if not delete_generator:
                     self.chem_generators[field_assigned].append((compound_id, new_rate))
+
+    def calc_reaction_prob(self):
+        for i in range(len(self.reactions)):
+            if self.use_prob:
+                if self.reaction_order_sum[self.reactions[i].order] > 0.0:
+                    prob_i = (
+                        self.reactions[i].k
+                        * (
+                            1
+                            - jnp.exp(
+                                -self.delta
+                                * self.reaction_order_sum[self.reactions[i].order]
+                            )
+                        )
+                    ) / self.reaction_order_sum[self.reactions[i].order]
+                else:
+                    prob_i = 0.0
+            else:
+                prob_i = 1.0
+            self.reaction_prob = self.reaction_prob.at[i].set(prob_i)
+
+    def add_reaction(self, reaction_names, reaction_obj) -> None:
+        for reaction_idx in range(len(reaction_names)):
+            cur_reaction_name = reaction_names[reaction_idx]
+            reaction_i = reaction_obj[cur_reaction_name]
+
+            reaction_i_obj = Reaction(
+                name=cur_reaction_name,
+                id=reaction_idx,
+                k=reaction_i.rate_coeff,
+                order=reaction_i.order,
+                products=[x for x in reaction_i.products]
+                if reaction_i.products is not None
+                else [],
+                products_exp=reaction_i.products_exponent
+                if reaction_i.products is not None
+                else [],
+                reactants=[x for x in reaction_i.reactants]
+                if reaction_i.reactants is not None
+                else [],
+                reactants_exp=reaction_i.reactants_exponent
+                if reaction_i.reactants is not None
+                else [],
+                chemicals=self.chem_names,
+            )
+
+            self.reaction_order = jnp.append(self.reaction_order, reaction_i_obj.order)
+            self.reactions.append(reaction_i_obj)
+            self.reaction_matrix = jnp.append(
+                self.reaction_matrix,
+                jnp.array([reaction_i_obj._generate_reaction_matrix()]),
+                axis=0,
+            )
+            self.reaction_order_sum = self.reaction_order_sum.at[reaction_i.order].set(
+                self.reaction_order_sum[reaction_i.order] + reaction_i.rate_coeff
+            )
+        self.calc_reaction_prob()
+
+    def modify_reaction(self, reaction_names, reaction_obj) -> None:
+        for reaction_idx in range(len(self.reactions)):
+            if self.reactions[reaction_idx].name in reaction_names:
+                cur_reaction_name = self.reactions[reaction_idx].name
+                reaction_i = reaction_obj[cur_reaction_name]
+
+                reaction_i_obj = Reaction(
+                    name=cur_reaction_name,
+                    id=reaction_idx,
+                    k=reaction_i.rate_coeff,
+                    order=reaction_i.order,
+                    products=[x for x in reaction_i.products]
+                    if reaction_i.products is not None
+                    else [],
+                    products_exp=reaction_i.products_exponent
+                    if reaction_i.products is not None
+                    else [],
+                    reactants=[x for x in reaction_i.reactants]
+                    if reaction_i.reactants is not None
+                    else [],
+                    reactants_exp=reaction_i.reactants_exponent
+                    if reaction_i.reactants is not None
+                    else [],
+                    chemicals=self.chem_names,
+                )
+                self.reaction_order = self.reaction_order.at[reaction_idx].set(
+                    reaction_i_obj.order
+                )
+                self.reactions[reaction_idx] = reaction_i_obj
+                self.reaction_matrix = self.reaction_matrix.at[reaction_idx].set(
+                    reaction_i_obj._generate_reaction_matrix()
+                )
+                self.reaction_order_sum = self.reaction_order_sum.at[
+                    reaction_i.order
+                ].set(self.reaction_order_sum[reaction_i.order] + reaction_i.rate_coeff)
+        self.calc_reaction_prob()
 
     def calc_movement(self):
         """
