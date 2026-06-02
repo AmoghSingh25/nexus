@@ -78,7 +78,10 @@ class TestInterventions:
         self.spatial_sim = SpatialSim(base_config.spatial_sim)
         intervention_flag = False
         interven_manager = InterventionManager(
-            cfg=base_config, spatial_obj=self.spatial_sim, grn_obj=self.grn_sim
+            cfg=base_config,
+            spatial_obj=self.spatial_sim,
+            grn_obj=self.grn_sim,
+            key=base_config.intervention.get("random_key", 42),
         )
         intervention_flag = True
         check_config(spatial_sim=self.spatial_sim, cfg=base_config)
@@ -125,7 +128,10 @@ class TestInterventions:
         self.grn_sim = GRNSim(base_config.grn)
         self.spatial_sim = SpatialSim(base_config.spatial_sim)
         interven_manager = InterventionManager(
-            cfg=base_config, spatial_obj=self.spatial_sim, grn_obj=self.grn_sim
+            cfg=base_config,
+            spatial_obj=self.spatial_sim,
+            grn_obj=self.grn_sim,
+            key=base_config.intervention.get("random_key", 42),
         )
         intervention_flag = True
 
@@ -170,7 +176,10 @@ class TestInterventions:
         self.spatial_sim = SpatialSim(base_config.spatial_sim)
         intervention_flag = False
         interven_manager = InterventionManager(
-            cfg=base_config, spatial_obj=self.spatial_sim, grn_obj=self.grn_sim
+            cfg=base_config,
+            spatial_obj=self.spatial_sim,
+            grn_obj=self.grn_sim,
+            key=base_config.intervention.get("random_key", 42),
         )
         intervention_flag = True
         check_config(spatial_sim=self.spatial_sim, cfg=base_config)

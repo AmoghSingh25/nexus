@@ -114,6 +114,7 @@ spatial_sim:
       products_exponent:
 
 intervention:
+  random_key: 42
   spatial_sim:
     - - "cell_target_vol"
       - ["soft", "shift", 0.1]
@@ -144,3 +145,9 @@ intervention:
     - - "set_particle"
       - ["scheduled", 5]
       - [[0.1, 0.1, 0.1], 0, 0.4] # Location, chemical_id, new rate
+    - - "modify_edge" # Also adds edge
+      - ["scheduled", 3]
+      - [0, 1, -5.0, 0.2] # Target gene, Regulator Gene, Weight of new edge, probability of adding edge (computed as probability of selecting eac cell)
+    - - "block_edge"
+      - ["scheduled", 3]
+      - [0, 10, 0.3] # Target gene, Regulator gene, Probability (k) of selecting each cell

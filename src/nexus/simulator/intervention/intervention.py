@@ -1,3 +1,5 @@
+import math
+from nexus.simulator.spatial.utils.random_generators import generate_choices
 from nexus.simulator.intervention.interventionVerify import check_intervene_params
 from beartype.typing import TypeVar, Union, Tuple, Literal
 import copy
@@ -22,10 +24,12 @@ TemporalIntervention = Union[
 
 @jaxtyped(typechecker=beartype)
 class InterventionManager:
-    def __init__(self, cfg, spatial_obj: SpatialSim, grn_obj: GRNSim):
+    def __init__(self, cfg, spatial_obj: SpatialSim, grn_obj: GRNSim, key: int = 42):
         self.spatial_interventions = cfg.intervention.get("spatial_sim", [])
         self.grn_interventions = cfg.intervention.get("grn", [])
         self.other_interventions = cfg.intervention.get("other", [])
+
+        self.key, self.sub_key = jax.random.split(jax.random.key(key))
 
         self.spatial_checkpoints = {}
         self.grn_checkpoints = {}
@@ -248,4 +252,32 @@ class InterventionManager:
                         new_rate=intervention_i[3],
                         delete_generator=False,
                     )
+                elif (
+                    intervention_type == "modify_edge"
+                    or intervention_type == "block_edge"
+                ):
+                    target_gene = int(intervention_i[1])
+                    regulator_gene = int(intervention_i[2])
+                    if intervention_type == "block_edge":
+                        weight = 0.0
+                    else:
+                        weight = (
+                            float(intervention_i[3]) if len(intervention_i) > 3 else 1.0
+                        )
+                    ki_matrix = self.grn_obj.ki_matrix
+                    n_cells = ki_matrix.shape[0]
+                    k_prob = intervention_i[-1]
+                    n_random_cells = math.ceil(n_cells * k_prob)
+
+                    self.key, self.sub_key, selected_cells = generate_choices(
+                        key=self.key,
+                        sub_key=self.sub_key,
+                        shape=(n_random_cells,),
+                        a=n_cells,
+                        replace=False,
+                        p=jnp.ones(n_cells) * k_prob,
+                    )
+                    self.grn_obj.ki_matrix = ki_matrix.at[
+                        selected_cells, target_gene, regulator_gene
+                    ].set(weight)
         return self.spatial_obj
