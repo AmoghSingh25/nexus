@@ -46,7 +46,7 @@ class GRNSim:
         steady_states - (n_genes, n_cells, 1)
         basal_rates -   (n_genes, n_cells, 1)
         ki_matrix -     (n_cells, n_genes, n_genes)
-        is_mr -         (n_genes,)
+        is_mr -         (n_genes,) -> Change to (n_cells, n_genes)
         prot_conc -     (n_genes, n_cells, 1)
         prot_kt -       (n_cells, n_genes)
         prot_kd -       (n_cells, n_genes)
@@ -219,7 +219,9 @@ class GRNSim:
         self.basal_rates = jnp.array(self.basal_rates).reshape(
             self.n_genes, self.n_cells
         )
-        self.is_mr = jnp.array(self.is_mr)
+        self.is_mr = jnp.repeat(
+            jnp.array(self.is_mr).reshape(1, -1), self.n_cells, axis=0
+        )
 
         ## Create JIT functions
         self.jit_pij = jit(self.calc_pij)
@@ -239,7 +241,7 @@ class GRNSim:
 
     def calc_steady_state_mr(self, b, decay):
         """Steady state calculation for MRs"""
-        return (b / decay).reshape(-1, 1), jnp.zeros_like(b).reshape(-1, 1)
+        return (b / decay).reshape(-1), jnp.zeros_like(b).reshape(-1)
 
     def calc_steady_state_g(
         self,
@@ -310,45 +312,57 @@ class GRNSim:
                 prot_decay,
             ):
                 jit_calc_steady_state = self.calc_steady_state_g
-                return jit_calc_steady_state(
-                    is_mr=is_mr,
-                    idx=gene_idx,
-                    basal_rates=basal_rate,
-                    decay=decay,
-                    gene_conc=gene_conc[:, cell_idx],
-                    gene_cell_mean=all_cell_conc,
-                    k_i=ki_matrix,
-                    hill_coeff=hill_coeff,
-                    p_kt=prot_trans,
-                    p_kd=prot_decay,
+                return lax.cond(
+                    is_mr,
+                    lambda _: jit(self.calc_steady_state_mr)(basal_rate, decay),
+                    lambda _: jit_calc_steady_state(
+                        is_mr=is_mr,
+                        idx=gene_idx,
+                        basal_rates=basal_rate,
+                        decay=decay,
+                        gene_conc=gene_conc[:, cell_idx],
+                        gene_cell_mean=all_cell_conc,
+                        k_i=ki_matrix,
+                        hill_coeff=hill_coeff,
+                        p_kt=prot_trans,
+                        p_kd=prot_decay,
+                    ),
+                    operand=None,
                 )
+                # return jit_calc_steady_state(
+                #     is_mr=is_mr,
+                #     idx=gene_idx,
+                #     basal_rates=basal_rate,
+                #     decay=decay,
+                #     gene_conc=gene_conc[:, cell_idx],
+                #     gene_cell_mean=all_cell_conc,
+                #     k_i=ki_matrix,
+                #     hill_coeff=hill_coeff,
+                #     p_kt=prot_trans,
+                #     p_kd=prot_decay,
+                # )
 
             vmap_single_cell = jit(
                 vmap(
                     _single_cell_steady_state,
-                    in_axes=(None, 0, None, 0, 0, 0, None, None, 0, 0, 0),
+                    in_axes=(None, 0, 0, 0, 0, 0, None, None, 0, 0, 0),
                 )
             )
-            steady_vals = lax.cond(
+            return vmap_single_cell(
+                idx,
+                n_cells_range,
                 is_mr,
-                lambda _: jit(self.calc_steady_state_mr)(basal_rate, decay[:, idx]),
-                lambda _: vmap_single_cell(
-                    idx,
-                    n_cells_range,
-                    is_mr,
-                    basal_rate,
-                    decay,
-                    ki_matrix,
-                    gene_conc,
-                    all_cell_conc,
-                    hill_coeff,
-                    prot_trans,
-                    prot_decay,
-                ),
-                operand=None,
+                basal_rate,
+                decay,
+                ki_matrix,
+                gene_conc,
+                all_cell_conc,
+                hill_coeff,
+                prot_trans,
+                prot_decay,
             )
 
-            return steady_vals[0], steady_vals[1]
+            # return steady_vals[0], steady_vals[1]
 
         gene_conc, prot_conc = self.gene_conc, self.prot_conc
         ## TODO: VMAP over genes does not work as genes depend on the concentration of the regulator genes
@@ -372,7 +386,7 @@ class GRNSim:
             g_conc, p_conc = calc_steady_state_jit(
                 n_cells_range=jnp.arange(self.n_cells),
                 idx=i,
-                is_mr=self.is_mr[i],
+                is_mr=self.is_mr[:, i],
                 basal_rate=self.basal_rates[i],
                 decay=self.decay[:, i],
                 ki_matrix=self.ki_matrix[:, i, :],
@@ -417,7 +431,7 @@ class GRNSim:
                 ):
                     vmap_all_genes = vmap(
                         _single_gene_steady_state,
-                        in_axes=(None, 0, 0, 0, 1, 1, None, None, 1, 1, 1),
+                        in_axes=(None, 0, 1, 0, 1, 1, None, None, 1, 1, 1),
                     )
 
                     ret_ = vmap_all_genes(
@@ -454,7 +468,6 @@ class GRNSim:
                 l2_prot_coeff = 1e-4
                 if target_conc.ndim == 3:
                     target_conc = target_conc.squeeze(2)
-                print(" - ", g_conc.shape, target_conc.shape)
                 loss = lax.cond(
                     target_gene,
                     lambda _: (
@@ -646,7 +659,7 @@ class GRNSim:
         decay: Float[Array, "cells genes 1"],
         basal_rates: Float[Array, "genes cells"],
         k_i: Float[Array, "cells genes genes"],
-        is_mr: Bool[Array, " genes"],
+        is_mr: Bool[Array, "cells genes"],
         noise_amp: Float[Array, "cells genes 1"],
         hill_coeff: Float[Array, "cells genes 1"],
         prot_kt: Float[Array, "cells genes 1"],
@@ -715,7 +728,7 @@ class GRNSim:
         # Auto vectorization over auto_vec_genes for all cells
         auto_vec_cells = vmap(
             auto_vec_genes,
-            in_axes=(None, 1, None, 0, 1, 0, None, None, 0, 0, 1, 0, 0, 0, 0),
+            in_axes=(None, 1, None, 0, 1, 0, 0, None, 0, 0, 1, 0, 0, 0, 0),
         )
 
         x_t, p_t = auto_vec_cells(

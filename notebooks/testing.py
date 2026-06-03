@@ -95,6 +95,11 @@ def _(sim_):
 
 
 @app.cell
+def _():
+    return
+
+
+@app.cell
 def _(sim_):
     sim_.ki_matrix[0][-1]
     return
@@ -102,7 +107,7 @@ def _(sim_):
 
 @app.cell
 def _(sim_):
-    sim_.ki_matrix[0][0]
+    sim_.ki_matrix[0][1]
     return
 
 

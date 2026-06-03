@@ -265,6 +265,7 @@ class InterventionManager:
                             float(intervention_i[3]) if len(intervention_i) > 3 else 1.0
                         )
                     ki_matrix = self.grn_obj.ki_matrix
+                    is_mr = self.grn_obj.is_mr
                     n_cells = ki_matrix.shape[0]
                     k_prob = intervention_i[-1]
                     n_random_cells = math.ceil(n_cells * k_prob)
@@ -280,6 +281,11 @@ class InterventionManager:
                     self.grn_obj.ki_matrix = ki_matrix.at[
                         selected_cells, target_gene, regulator_gene
                     ].set(weight)
+                    if jnp.any(is_mr[selected_cells, target_gene]) and weight != 0.0:
+                        self.grn_obj.is_mr = self.grn_obj.is_mr.at[
+                            selected_cells, target_gene
+                        ].set(False)
+                    # if is_mr[target_gene] and weight == 0.0
                 elif intervention_type == "modify_reaction":
                     reaction_names = list(intervention_i[1].keys())
                     self.spatial_obj.mesh.modify_reaction(
