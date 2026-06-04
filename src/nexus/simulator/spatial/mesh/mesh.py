@@ -130,6 +130,8 @@ class Mesh:
             self.cell_random_vel_coeff,
             self.cell_death_decay_coeff,
             self.cell_residual_vel,
+            self.cell_resource_limit,
+            self.cell_contact_limit,
         ) = check_cell_type_data(
             key=self.key, sub_key=self.sub_key, n_cells=self.n_cells, cfg=cfg
         )
@@ -216,7 +218,6 @@ class Mesh:
         self.chem_generators: Dict[int, Tuple[float]] = {}
 
         self.diffusion_bool = cfg.diffusion_bool
-        # self.field_D = []
         self.field_vol = []
         self.field_id = []
         self.field_keys = []
@@ -229,7 +230,6 @@ class Mesh:
         )
 
         for [i, j, k] in self.field_positions:
-            # self.field_D.append(self.D)
             self.field_vol.append(self.field_vol_singular)
             self.field_keys.append(random.split(random.key(curr_id)))
             self.field_id.append(curr_id)
@@ -249,11 +249,14 @@ class Mesh:
                 "Number of D values must be equal to the number of fields"
             )
             self.field_D = jnp.array(cfg.get("D")).reshape(self.field_id.shape)
-        ## Reaction
 
+        ## Reaction
         self.chemicals = []
+        self.chem_name_map = {}
         if cfg.chemical is not None:
             self.chem_names = cfg["chemical"]["name"]
+            for idx in range(len(self.chem_names)):
+                self.chem_name_map[self.chem_names[idx]] = idx
             self.reactions = []
             self.mol_masses = cfg["chemical"]["mol_mass"]
 
@@ -706,7 +709,7 @@ class Mesh:
         )
         new_interphase_chkpt = jnp.round(new_interphase_chkpt).astype(jnp.int16)
         if new_interphase_chkpt < 1:
-            new_interphase_chkpt = 1
+            new_interphase_chkpt = jnp.ones_like(new_interphase_chkpt)
         self.key, self.sub_key, new_mitosis_chkpt = generate_normal(
             key=self.key,
             sub_key=self.sub_key,
@@ -735,11 +738,10 @@ class Mesh:
         )
         self.cell_vel = jnp.concatenate([self.cell_vel, init_vel], axis=0)
         if new_mitosis_chkpt < 0:
-            new_mitosis_chkpt = 1
+            new_mitosis_chkpt = jnp.ones_like(new_mitosis_chkpt)
         new_mitosis_chkpt = new_interphase_chkpt + jnp.round(new_mitosis_chkpt).astype(
             jnp.int16
         )
-
         self.interphase_chkpt = jnp.append(
             self.interphase_chkpt, new_interphase_chkpt, axis=0
         )
@@ -793,8 +795,38 @@ class Mesh:
         split_cells_mask = jnp.array(list(range(len(self.cell_states)))).reshape(-1)[
             (self.cell_states == 2).reshape(-1)
         ]
+        cell_fields = self.get_assigned_fields()
+
         for cell_id in split_cells_mask:
             cell_pos_i = self.cell_positions[cell_id]
+            cell_field_i = cell_fields[cell_id]
+            cell_type_i = self.cell_type_mask[cell_id].item()
+            can_split = True
+
+            ## Check resource limits
+            if self.cell_resource_limit.get(cell_type_i):
+                cell_resource_limit_i = self.cell_resource_limit[cell_type_i]
+                for chem_i, limit_i in cell_resource_limit_i:
+                    if (
+                        self.field_chem[cell_field_i][self.chem_name_map[chem_i]]
+                        < limit_i
+                    ):
+                        can_split = False
+                        break
+            if not can_split:
+                continue
+
+            ## Check contact limits
+            if self.cell_contact_limit.get(cell_type_i):
+                cell_contact_limit_i = self.cell_contact_limit[cell_type_i]
+                neigh_cells, _ = self.get_radial_limits(
+                    pos=self.cell_positions[cell_id], radius=cell_contact_limit_i[1]
+                )
+                if neigh_cells.shape[0] > cell_contact_limit_i[0]:
+                    can_split = False
+                    break
+            if not can_split:
+                continue
 
             self.key, self.sub_key, rand_point = generate_uniform(
                 key=self.key, sub_key=self.sub_key, shape=(3)

@@ -46,6 +46,9 @@ def check_cell_type_data(key, sub_key, n_cells, cfg):
     check_cycle_flag = -1
     cell_types = []
     param_dict = {}
+    cell_resource_limit = {}
+    cell_contact_limit = {}
+
     for i in range(len(cfg.movement)):
         cell_types.append(list(cfg.movement.keys())[i])
         if not req_keys_movement.issubset(
@@ -59,6 +62,10 @@ def check_cell_type_data(key, sub_key, n_cells, cfg):
         _cell_params = dict(cfg.cycle.get(cell_types[-1]))
         _cell_params.update(cfg.movement.get(cell_types[-1]))
         param_dict[cell_types[-1]] = _cell_params
+        if cfg.cycle[cell_types[-1]].get("resource_limit", None) is not None:
+            cell_resource_limit[i] = cfg.cycle[cell_types[-1]]["resource_limit"]
+        if cfg.cycle[cell_types[-1]].get("contact_limit", None) is not None:
+            cell_contact_limit[i] = cfg.cycle[cell_types[-1]]["contact_limit"]
 
     if check_movement_flag != -1:
         raise ValueError(
@@ -90,6 +97,7 @@ def check_cell_type_data(key, sub_key, n_cells, cfg):
     total_qty = 0.0
     cell_type = 0
     cell_qty = {i: param_dict[i]["qty_ratio"] for i in param_dict}
+
     for i in cell_qty:
         proportions.append(total_qty + cell_qty.get(i))
         start, end = (
@@ -145,4 +153,6 @@ def check_cell_type_data(key, sub_key, n_cells, cfg):
         jnp.array(cell_random_vel_coeff),
         jnp.array(cell_death_decay_coeff),
         jnp.array(cell_residual_vel),
+        cell_resource_limit,
+        cell_contact_limit,
     )
