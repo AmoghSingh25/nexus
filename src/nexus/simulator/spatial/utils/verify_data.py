@@ -63,7 +63,15 @@ def check_cell_type_data(key, sub_key, n_cells, cfg):
         _cell_params.update(cfg.movement.get(cell_types[-1]))
         param_dict[cell_types[-1]] = _cell_params
         if cfg.cycle[cell_types[-1]].get("resource_limit", None) is not None:
-            cell_resource_limit[i] = cfg.cycle[cell_types[-1]]["resource_limit"]
+            resource_limit_types = (
+                cfg.cycle[cell_types[-1]]["resource_limit_type"],
+                cfg.cycle[cell_types[-1]].get("resource_limit_hill_coeff", 1),
+                cfg.cycle[cell_types[-1]].get("resource_limit_combine_func", "min"),
+            )
+            cell_resource_limit[i] = [
+                cfg.cycle[cell_types[-1]]["resource_limit"],
+                resource_limit_types,
+            ]
         if cfg.cycle[cell_types[-1]].get("contact_limit", None) is not None:
             cell_contact_limit[i] = cfg.cycle[cell_types[-1]]["contact_limit"]
 

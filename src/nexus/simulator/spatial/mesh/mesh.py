@@ -1,3 +1,4 @@
+from __future__ import annotations
 import logging
 from jaxtyping import Array, Float, Bool, Int, Num
 import jax.numpy as jnp
@@ -19,7 +20,7 @@ from nexus.simulator.spatial.layers.chemical import (
 from nexus.simulator.spatial.layers.force import calc_vel
 from nexus.simulator.spatial.utils.verify_data import check_cell_type_data
 from nexus.simulator.spatial.mesh.clustering_field import k_mean_clustering
-from beartype.typing import Dict, Tuple
+from beartype.typing import Dict, Tuple, Literal
 
 
 class Mesh:
@@ -623,20 +624,56 @@ class Mesh:
                 self.cell_positions[cell_id] + self.cell_vel[cell_id] * self.delta
             )
 
-    def check_cell_constraints(self, cell_id, cell_fields):
+    def calc_hill_func(
+        self,
+        concs: Float[Array, " chems"],
+        half_rate_concs: Float[Array, " chems"],
+        n: float = 1,
+        combine_type: Literal["mult", "min"] = "mult",
+    ) -> Float[Array, "1"]:
+        coeffs = jnp.pow(concs, n) / (jnp.pow(concs, n) + jnp.pow(half_rate_concs, n))
+        if combine_type == "mult":
+            return jnp.prod(coeffs).reshape(-1)
+        elif combine_type == "min":
+            return jnp.min(coeffs).reshape(-1)
+
+    def check_cell_constraints(self, cell_id, cell_fields) -> bool:
         cell_field_i = cell_fields[cell_id]
         cell_type_i = self.cell_type_mask[cell_id].item()
-        can_split = True
+        prob_split = 1.0  ## TODO - Change to a parameter for max probability of split
 
         ## Check resource limits
         if self.cell_resource_limit.get(cell_type_i):
-            cell_resource_limit_i = self.cell_resource_limit[cell_type_i]
-            for chem_i, limit_i in cell_resource_limit_i:
-                if self.field_chem[cell_field_i][self.chem_name_map[chem_i]] < limit_i:
-                    print(self.field_chem[cell_field_i][self.chem_name_map[chem_i]])
-                    can_split = False
-                    logging.info("CANNOT SPLIT - Resource limit")
-                    return can_split
+            chem_resources_i, resource_limit_type_params = self.cell_resource_limit[
+                cell_type_i
+            ]
+            if resource_limit_type_params[0] == "hill":
+                curr_concs = []
+                half_rate_concs = []
+                for chem_i, limit_i in chem_resources_i:
+                    curr_concs.append(
+                        self.field_chem[cell_field_i][self.chem_name_map[chem_i]]
+                    )
+                    half_rate_concs.append(limit_i)
+                curr_concs = jnp.array(curr_concs).reshape(-1)
+                half_rate_concs = jnp.array(half_rate_concs)
+                resource_hill_coeff = self.calc_hill_func(
+                    curr_concs,
+                    half_rate_concs,
+                    n=resource_limit_type_params[1],
+                    combine_type=resource_limit_type_params[2],
+                )
+                prob_split = 1.0 * resource_hill_coeff
+            elif resource_limit_type_params[0] == "hard":
+                for chem_i, limit_i in chem_resources_i:
+                    if (
+                        self.field_chem[cell_field_i][self.chem_name_map[chem_i]]
+                        < limit_i
+                    ):
+                        logging.info(
+                            f"Cannot split cell_idx {cell_id} - Resource limit - Current conc - {self.field_chem[cell_field_i][self.chem_name_map[chem_i]]}, Limit - {limit_i}"
+                        )
+                        return False
 
         ## Check contact limits
         if self.cell_contact_limit.get(cell_type_i):
@@ -645,10 +682,15 @@ class Mesh:
                 pos=self.cell_positions[cell_id], radius=cell_contact_limit_i[1]
             )
             if neigh_cells.shape[0] > cell_contact_limit_i[0]:
-                can_split = False
-                logging.info("CANNOT SPLIT - Contact limit")
-                return can_split
-        return can_split
+                logging.info(f"Cannot split cell_idx {cell_id} - Contact limit")
+                return False
+        self.key, self.sub_key, rand_val = generate_uniform(
+            key=self.key, sub_key=self.sub_key, shape=(1,)
+        )
+        if rand_val[0] > prob_split:
+            return True
+        else:
+            return False
 
     def add_cell(
         self,

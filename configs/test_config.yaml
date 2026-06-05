@@ -70,7 +70,7 @@ spatial_sim:
   cycle_bool: true
   cycle:
     cell1:
-      cycle_len: 10
+      cycle_len: 3
       interphase_len: 0.9
       necrosis_death_prob: 0.0001
       apoptosis_death_prob: 0.001
@@ -78,7 +78,10 @@ spatial_sim:
       cell_density: 1.0
       cell_vol_growth_rate: 1.0
       cell_decay_rate: 0.5
-      resource_limit: [["chem1", 0.1]] # Chemical name and minimum value of the chemical for cell division
+      resource_limit: [["chem1", 0.1], ["chem2", 0.2]] # Chemical name and minimum value of the chemical for cell division
+      resource_limit_type: "hill" # Other option is hard cutoff
+      resource_limit_hill_coeff: 1
+      resource_limit_combine_func: "min" # Or "mult"
       contact_limit: [3, 0.5] # Maximum number of neighbours in the surrounding to perform cell division. Higher number of neighbours prevent cell division, radial limit
     cell2:
       cycle_len: 20
@@ -88,6 +91,8 @@ spatial_sim:
       cell_target_vol: 2.0
       cell_density: 2.0
       cell_vol_growth_rate: 1.5
+      resource_limit: [["chem1", 0.1]] # Chemical name and minimum value of the chemical for cell division
+      resource_limit_type: "hard" # Other option is hard cutoff
       cell_decay_rate: 0.5
 
   ## Chemicals
@@ -97,10 +102,12 @@ spatial_sim:
       - "chem1"
       - "chem2"
       - "chem3"
+      - "chem4"
     mol_mass:
       - 1
       - 2
       - 3
+      - 4
 
   ## Reactions
   reaction_bool: true

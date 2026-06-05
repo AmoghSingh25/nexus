@@ -55,6 +55,7 @@ build-backend = "setuptools.build_meta"
 exclude = ["notebooks/", "examples/"]
 
 [tool.ruff.lint]
+typing-modules = ["beartype.typing"]
 ignore = ["F722"]
 
 [[tool.uv.index]]
