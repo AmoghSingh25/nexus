@@ -623,6 +623,33 @@ class Mesh:
                 self.cell_positions[cell_id] + self.cell_vel[cell_id] * self.delta
             )
 
+    def check_cell_constraints(self, cell_id, cell_fields):
+        cell_field_i = cell_fields[cell_id]
+        cell_type_i = self.cell_type_mask[cell_id].item()
+        can_split = True
+
+        ## Check resource limits
+        if self.cell_resource_limit.get(cell_type_i):
+            cell_resource_limit_i = self.cell_resource_limit[cell_type_i]
+            for chem_i, limit_i in cell_resource_limit_i:
+                if self.field_chem[cell_field_i][self.chem_name_map[chem_i]] < limit_i:
+                    print(self.field_chem[cell_field_i][self.chem_name_map[chem_i]])
+                    can_split = False
+                    logging.info("CANNOT SPLIT - Resource limit")
+                    return can_split
+
+        ## Check contact limits
+        if self.cell_contact_limit.get(cell_type_i):
+            cell_contact_limit_i = self.cell_contact_limit[cell_type_i]
+            neigh_cells, _ = self.get_radial_limits(
+                pos=self.cell_positions[cell_id], radius=cell_contact_limit_i[1]
+            )
+            if neigh_cells.shape[0] > cell_contact_limit_i[0]:
+                can_split = False
+                logging.info("CANNOT SPLIT - Contact limit")
+                return can_split
+        return can_split
+
     def add_cell(
         self,
         pos: Num[Array, "1 3"],
@@ -807,37 +834,10 @@ class Mesh:
 
         for cell_id in split_cells_mask:
             cell_pos_i = self.cell_positions[cell_id]
-            cell_field_i = cell_fields[cell_id]
-            cell_type_i = self.cell_type_mask[cell_id].item()
-            can_split = True
-
-            ## Check resource limits
-            if self.cell_resource_limit.get(cell_type_i):
-                cell_resource_limit_i = self.cell_resource_limit[cell_type_i]
-                for chem_i, limit_i in cell_resource_limit_i:
-                    if (
-                        self.field_chem[cell_field_i][self.chem_name_map[chem_i]]
-                        < limit_i
-                    ):
-                        can_split = False
-                        logging.info("CANNOT SPLIT - Resource limit")
-                        break
-            if not can_split:
+            if not self.check_cell_constraints(
+                cell_id=cell_id, cell_fields=cell_fields
+            ):
                 continue
-
-            ## Check contact limits
-            if self.cell_contact_limit.get(cell_type_i):
-                cell_contact_limit_i = self.cell_contact_limit[cell_type_i]
-                neigh_cells, _ = self.get_radial_limits(
-                    pos=self.cell_positions[cell_id], radius=cell_contact_limit_i[1]
-                )
-                if neigh_cells.shape[0] > cell_contact_limit_i[0]:
-                    can_split = False
-                    logging.info("CANNOT SPLIT - Contact limit")
-                    break
-            if not can_split:
-                continue
-
             self.key, self.sub_key, rand_point = generate_uniform(
                 key=self.key, sub_key=self.sub_key, shape=(3)
             )
