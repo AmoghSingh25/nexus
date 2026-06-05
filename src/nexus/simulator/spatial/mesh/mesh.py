@@ -1,3 +1,4 @@
+import logging
 from jaxtyping import Array, Float, Bool, Int, Num
 import jax.numpy as jnp
 import jax
@@ -68,9 +69,6 @@ class Mesh:
             ),
         )
 
-        self.field_positions = jnp.vstack([x.ravel(), y.ravel(), z.ravel()]).T
-        self.n_fields = self.field_positions.shape[0]
-
         self.cell_concentration = cfg.get("cell_concentration", 10)
 
         self.mesh_vol = self.height * self.width * self.depth
@@ -138,7 +136,7 @@ class Mesh:
 
         self.cell_vel = jnp.zeros(shape=(self.n_cells, 3))
         self.cell_states = jnp.zeros(shape=(self.n_cells, 1), dtype=jnp.int8)
-        ## 0- Transition, 1- Interphase, 2- mitosis, -1 - Killed,
+        ## 0- Transition, 1- Interphase, 2- mitosis, -1 - Killed, -2 Undergoing programmed cell death
 
         self.cell_time = jnp.zeros(shape=(self.n_cells, 1), dtype=jnp.int16)
 
@@ -218,16 +216,23 @@ class Mesh:
         self.chem_generators: Dict[int, Tuple[float]] = {}
 
         self.diffusion_bool = cfg.diffusion_bool
+        self.field_positions = jnp.vstack([x.ravel(), y.ravel(), z.ravel()]).T
+        self.n_fields = self.field_positions.shape[0]
         self.field_vol = []
         self.field_id = []
         self.field_keys = []
         self.field_neighbours = []
         self.field_flux = []
-        self.key, self.sub_key, self.field_chem = generate_uniform(
-            key=self.key,
-            sub_key=self.sub_key,
-            shape=(len(self.field_positions), self.n_chemicals, 1),
-        )
+        if cfg.chemical.get("non_zero_init", True):
+            self.key, self.sub_key, self.field_chem = generate_uniform(
+                key=self.key,
+                sub_key=self.sub_key,
+                shape=(len(self.field_positions), self.n_chemicals, 1),
+            )
+        else:
+            self.field_chem = jnp.zeros(
+                (len(self.field_positions), self.n_chemicals, 1)
+            )
 
         for [i, j, k] in self.field_positions:
             self.field_vol.append(self.field_vol_singular)
@@ -761,6 +766,9 @@ class Mesh:
             jnp.array([self.cell_type_mask[parent_cell_id]]),
             axis=0,
         )
+        self.prg_cells_mask = self.cell_states == -2
+        self.live_cells_mask = (self.cell_states != -1) & ~self.prg_cells_mask
+
         self.n_cells += 1
 
     def kill_cells(self, killed_cells_mask: Bool[Array, "..."]):
@@ -812,6 +820,7 @@ class Mesh:
                         < limit_i
                     ):
                         can_split = False
+                        logging.info("CANNOT SPLIT - Resource limit")
                         break
             if not can_split:
                 continue
@@ -824,6 +833,7 @@ class Mesh:
                 )
                 if neigh_cells.shape[0] > cell_contact_limit_i[0]:
                     can_split = False
+                    logging.info("CANNOT SPLIT - Contact limit")
                     break
             if not can_split:
                 continue

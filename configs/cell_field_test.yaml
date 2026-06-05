@@ -24,7 +24,7 @@ grn:
     - 1.0
 
   ## Protein related
-  protein_sim: false
+  protein_sim: True
 
 # Lattice free setup
 spatial_sim:
@@ -61,20 +61,23 @@ spatial_sim:
       random_vel_coeff: 0
 
   ## Cycle related
-  cycle_bool: false
+  cycle_bool: True
   cycle:
     cell1:
-      cycle_len: 10
+      cycle_len: 2
       interphase_len: 0.9
       necrosis_death_prob: 0.1
       apoptosis_death_prob: 0.1
-      cell_target_vol: 10.0
+      cell_target_vol: 1.0
       cell_density: 1.0
       cell_vol_growth_rate: 1.0
       cell_decay_rate: 0.5
+      resource_limit: [["chem3", 0.2]]
+      contact_limit: [1, 2]
 
   ## Chemicals
   chemical:
+    non_zero_init: False
     name:
       - "chem1"
       - "chem2"

@@ -92,6 +92,7 @@ spatial_sim:
 
   ## Chemicals
   chemical:
+    non_zero_init: True
     name:
       - "chem1"
       - "chem2"
