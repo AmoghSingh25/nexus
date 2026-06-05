@@ -82,7 +82,9 @@ spatial_sim:
       resource_limit_type: "hill" # Other option is hard cutoff
       resource_limit_hill_coeff: 1
       resource_limit_combine_func: "min" # Or "mult"
-      contact_limit: [3, 0.5] # Maximum number of neighbours in the surrounding to perform cell division. Higher number of neighbours prevent cell division, radial limit
+      contact_limit: [3, 0.5] # Number of neighbours in the surrounding to (perform cell division)(for half rate cell division). Higher number of neighbours prevent cell division, radial limit
+      contact_limit_type: "hill" # Other option is hard cutoff
+      contact_limit_hill_coeff: 1 # Other option is hard cutoff
     cell2:
       cycle_len: 20
       interphase_len: 0.8

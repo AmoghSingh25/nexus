@@ -677,7 +677,9 @@ class Mesh:
 
         ## Check contact limits
         if self.cell_contact_limit.get(cell_type_i):
-            cell_contact_limit_i = self.cell_contact_limit[cell_type_i]
+            cell_contact_limit_i, contact_limit_params = self.cell_contact_limit[
+                cell_type_i
+            ]
             neigh_cells, _ = self.get_radial_limits(
                 pos=self.cell_positions[cell_id], radius=cell_contact_limit_i[1]
             )
