@@ -663,7 +663,7 @@ class Mesh:
                     n=resource_limit_type_params[1],
                     combine_type=resource_limit_type_params[2],
                 )
-                prob_split = 1.0 * resource_hill_coeff
+                prob_split = prob_split * resource_hill_coeff
             elif resource_limit_type_params[0] == "hard":
                 for chem_i, limit_i in chem_resources_i:
                     if (
@@ -683,9 +683,19 @@ class Mesh:
             neigh_cells, _ = self.get_radial_limits(
                 pos=self.cell_positions[cell_id], radius=cell_contact_limit_i[1]
             )
-            if neigh_cells.shape[0] > cell_contact_limit_i[0]:
-                logging.info(f"Cannot split cell_idx {cell_id} - Contact limit")
-                return False
+            if contact_limit_params[0] == "hill":
+                curr_dens = neigh_cells.shape[0]
+                contact_limit_hill_coeff = self.calc_hill_func(
+                    concs=curr_dens,
+                    half_rate_concs=cell_contact_limit_i[0],
+                    n=contact_limit_params[1],
+                    combine_type=contact_limit_params[2],
+                )
+                prob_split = prob_split * contact_limit_hill_coeff
+            elif contact_limit_params[0] == "hard":
+                if neigh_cells.shape[0] > cell_contact_limit_i[0]:
+                    logging.info(f"Cannot split cell_idx {cell_id} - Contact limit")
+                    return False
         self.key, self.sub_key, rand_val = generate_uniform(
             key=self.key, sub_key=self.sub_key, shape=(1,)
         )
