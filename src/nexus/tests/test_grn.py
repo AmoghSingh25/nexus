@@ -21,19 +21,6 @@ def read_pickle(file_name):
     return var
 
 
-def log_cleanup(test_func):
-    @functools.wraps(test_func)
-    def test_wrapper(self, *args, **kwargs):
-        try:
-            return test_func(self, *args, **kwargs)
-        finally:
-            if hasattr(self, "sim") and self.sim is not None:
-                self.sim.cleanup()
-                self.sim = None
-
-    return test_wrapper
-
-
 class TestGRN:
     config_files = [
         "configs/sample_data/sample_network_2cell.yaml",

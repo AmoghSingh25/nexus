@@ -18,22 +18,6 @@ def get_config(config_name="test_config"):
     return cfg
 
 
-def log_cleanup(test_func):
-    @functools.wraps(test_func)
-    def test_wrapper(self, *args, **kwargs):
-        try:
-            return test_func(self, *args, **kwargs)
-        finally:
-            if hasattr(self, "grn_sim") and self.grn_sim is not None:
-                self.grn_sim.cleanup()
-                self.grn_sim = None
-            if hasattr(self, "spatial_sim") and self.spatial_sim is not None:
-                self.spatial_sim.cleanup()
-                self.spatial_sim = None
-
-    return test_wrapper
-
-
 class TestInterventions:
     base_config = get_config("test_config")
     cell_params = [
