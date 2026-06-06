@@ -1,13 +1,13 @@
 import marimo
 
-__generated_with = "0.18.4"
+__generated_with = "0.22.4"
 app = marimo.App(width="medium")
 
 
 @app.cell
 def _():
-    from simulator.spatial.spatialSim import SpatialSim
-    from simulator.spatial.spatialSim import SpatialSimVec
+    from nexus.simulator.spatial.spatialSim import SpatialSim
+    from nexus.simulator.run_sim import run_sim
     import matplotlib.pyplot as plt
     import matplotlib
     from hydra import (
@@ -18,15 +18,7 @@ def _():
     import marimo as mo
 
     matplotlib.style.use("default")
-    return (
-        SpatialSim,
-        SpatialSimVec,
-        compose,
-        initialize_config_dir,
-        mo,
-        os,
-        plt,
-    )
+    return SpatialSim, compose, initialize_config_dir, mo, os, plt, run_sim
 
 
 @app.cell
@@ -60,12 +52,15 @@ def _(plt):
         plt.xlabel("Field ID")
         plt.ylabel("Chemical Mass")
 
+
     def plot_chemical_progress(sim, chem_id, cell_id=0):
         _s = sim
         _chem_datas = []
         for _chem_i in range(_s.mesh.n_chemicals):
             _chem_datas.append(
-                _s.logger.retrieve_chem_data(chem_id=_chem_i, cell_id=cell_id)["conc"]
+                _s.logger.retrieve_chem_data(chem_id=_chem_i, cell_id=cell_id)[
+                    "conc"
+                ]
             )
             plt.plot(_chem_datas[-1], label=f"Chem {str(_chem_i)}")
 
@@ -80,6 +75,36 @@ def _(plt):
 def _():
     chem_id = 0
     return (chem_id,)
+
+
+@app.cell
+def _(get_config, run_sim):
+    _config = get_config("test_config")
+    g, s = run_sim(_config)
+    return (s,)
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
+def _(s):
+    s.run_sim()
+    return
+
+
+@app.cell
+def _(s):
+    s.mesh.chem_generators
+    return
+
+
+@app.cell
+def _(s):
+    s.mesh.cell_positions
+    return
 
 
 @app.cell(hide_code=True)

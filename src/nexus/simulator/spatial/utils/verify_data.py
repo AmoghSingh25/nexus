@@ -1,3 +1,4 @@
+import jax.numpy as jnp
 import numpy as np
 from nexus.simulator.spatial.utils.random_generators import (
     generate_permutation,
@@ -45,6 +46,9 @@ def check_cell_type_data(key, sub_key, n_cells, cfg):
     check_cycle_flag = -1
     cell_types = []
     param_dict = {}
+    cell_resource_limit = {}
+    cell_contact_limit = {}
+
     for i in range(len(cfg.movement)):
         cell_types.append(list(cfg.movement.keys())[i])
         if not req_keys_movement.issubset(
@@ -58,10 +62,29 @@ def check_cell_type_data(key, sub_key, n_cells, cfg):
         _cell_params = dict(cfg.cycle.get(cell_types[-1]))
         _cell_params.update(cfg.movement.get(cell_types[-1]))
         param_dict[cell_types[-1]] = _cell_params
+        if cfg.cycle[cell_types[-1]].get("resource_limit", None) is not None:
+            resource_limit_types = (
+                cfg.cycle[cell_types[-1]]["resource_limit"].get("type", "hill"),
+                cfg.cycle[cell_types[-1]]["resource_limit"].get("hill_coeff", 1),
+                cfg.cycle[cell_types[-1]]["resource_limit"].get("combine_func", "min"),
+            )
+            cell_resource_limit[i] = (
+                cfg.cycle[cell_types[-1]]["resource_limit"]["limits"],
+                resource_limit_types,
+            )
+        if cfg.cycle[cell_types[-1]].get("contact_limit", None) is not None:
+            contact_limit_types = (
+                cfg.cycle[cell_types[-1]]["contact_limit"]["type"],
+                cfg.cycle[cell_types[-1]]["contact_limit"]["hill_coeff"],
+            )
+            cell_contact_limit[i] = (
+                cfg.cycle[cell_types[-1]]["contact_limit"]["limits"],
+                contact_limit_types,
+            )
 
     if check_movement_flag != -1:
         raise ValueError(
-            f"Incorrect keys for movement config. Missing {set(req_keys_movement) - set(cfg.cycle.get(check_movement_flag))} for {check_movement_flag}"
+            f"Incorrect keys for movement config. Missing {set(req_keys_movement) - set(cfg.movement.get(check_movement_flag))} for {check_movement_flag}"
         )
     if check_cycle_flag != -1:
         raise ValueError(
@@ -83,11 +106,13 @@ def check_cell_type_data(key, sub_key, n_cells, cfg):
     cell_drift_vel_coeff = np.zeros((n_cells, 1))
     cell_random_vel_coeff = np.zeros((n_cells, 1))
     cell_death_decay_coeff = np.zeros((n_cells, 1))
+    cell_residual_vel = np.zeros((n_cells, 3))
 
     cell_mask = np.zeros((n_cells, 1), dtype=np.int16)
     total_qty = 0.0
     cell_type = 0
     cell_qty = {i: param_dict[i]["qty_ratio"] for i in param_dict}
+
     for i in cell_qty:
         proportions.append(total_qty + cell_qty.get(i))
         start, end = (
@@ -129,17 +154,20 @@ def check_cell_type_data(key, sub_key, n_cells, cfg):
     return (
         key,
         sub_key,
-        cell_mask,
-        interphase_len,
-        mitosis_len,
-        cell_death_prob,
-        cell_prg_death_prob,
-        cell_target_vol,
-        cell_density,
-        cell_vol_growth_rate,
-        cell_attraction_coeff,
-        cell_repulsion_coeff,
-        cell_drift_vel_coeff,
-        cell_random_vel_coeff,
-        cell_death_decay_coeff,
+        jnp.array(cell_mask),
+        jnp.array(interphase_len),
+        jnp.array(mitosis_len),
+        jnp.array(cell_death_prob),
+        jnp.array(cell_prg_death_prob),
+        jnp.array(cell_target_vol),
+        jnp.array(cell_density),
+        jnp.array(cell_vol_growth_rate),
+        jnp.array(cell_attraction_coeff),
+        jnp.array(cell_repulsion_coeff),
+        jnp.array(cell_drift_vel_coeff),
+        jnp.array(cell_random_vel_coeff),
+        jnp.array(cell_death_decay_coeff),
+        jnp.array(cell_residual_vel),
+        cell_resource_limit,
+        cell_contact_limit,
     )

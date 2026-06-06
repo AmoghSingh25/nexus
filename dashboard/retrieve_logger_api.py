@@ -87,7 +87,7 @@ def get_logs():
         os.path.isdir,
         [os.path.join(spatial_base_dir, x) for x in os.listdir(spatial_base_dir)],
     )
-    log_files = list(log_files)
+    log_files = sorted(list(log_files))
     log_file_names = [x[len(str(spatial_base_dir)) + 1 :] for x in log_files]
     resp_files = make_response({"files": log_file_names})
     return resp_files

@@ -1,4 +1,4 @@
-import functools
+from nexus.tests.utils import log_cleanup
 import jax.numpy as jnp
 import jax
 from nexus.simulator.spatial.spatialSim import SpatialSim
@@ -13,22 +13,6 @@ def get_config(config_name="test_config"):
     with initialize_config_dir(version_base=None, config_dir=conf_path):
         cfg = compose(config_name=config_name)
     return cfg
-
-
-def log_cleanup(test_func):
-    @functools.wraps(test_func)
-    def test_wrapper(self, *args, **kwargs):
-        try:
-            return test_func(self, *args, **kwargs)
-        finally:
-            if hasattr(self, "sim") and self.sim is not None:
-                self.sim.cleanup()
-                self.sim = None
-            if hasattr(self, "sim2") and self.sim2 is not None:
-                self.sim2.cleanup()
-                self.sim2 = None
-
-    return test_wrapper
 
 
 class TestSpatial:
@@ -128,3 +112,144 @@ class TestSpatial:
                 arr1 = getattr(self.sim.mesh, attr)
                 arr2 = getattr(self.sim2.mesh, attr)
                 assert jnp.all(arr1 == arr2)
+
+    @log_cleanup
+    def test_resource_limit_hard(self):
+        # Manually set the field chemical concentration and verifies the simulator accurately marks the cell for split or no-split
+        cell_type = 0
+        base_config = get_config("test_config")
+        base_config.spatial_sim.cycle_bool = True
+        base_config.spatial_sim.logging = False
+        sim = SpatialSim(base_config.spatial_sim)
+
+        cell_idx = jnp.where(sim.mesh.cell_type_mask == cell_type)[0][0]
+        cell_fields = sim.mesh.get_assigned_fields()
+        cell_field = cell_fields[cell_idx]
+        chem1_idx = sim.mesh.chem_name_map["chem1"]
+        sim.mesh.cell_contact_limit = {}
+        sim.mesh.cell_resource_limit[cell_type] = (
+            [["chem1", 0.1], ["chem2", 0.2]],
+            ("hard", 1, "min"),
+        )
+        assert sim.mesh.cell_resource_limit[cell_type][1][0] == "hard"
+
+        sim.mesh.field_chem = sim.mesh.field_chem.at[cell_field, chem1_idx, 0].set(0.05)
+        assert not sim.mesh.check_cell_constraints(
+            cell_id=cell_idx, cell_fields=cell_fields
+        )
+
+        sim.mesh.field_chem = sim.mesh.field_chem.at[cell_field, chem1_idx, 0].set(0.15)
+        assert sim.mesh.check_cell_constraints(
+            cell_id=cell_idx, cell_fields=cell_fields
+        )
+
+    @log_cleanup
+    def test_resource_limit_hill(self):
+        # Test the resource limit using hill function computation for cell split
+        cell_type = 0
+        base_config = get_config("test_config")
+        base_config.spatial_sim.cycle_bool = True
+        base_config.spatial_sim.logging = False
+        sim = SpatialSim(base_config.spatial_sim)
+        cells = jnp.where(sim.mesh.cell_type_mask == cell_type)[0]
+        cell_fields = sim.mesh.get_assigned_fields()
+        chem1_idx = sim.mesh.chem_name_map["chem1"]
+        chem2_idx = sim.mesh.chem_name_map["chem2"]
+        sim.mesh.cell_contact_limit = {}
+        assert sim.mesh.cell_resource_limit[cell_type][1][0] == "hill"
+
+        sim.mesh.field_chem = sim.mesh.field_chem.at[:, chem1_idx, 0].set(10.0)
+        sim.mesh.field_chem = sim.mesh.field_chem.at[:, chem2_idx, 0].set(10.0)
+        splits_prob_highchem = jnp.array(
+            [
+                sim.mesh.check_cell_constraints(
+                    cell_id=cell_id, cell_fields=cell_fields
+                )
+                for cell_id in cells
+            ],
+        )
+        sim.mesh.field_chem = sim.mesh.field_chem.at[:, chem1_idx, 0].set(0.01)
+        sim.mesh.field_chem = sim.mesh.field_chem.at[:, chem2_idx, 0].set(0.01)
+        splits_prob_lowchem = jnp.array(
+            [
+                sim.mesh.check_cell_constraints(
+                    cell_id=cell_id, cell_fields=cell_fields
+                )
+                for cell_id in cells
+            ],
+        )
+        assert jnp.sum(splits_prob_lowchem) < jnp.sum(splits_prob_highchem)
+
+    @log_cleanup
+    def test_contact_limit_hard(self):
+        cell_type = 0
+        base_config = get_config("test_config")
+        base_config.spatial_sim.cycle_bool = True
+        base_config.spatial_sim.logging = False
+        sim = SpatialSim(base_config.spatial_sim)
+        cell_fields = sim.mesh.get_assigned_fields()
+        sim.mesh.cell_resource_limit = {}
+        sim.mesh.cell_contact_limit[0] = ([3, 0.5], ("hard", 1))
+        assert sim.mesh.cell_contact_limit[cell_type][1][0] == "hard"
+
+        cells = jnp.where(sim.mesh.cell_states == cell_type)[0]
+        sim.mesh.cell_positions = (
+            jnp.zeros_like(sim.mesh.cell_positions).at[:].set(10.0)
+        )
+        sim.mesh.cell_positions = sim.mesh.cell_positions.at[cells[0]].set(0.0)
+        assert sim.mesh.check_cell_constraints(
+            cell_id=cells[0], cell_fields=cell_fields
+        )
+
+        sim.mesh.cell_positions = sim.mesh.cell_positions.at[cells[1]].set(
+            jnp.array([0.1, 0.0, 0.0])
+        )
+        sim.mesh.cell_positions = sim.mesh.cell_positions.at[cells[2]].set(
+            jnp.array([0.0, 0.1, 0.0])
+        )
+        sim.mesh.cell_positions = sim.mesh.cell_positions.at[cells[3]].set(
+            jnp.array([0.0, 0.0, 0.1])
+        )
+        assert not sim.mesh.check_cell_constraints(
+            cell_id=cells[0], cell_fields=cell_fields
+        )
+
+    @log_cleanup
+    def test_contact_limit_hill(self):
+        cell_type = 0
+        base_config = get_config("test_config")
+        base_config.spatial_sim.cycle_bool = True
+        base_config.spatial_sim.logging = False
+        sim = SpatialSim(base_config.spatial_sim)
+        cell_fields = sim.mesh.get_assigned_fields()
+        sim.mesh.cell_resource_limit = {}
+        sim.mesh.cell_contact_limit[cell_type] = ([3, 0.5], ("hill", 1))
+        cells = jnp.where(sim.mesh.cell_type_mask == cell_type)[0]
+        assert sim.mesh.cell_contact_limit[cell_type][1][0] == "hill"
+
+        sim.mesh.cell_positions = (
+            jnp.zeros_like(sim.mesh.cell_positions).at[:].set(10.0)
+        )
+        sim.mesh.cell_positions = sim.mesh.cell_positions.at[cells[0]].set(0.0)
+        splits_low_density = jnp.array(
+            [
+                sim.mesh.check_cell_constraints(
+                    cell_id=cells[x], cell_fields=cell_fields
+                )
+                for x in cells
+            ]
+        )
+
+        for i in cells[1:]:
+            sim.mesh.cell_positions = sim.mesh.cell_positions.at[i].set(
+                jnp.array([0.05 * i, 0.0, 0.0])
+            )
+        splits_high_density = jnp.array(
+            [
+                sim.mesh.check_cell_constraints(
+                    cell_id=cells[x], cell_fields=cell_fields
+                )
+                for x in cells
+            ]
+        )
+        assert jnp.sum(splits_high_density) < jnp.sum(splits_low_density)

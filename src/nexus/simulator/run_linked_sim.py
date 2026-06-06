@@ -42,6 +42,11 @@ def run_sim(cfg: DictConfig) -> None:
             norm_ord=2, clustering_type="k_mean"
         )
         for i in range(spatial_sim.mesh.n_cells):
+            if (
+                spatial_sim.mesh.cell_states[i] == -1
+                or spatial_sim.mesh.cell_states[i] == -2
+            ):
+                continue
             cell_mass[i] = grn_sim.prot_conc[:, i]
             cell_vols[i] = spatial_sim.mesh.cell_vol[i]
 
@@ -71,7 +76,6 @@ def run_sim(cfg: DictConfig) -> None:
                 after_cell_concs.append(grn_sim.prot_conc[:, j])
 
                 cell_flux_field += cell_delta_m[j]
-
             spatial_sim.mesh.field_chem = spatial_sim.mesh.field_chem.at[i, :].set(
                 spatial_sim.mesh.field_chem[i, :] - cell_flux_field
             )

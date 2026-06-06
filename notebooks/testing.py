@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.18.4"
+__generated_with = "0.22.4"
 app = marimo.App(width="full")
 
 
@@ -29,6 +29,7 @@ def _(compose, initialize_config_dir, os):
         with initialize_config_dir(version_base=None, config_dir=conf_path):
             cfg = compose(config_name=config_name)
         return cfg
+
     return (get_config,)
 
 
@@ -40,8 +41,14 @@ def _():
 
 @app.cell
 def _(get_config):
-    cfg = get_config(config_name="3d_spatial_test")
+    cfg = get_config(config_name="test_config")
     return (cfg,)
+
+
+@app.cell
+def _(cfg):
+    cfg.intervention.other[-1][2]
+    return
 
 
 @app.cell
@@ -56,27 +63,76 @@ def _(np, plt):
         plt.legend()
         plt.grid(True)
         plt.show()
-    return (plot_conc,)
 
-
-@app.cell
-def _():
-    from simulator.grn.grnSim import GRNSim
-    return (GRNSim,)
-
-
-@app.cell
-def _(cfg):
-    cfg.grn.n_cells = 1
-    cfg.grn.learn_params = True
-    cfg.grn.epochs = 10
     return
 
 
 @app.cell
 def _():
-    # sim1 = GRNSim_v1(gene_data="configs/sample_data/Interaction_cID_4.txt",mr_data="configs/sample_data/Regs_cID_4.txt", protein_sim=False, n_cells=100)
-    # ret1=sim1.run_sim(20)
+    from nexus.simulator.grn.grnSim import GRNSim
+
+    return (GRNSim,)
+
+
+@app.cell
+def _():
+    # cfg.grn.n_cells = 10
+    # cfg.grn.learn_params = True
+    # cfg.grn.epochs = 10
+    return
+
+
+@app.cell
+def _(GRNSim, cfg):
+    sim_= GRNSim(cfg.grn)
+    return (sim_,)
+
+
+@app.cell
+def _(sim_):
+    sim_.is_mr
+    return
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
+def _(sim_):
+    sim_.ki_matrix[0][-1]
+    return
+
+
+@app.cell
+def _(sim_):
+    sim_.ki_matrix[0][1]
+    return
+
+
+@app.cell
+def _(sim_):
+    sim_.ki_matrix[0]
+    return
+
+
+@app.cell
+def _(sim_):
+    sim_.ki_matrix.shape
+    return
+
+
+@app.cell
+def _(GRNSim):
+    sim1 = GRNSim(gene_data="configs/sample_data/Interaction_cID_4.txt",mr_data="configs/sample_data/Regs_cID_4.txt", protein_sim=False, n_cells=2700)
+    ret1=sim1.run_sim(20)
+    return (sim1,)
+
+
+@app.cell
+def _(cfg):
+    cfg.grn.n_cells = 9
     return
 
 
@@ -89,111 +145,25 @@ def _(GRNSim, cfg):
 
 @app.cell
 def _(sim2):
-    sim2.gene_conc
+    sim2.steady_states.shape
     return
 
 
 @app.cell
-def _():
+def _(plt, sim2):
+    plt.plot(sim2.steady_states[0])
     return
 
 
 @app.cell
 def _(sim2):
     target_gene = sim2.steady_states - 0.2
-    ret = sim2.learn_params_steady_state(target_gene, sim2.prot_steady_state)
-    return (ret,)
-
-
-@app.cell
-def _(ret):
-    ret
-    return
-
-
-@app.cell
-def _(sim2):
-    (
-        sim2.basal_rates,
-        sim2.decay,
-        sim2.ki_matrix,
-        sim2.hill_coeffs,
-        sim2.prot_tran_rates,
-        sim2.prot_decay,
-    )
-    return
-
-
-@app.cell
-def _(sim2):
-    sim2.calc_steady_states()
-    return
-
-
-@app.cell
-def _(ret2):
-    ret2[0][-1].reshape(-1, 1)
+    # ret = sim2.learn_params_steady_state(target_gene, sim2.prot_steady_state)
     return
 
 
 @app.cell
 def _():
-    return
-
-
-@app.cell
-def _(ret2):
-    ret2[1]
-    return
-
-
-@app.cell
-def _(ret2):
-    print(ret2[2][0][0].shape)
-    return
-
-
-@app.cell
-def _(ret2):
-    ret2[2][0][0].reshape(4, 4).diagonal()
-    return
-
-
-@app.cell
-def _(ret2):
-    ret2[2][0][1].reshape(4, 4).diagonal()
-    return
-
-
-@app.cell
-def _(ret2):
-    ret2[2][0][1]
-    return
-
-
-@app.cell
-def _(ret2):
-    ret2[2][0].reshape(4, 4)
-    return
-
-
-@app.cell
-def _(ret2):
-    ret2[2][0].shape
-    return
-
-
-@app.cell
-def _():
-    # 2
-    # (4, 1, 4, 1, 1)
-    # (4, 1, 4, 1, 1)
-    return
-
-
-@app.cell
-def _(plot_conc, ret2):
-    plot_conc(ret2[0], 0)
     return
 
 
@@ -201,18 +171,19 @@ def _(plot_conc, ret2):
 def _(GRNSim, cfg, time):
     ## Calculating run times
 
-    cfg.grn.n_cells = 9
+    cfg.grn.n_cells = 10_000
     _time_taken = []
     for _i in range(5):
         _start = time.time()
-        sim1 = GRNSim(cfg.grn)
+        _sim1 = GRNSim(cfg.grn)
         _end = time.time()
         print("Time taken = ", _end - _start)
         _time_taken.append(_end - _start)
-        sim1.logger.cleanup()
+        print(_sim1.steady_states.shape)
+        _sim1.cleanup()
     for _i in _time_taken:
         print(_i)
-    return (sim1,)
+    return
 
 
 @app.cell
@@ -324,7 +295,7 @@ def _():
 
 @app.cell
 def _(node_mapping, pickle):
-    with open("src/tests/saved_outputs/node_mapping.pkl", "wb") as _f:
+    with open("src/nexus/tests/saved_outputs/node_mapping.pkl", "wb") as _f:
         pickle.dump(node_mapping, _f)
     return
 
@@ -333,9 +304,9 @@ def _(node_mapping, pickle):
 def _():
     import pickle
 
-    with open("src/tests/saved_outputs/saved_output.pkl", "rb") as f:
+    with open("src/nexus/tests/saved_outputs/saved_output.pkl", "rb") as f:
         sergio_output_1 = pickle.load(f)
-    with open("src/tests/saved_outputs/saved_output_9cells.pkl", "rb") as f:
+    with open("src/nexus/tests/saved_outputs/saved_output_9cells.pkl", "rb") as f:
         sergio_output_2 = pickle.load(f)
     return pickle, sergio_output_1, sergio_output_2
 
@@ -379,8 +350,57 @@ def _(jnp, node_mapping, sim2):
 
 
 @app.cell
+def _(np, pl, plt, reordered_output_2, sergio_output_2):
+    _clean_data = pl.read_csv("notebooks/sergio_rs_10cell_output.csv")
+
+    for _j in range(9):
+        _data = []
+        for _i in _clean_data.columns:
+            if "_cell_"+str(_j) in _i:
+                _data.append(_clean_data[_i])
+
+    _best_idx = ((np.array(_data).T - sergio_output_2[4:])**2).mean(axis=0).argmin()
+
+    plt.figure(figsize=(12,6))
+    plt.plot(reordered_output_2[:, 0], label="Nexus-GRN")
+    plt.plot(sergio_output_2[:, 0], label="SERGIO")
+    plt.plot(np.array(_data)[_best_idx], label = "SERGIO_RS")
+    plt.legend()
+    plt.title("Comparison of Nexus-GRN, SERGIO and SERGIO_RS outputs")
+    plt.xlabel("RNA ID")
+    plt.ylabel("Conc.")
+    # plt.show()
+    plt.savefig("outputs/images/sergio_rs_comparison.pdf", dpi=1200)
+    return
+
+
+@app.cell
 def _(jnp, reordered_output_2, sergio_output_2):
     print(jnp.allclose(reordered_output_2, sergio_output_2, rtol=1e-6, atol=1e-32))
+    return
+
+
+@app.cell
+def _():
+    import polars as pl
+
+    return (pl,)
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
+def _(clean_data, plt):
+    data = []
+    for i in clean_data.columns:
+        if "_cell_8" in i:
+            data.append(clean_data[i])
+
+    plt.plot(data[8], label = str(i))
+    plt.show()
     return
 
 

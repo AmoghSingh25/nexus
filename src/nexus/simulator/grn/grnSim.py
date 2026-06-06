@@ -2,6 +2,7 @@
 # - Simulation starts from steady state calculation
 # - Basal rates of non-MR is 0 (from SERGIO) - Can also be configured for non zero basal rates
 
+import jax
 import os
 import time
 import networkx as nx
@@ -17,24 +18,26 @@ from omegaconf import DictConfig
 from nexus.simulator.grn.logger.grnLogger import GRNLogger
 import optax
 from dataclasses import dataclass
-from typing import List
+from jaxtyping import Float, Array, jaxtyped, Bool
+from beartype import beartype
+from beartype.typing import Tuple, List
 
 
 @dataclass
 class GRNOutput:
-    gene_traj: List
-    prot_traj: List
-    noise_trace: jnp.array
+    gene_traj: Float[Array, "steps genes cells 1"]
+    prot_traj: Float[Array, "steps genes cells 1"]
+    noise_trace: Float[Array, "2 steps cells genes"]
 
 
 class GRNSim:
     def __init__(
         self,
         cfg: DictConfig,
-        node_set=None,
-        edges_set=None,
-        target_gene_conc=None,
-        target_prot_conc=None,
+        node_set: List | None = None,
+        edges_set: List | None = None,
+        target_gene_conc: Float[Array, "..."] | None = None,
+        target_prot_conc: Float[Array, "..."] | None = None,
     ):
         """
         Shapes of variables :
@@ -43,7 +46,7 @@ class GRNSim:
         steady_states - (n_genes, n_cells, 1)
         basal_rates -   (n_genes, n_cells, 1)
         ki_matrix -     (n_cells, n_genes, n_genes)
-        is_mr -         (n_genes,)
+        is_mr -         (n_genes,) -> Change to (n_cells, n_genes)
         prot_conc -     (n_genes, n_cells, 1)
         prot_kt -       (n_cells, n_genes)
         prot_kd -       (n_cells, n_genes)
@@ -94,7 +97,15 @@ class GRNSim:
         self.learn_gene = False
         self.learn_prot = False
         if target_gene_conc is not None:
-            self.target_gene_conc = target_gene_conc.reshape(self.n_genes, 1)
+            if target_gene_conc.ndim == 1:
+                self.target_gene_conc = target_gene_conc.reshape(self.n_genes, 1)
+            elif target_gene_conc.ndim == 2:
+                self.target_gene_conc = target_gene_conc.reshape(
+                    self.n_cells, self.n_genes, 1
+                )
+            else:
+                assert target_gene_conc.shape == (self.n_genes, self.n_cells, 1)
+                self.target_gene_conc = target_gene_conc
             self.learn_gene = True
         if target_prot_conc is not None:
             self.target_prot_conc = target_prot_conc.reshape(self.n_genes, 1)
@@ -166,7 +177,7 @@ class GRNSim:
                 basal_rate_i = jnp.zeros((self.n_cells, 1))  # 0 basal rate for non-MRs
                 self.g.add_node(i)
                 ki_vals = jnp.array(node["ki"])
-                if self.non_mr_basal:
+                if self.non_mr_basal:  # Optional non-zero basal rate for non-MRs
                     self.basal_rates.append(
                         jnp.array(node["basal_rate"]).reshape((self.n_cells, 1))
                     )
@@ -208,7 +219,9 @@ class GRNSim:
         self.basal_rates = jnp.array(self.basal_rates).reshape(
             self.n_genes, self.n_cells
         )
-        self.is_mr = jnp.array(self.is_mr)
+        self.is_mr = jnp.repeat(
+            jnp.array(self.is_mr).reshape(1, -1), self.n_cells, axis=0
+        )
 
         ## Create JIT functions
         self.jit_pij = jit(self.calc_pij)
@@ -228,7 +241,7 @@ class GRNSim:
 
     def calc_steady_state_mr(self, b, decay):
         """Steady state calculation for MRs"""
-        return (b / decay).reshape(-1, 1), jnp.zeros_like(b).reshape(-1, 1)
+        return (b / decay).reshape(-1), jnp.zeros_like(b).reshape(-1)
 
     def calc_steady_state_g(
         self,
@@ -264,7 +277,7 @@ class GRNSim:
 
         return e_x, p_c
 
-    def calc_steady_states(self, learn_params=True):
+    def calc_steady_states(self, learn_params: bool = True) -> Tuple:
         """Calculates the steady state concentrations for the MR and Gene nodes.
         The steady state concentrations are calculated using the method mentioned in Equation 8 and Equation 10 in
         Dibaeinia, P., & Sinha, S. (2020). SERGIO: A Single-Cell Expression Simulator Guided by Gene Regulatory Networks.
@@ -299,45 +312,57 @@ class GRNSim:
                 prot_decay,
             ):
                 jit_calc_steady_state = self.calc_steady_state_g
-                return jit_calc_steady_state(
-                    is_mr=is_mr,
-                    idx=gene_idx,
-                    basal_rates=basal_rate,
-                    decay=decay,
-                    gene_conc=gene_conc[:, cell_idx],
-                    gene_cell_mean=all_cell_conc,
-                    k_i=ki_matrix,
-                    hill_coeff=hill_coeff,
-                    p_kt=prot_trans,
-                    p_kd=prot_decay,
+                return lax.cond(
+                    is_mr,
+                    lambda _: jit(self.calc_steady_state_mr)(basal_rate, decay),
+                    lambda _: jit_calc_steady_state(
+                        is_mr=is_mr,
+                        idx=gene_idx,
+                        basal_rates=basal_rate,
+                        decay=decay,
+                        gene_conc=gene_conc[:, cell_idx],
+                        gene_cell_mean=all_cell_conc,
+                        k_i=ki_matrix,
+                        hill_coeff=hill_coeff,
+                        p_kt=prot_trans,
+                        p_kd=prot_decay,
+                    ),
+                    operand=None,
                 )
+                # return jit_calc_steady_state(
+                #     is_mr=is_mr,
+                #     idx=gene_idx,
+                #     basal_rates=basal_rate,
+                #     decay=decay,
+                #     gene_conc=gene_conc[:, cell_idx],
+                #     gene_cell_mean=all_cell_conc,
+                #     k_i=ki_matrix,
+                #     hill_coeff=hill_coeff,
+                #     p_kt=prot_trans,
+                #     p_kd=prot_decay,
+                # )
 
             vmap_single_cell = jit(
                 vmap(
                     _single_cell_steady_state,
-                    in_axes=(None, 0, None, 0, 0, 0, None, None, 0, 0, 0),
+                    in_axes=(None, 0, 0, 0, 0, 0, None, None, 0, 0, 0),
                 )
             )
-            steady_vals = lax.cond(
+            return vmap_single_cell(
+                idx,
+                n_cells_range,
                 is_mr,
-                lambda _: jit(self.calc_steady_state_mr)(basal_rate, decay[:, idx]),
-                lambda _: vmap_single_cell(
-                    idx,
-                    n_cells_range,
-                    is_mr,
-                    basal_rate,
-                    decay,
-                    ki_matrix,
-                    gene_conc,
-                    all_cell_conc,
-                    hill_coeff,
-                    prot_trans,
-                    prot_decay,
-                ),
-                operand=None,
+                basal_rate,
+                decay,
+                ki_matrix,
+                gene_conc,
+                all_cell_conc,
+                hill_coeff,
+                prot_trans,
+                prot_decay,
             )
 
-            return steady_vals[0], steady_vals[1]
+            # return steady_vals[0], steady_vals[1]
 
         gene_conc, prot_conc = self.gene_conc, self.prot_conc
         ## TODO: VMAP over genes does not work as genes depend on the concentration of the regulator genes
@@ -361,7 +386,7 @@ class GRNSim:
             g_conc, p_conc = calc_steady_state_jit(
                 n_cells_range=jnp.arange(self.n_cells),
                 idx=i,
-                is_mr=self.is_mr[i],
+                is_mr=self.is_mr[:, i],
                 basal_rate=self.basal_rates[i],
                 decay=self.decay[:, i],
                 ki_matrix=self.ki_matrix[:, i, :],
@@ -406,7 +431,7 @@ class GRNSim:
                 ):
                     vmap_all_genes = vmap(
                         _single_gene_steady_state,
-                        in_axes=(None, 0, 0, 0, 1, 1, None, None, 1, 1, 1),
+                        in_axes=(None, 0, 1, 0, 1, 1, None, None, 1, 1, 1),
                     )
 
                     ret_ = vmap_all_genes(
@@ -437,22 +462,18 @@ class GRNSim:
                     nn.softplus(params_prot["prot_tran_rates"]),
                     nn.softplus(params_prot["prot_decay"]),
                 )
-                n_cells = len(n_cells_range)
                 p_conc = jnp.clip(p_conc, min=jnp.min(target_conc))
 
                 l2_gene_coeff = 1e-4
                 l2_prot_coeff = 1e-4
+                if target_conc.ndim == 3:
+                    target_conc = target_conc.squeeze(2)
                 loss = lax.cond(
                     target_gene,
                     lambda _: (
                         jnp.sqrt(
                             jnp.sum(
-                                (
-                                    jnp.log1p(
-                                        target_conc.repeat(axis=1, repeats=n_cells)
-                                    )
-                                    - jnp.log1p(g_conc.squeeze(2))
-                                )
+                                (jnp.log1p(target_conc) - jnp.log1p(g_conc.squeeze(2)))
                                 ** 2,
                                 dtype=jnp.float32,
                             )
@@ -462,12 +483,7 @@ class GRNSim:
                     lambda _: (
                         jnp.sqrt(
                             jnp.sum(
-                                (
-                                    jnp.log1p(
-                                        target_conc.repeat(axis=1, repeats=n_cells)
-                                    )
-                                    - jnp.log1p(p_conc.squeeze(2))
-                                )
+                                (jnp.log1p(target_conc) - jnp.log1p(p_conc.squeeze(2)))
                                 ** 2,
                                 dtype=jnp.float32,
                             )
@@ -581,8 +597,15 @@ class GRNSim:
             return gene_conc, prot_conc, {}, {}
 
     def calc_pij(
-        self, is_mr, idx, basal_rates, gene_conc, gene_cell_mean, k_i, _hill=1
-    ):
+        self,
+        is_mr,
+        idx,
+        basal_rates,
+        gene_conc,
+        gene_cell_mean,
+        k_i,
+        _hill=1.0,
+    ) -> jax.Array:
         """Calculates the production rate of each gene as a function of its regulator genes as given in Equation 5, Equation 6 and Equation 7 in
         Dibaeinia, P., & Sinha, S. (2020). SERGIO: A Single-Cell Expression Simulator Guided by Gene Regulatory Networks.
 
@@ -591,7 +614,12 @@ class GRNSim:
 
         """
 
-        def _calc_pij_g(gene_conc, gene_cell_mean, k_i, _hill=1):
+        def _calc_pij_g(
+            gene_conc: Float[Array, "..."],
+            gene_cell_mean: Float[Array, "..."],
+            k_i: Float[Array, "..."],
+            _hill: Float[Array, "..."] = 1,
+        ):
             eps = 1e-8
             num = jnp.pow(gene_conc, _hill)
             frac = num / (jnp.pow(gene_cell_mean, _hill) + num + eps)
@@ -625,19 +653,19 @@ class GRNSim:
 
     def calc_x_t(
         self,
-        gene_conc,
-        prot_conc,
-        delta,
-        decay,
-        basal_rates,
-        k_i,
-        is_mr,
-        noise_amp,
-        hill_coeff,
-        prot_kt,
-        prot_kd,
-        noise_a,
-        noise_b,
+        gene_conc: Float[Array, "genes cells 1"],
+        prot_conc: Float[Array, "genes cells 1"],
+        delta: Float[Array, ""],
+        decay: Float[Array, "cells genes 1"],
+        basal_rates: Float[Array, "genes cells"],
+        k_i: Float[Array, "cells genes genes"],
+        is_mr: Bool[Array, "cells genes"],
+        noise_amp: Float[Array, "cells genes 1"],
+        hill_coeff: Float[Array, "cells genes 1"],
+        prot_kt: Float[Array, "cells genes 1"],
+        prot_kd: Float[Array, "cells genes 1"],
+        noise_a: Float[Array, "cells genes"],
+        noise_b: Float[Array, "cells genes"],
     ):
         """Estimate the concentration of each gene and protein at the next time step.
 
@@ -700,7 +728,7 @@ class GRNSim:
         # Auto vectorization over auto_vec_genes for all cells
         auto_vec_cells = vmap(
             auto_vec_genes,
-            in_axes=(None, 1, None, 0, 1, 0, None, None, 0, 0, 1, 0, 0, 0, 0),
+            in_axes=(None, 1, None, 0, 1, 0, 0, None, 0, 0, 1, 0, 0, 0, 0),
         )
 
         x_t, p_t = auto_vec_cells(
@@ -725,37 +753,51 @@ class GRNSim:
         p_t = p_t.reshape((self.n_cells, self.n_genes)).T
         return x_t, p_t
 
-    def learn_params_fn(self):
+    def learn_params_fn(self, epochs=None):
+        if epochs is None:
+            epochs = self.epochs
+
+        start_gene_conc = self.target_gene_conc.reshape(self.n_genes, self.n_cells, 1)
+
+        if self.protein_sim:
+            start_prot_conc = self.target_prot_conc.reshape(
+                self.n_genes, self.n_cells, 1
+            )
+        else:
+            start_prot_conc = jnp.zeros_like(start_gene_conc)
+
         def loss_target(
             params,
             params_prot,
             n_cells_range,
-            n_genes_range,
-            is_mr,
             gene_conc,
+            prot_conc,
             target_conc,
-            prot_tran_rates,
             target_gene=True,
         ):
             wiener_noise_a = self.noise_a
             wiener_noise_b = self.noise_b
+
+            hill_coeffs_clipped = jnp.clip(params["hill_coeffs"], 1.0, 4.0)
+
             _gene_conc, _prot_conc = self.jit_x_t(
-                self.gene_conc,
-                self.prot_conc,
+                gene_conc,
+                prot_conc,
                 self.delta,
-                params["decay"],
-                params["basal_rates"],
+                nn.softplus(params["decay"]),
+                nn.softplus(params["basal_rates"]),
                 params["ki_matrix"],
                 self.is_mr,
                 self.noise_amp,
-                params["hill_coeffs"],
-                params_prot["prot_tran_rates"],
-                params_prot["prot_decay"],
+                hill_coeffs_clipped,
+                nn.softplus(params_prot["prot_tran_rates"]),
+                nn.softplus(params_prot["prot_decay"]),
                 wiener_noise_a[0],
                 wiener_noise_b[0],
             )
-            n_cells = len(n_cells_range)
-            p_conc = jnp.clip(_prot_conc, min=jnp.min(target_conc))
+
+            _gene_conc_clipped = jnp.clip(_gene_conc, min=0.0)
+            _prot_conc_clipped = jnp.clip(_prot_conc, min=jnp.min(target_conc))
 
             l2_gene_coeff = 1e-4
             l2_prot_coeff = 1e-4
@@ -766,8 +808,8 @@ class GRNSim:
                     jnp.sqrt(
                         jnp.sum(
                             (
-                                jnp.log1p(target_conc.repeat(axis=1, repeats=n_cells))
-                                - jnp.log1p(_gene_conc)
+                                jnp.log1p(target_conc.squeeze(2))
+                                - jnp.log1p(_gene_conc_clipped)
                             )
                             ** 2,
                             dtype=jnp.float32,
@@ -779,8 +821,8 @@ class GRNSim:
                     jnp.sqrt(
                         jnp.sum(
                             (
-                                jnp.log1p(target_conc.repeat(axis=1, repeats=n_cells))
-                                - jnp.log1p(p_conc)
+                                jnp.log1p(target_conc.squeeze(2))
+                                - jnp.log1p(_prot_conc_clipped)
                             )
                             ** 2,
                             dtype=jnp.float32,
@@ -795,24 +837,18 @@ class GRNSim:
         grad_loss_gene = jit(grad(loss_target, argnums=0))
         grad_loss_prot = jit(grad(loss_target, argnums=1))
         calc_loss = jit(loss_target)
-        calc_loss = jit(loss_target)
-        basal_rates = self.basal_rates
-        decay = self.decay
-        ki_matrix = self.ki_matrix
-        hill_coeffs = self.hill_coeffs
-        prot_tran_rates = self.prot_tran_rates
-        prot_decay = self.prot_decay
 
         params_gene = {
-            "basal_rates": basal_rates,
-            "decay": decay,
-            "ki_matrix": ki_matrix,
-            "hill_coeffs": hill_coeffs,
+            "basal_rates": self.basal_rates,
+            "decay": self.decay,
+            "ki_matrix": self.ki_matrix,
+            "hill_coeffs": self.hill_coeffs,
         }
         params_prot = {
-            "prot_tran_rates": prot_tran_rates,
-            "prot_decay": prot_decay,
+            "prot_tran_rates": self.prot_tran_rates,
+            "prot_decay": self.prot_decay,
         }
+
         scheduler = optax.cosine_decay_schedule(
             init_value=self.lr, decay_steps=self.epochs
         )
@@ -828,72 +864,66 @@ class GRNSim:
 
         opt_state = optimizer.init(params_gene)
         opt_state_prot = optimizer_prot.init(params_prot)
-        losses = []
 
-        for e_i in range(self.epochs):
-            logging.info(f"\tEpoch - {e_i}")
+        for e_i in range(epochs):
             if self.learn_gene:
                 grad_gene = grad_loss_gene(
                     params_gene,
                     params_prot,
                     jnp.arange(self.n_cells),
-                    jnp.arange(self.n_genes),
-                    self.is_mr,
-                    self.gene_conc,
-                    target_conc=self.target_gene_conc,
-                    prot_tran_rates=prot_tran_rates,
+                    start_gene_conc,
+                    start_prot_conc,
+                    self.target_gene_conc,
                 )
                 updates, opt_state = optimizer.update(grad_gene, opt_state)
                 params_gene = optax.apply_updates(params_gene, updates)
-            if e_i % 50 == 0:
-                if self.learn_gene:
-                    loss_i = calc_loss(
-                        params_gene,
-                        params_prot,
-                        jnp.arange(self.n_cells),
-                        jnp.arange(self.n_genes),
-                        self.is_mr,
-                        self.gene_conc,
-                        target_conc=self.target_gene_conc,
-                        prot_tran_rates=prot_tran_rates,
-                    )
-                    print(
-                        f"Epoch - {e_i} Loss = {loss_i} Learing rate = {opt_state.hyperparams['learning_rate']}"
-                    )
-                if self.learn_prot:
-                    loss_i_prot = calc_loss(
-                        params_gene,
-                        params_prot,
-                        jnp.arange(self.n_cells),
-                        jnp.arange(self.n_genes),
-                        self.is_mr,
-                        self.gene_conc,
-                        target_conc=self.target_prot_conc,
-                        prot_tran_rates=prot_tran_rates,
-                        target_gene=False,
-                    )
-                    print(f"Prot loss = {loss_i_prot}")
-                losses.append(loss_i)
 
             if self.learn_prot:
                 grad_prot = grad_loss_prot(
                     params_gene,
                     params_prot,
                     jnp.arange(self.n_cells),
-                    jnp.arange(self.n_genes),
-                    self.is_mr,
-                    self.gene_conc,
-                    target_conc=self.target_prot_conc,
-                    prot_tran_rates=prot_tran_rates,
-                    target_gene=False,
+                    start_gene_conc,
+                    start_prot_conc,
+                    self.target_prot_conc,
+                    False,
                 )
                 updates, opt_state_prot = optimizer_prot.update(
                     grad_prot, opt_state_prot
                 )
                 params_prot = optax.apply_updates(params_prot, updates)
+
+            if e_i % 50 == 0:
+                if self.learn_gene:
+                    loss_i = calc_loss(
+                        params_gene,
+                        params_prot,
+                        jnp.arange(self.n_cells),
+                        start_gene_conc,
+                        start_prot_conc,
+                        self.target_gene_conc,
+                    )
+                    print(f"Epoch - {e_i} Gene Loss = {loss_i}")
+                if self.learn_prot:
+                    loss_i_prot = calc_loss(
+                        params_gene,
+                        params_prot,
+                        jnp.arange(self.n_cells),
+                        start_gene_conc,
+                        start_prot_conc,
+                        self.target_prot_conc,
+                        False,
+                    )
+                    print(f"Epoch - {e_i} Prot Loss = {loss_i_prot}")
+
         return params_gene, params_prot
 
-    def run_sim(self, step=None, noise_trace=None):
+    @jaxtyped(typechecker=beartype)
+    def run_sim(
+        self,
+        step: int | None = None,
+        noise_trace: Float[Array, "2 steps cells genes"] | None = None,
+    ) -> GRNOutput | Tuple:
         """
         Run the simulation for n_steps
 
@@ -940,8 +970,8 @@ class GRNSim:
                 prot_conc_history.append(self.prot_conc)
             logging.info("Simulation ended...")
             ret = GRNOutput(
-                gene_traj=gene_conc_history,
-                prot_traj=prot_conc_history,
+                gene_traj=jnp.stack(gene_conc_history),
+                prot_traj=jnp.stack(prot_conc_history),
                 noise_trace=jnp.array([self.noise_a, self.noise_b]),
             )
             return ret

@@ -1,4 +1,4 @@
-import functools
+from nexus.tests.utils import log_cleanup
 import random
 import copy
 from tqdm import tqdm
@@ -16,22 +16,6 @@ def get_config(config_name="test_config"):
     with initialize_config_dir(version_base=None, config_dir=conf_path):
         cfg = compose(config_name=config_name)
     return cfg
-
-
-def log_cleanup(test_func):
-    @functools.wraps(test_func)
-    def test_wrapper(self, *args, **kwargs):
-        try:
-            return test_func(self, *args, **kwargs)
-        finally:
-            if hasattr(self, "grn_sim") and self.grn_sim is not None:
-                self.grn_sim.cleanup()
-                self.grn_sim = None
-            if hasattr(self, "spatial_sim") and self.spatial_sim is not None:
-                self.spatial_sim.cleanup()
-                self.spatial_sim = None
-
-    return test_wrapper
 
 
 class TestInterventions:
@@ -73,7 +57,7 @@ class TestInterventions:
     random.seed(42)
 
     @log_cleanup
-    def test_cell_scheduled_interventions(self):
+    def test_cell_scheduled_do_interventions(self):
         val_set = random.random()
         cell_range = list(range(3))
         base_config = copy.deepcopy(self.config)
@@ -81,7 +65,12 @@ class TestInterventions:
         interventions = []
         for i in self.cell_params:
             interventions.append(
-                [i, val_set, ["scheduled", self.interven_step], ["index", cell_range]]
+                [
+                    i,
+                    ["hard", val_set],
+                    ["scheduled", self.interven_step],
+                    ["index", cell_range],
+                ]
             )
         base_config["intervention"]["spatial_sim"] = interventions
 
@@ -89,7 +78,10 @@ class TestInterventions:
         self.spatial_sim = SpatialSim(base_config.spatial_sim)
         intervention_flag = False
         interven_manager = InterventionManager(
-            cfg=base_config, spatial_obj=self.spatial_sim, grn_obj=self.grn_sim
+            cfg=base_config,
+            spatial_obj=self.spatial_sim,
+            grn_obj=self.grn_sim,
+            key=base_config.intervention.get("random_key", 42),
         )
         intervention_flag = True
         check_config(spatial_sim=self.spatial_sim, cfg=base_config)
@@ -112,7 +104,7 @@ class TestInterventions:
                 self.spatial_sim.run_sim(step=i)
 
     @log_cleanup
-    def test_cell_pulse_intervention(self):
+    def test_cell_pulse_do_intervention(self):
         base_config = copy.deepcopy(self.config)
         interven_start = 1
         interven_end = 3
@@ -125,7 +117,7 @@ class TestInterventions:
             interventions.append(
                 [
                     i,
-                    pulse_val,
+                    ["hard", pulse_val],
                     ["pulse", interven_start, interven_end],
                     ["index", cell_range],
                 ]
@@ -136,7 +128,10 @@ class TestInterventions:
         self.grn_sim = GRNSim(base_config.grn)
         self.spatial_sim = SpatialSim(base_config.spatial_sim)
         interven_manager = InterventionManager(
-            cfg=base_config, spatial_obj=self.spatial_sim, grn_obj=self.grn_sim
+            cfg=base_config,
+            spatial_obj=self.spatial_sim,
+            grn_obj=self.grn_sim,
+            key=base_config.intervention.get("random_key", 42),
         )
         intervention_flag = True
 
@@ -160,7 +155,7 @@ class TestInterventions:
                         )
 
     @log_cleanup
-    def test_grn_interventions(self):
+    def test_grn_do_interventions(self):
         val_set = random.random()
         cell_range = list(range(3))
         base_config = copy.deepcopy(self.config)
@@ -168,7 +163,12 @@ class TestInterventions:
         interventions = []
         for i in self.grn_params:
             interventions.append(
-                [i, val_set, ["scheduled", self.interven_step], ["index", cell_range]]
+                [
+                    i,
+                    ["hard", val_set],
+                    ["scheduled", self.interven_step],
+                    ["index", cell_range],
+                ]
             )
         base_config["intervention"]["grn"] = interventions
 
@@ -176,7 +176,10 @@ class TestInterventions:
         self.spatial_sim = SpatialSim(base_config.spatial_sim)
         intervention_flag = False
         interven_manager = InterventionManager(
-            cfg=base_config, spatial_obj=self.spatial_sim, grn_obj=self.grn_sim
+            cfg=base_config,
+            spatial_obj=self.spatial_sim,
+            grn_obj=self.grn_sim,
+            key=base_config.intervention.get("random_key", 42),
         )
         intervention_flag = True
         check_config(spatial_sim=self.spatial_sim, cfg=base_config)

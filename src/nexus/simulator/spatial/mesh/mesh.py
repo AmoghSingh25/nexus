@@ -1,3 +1,6 @@
+from __future__ import annotations
+import logging
+from jaxtyping import Array, Float, Bool, Int, Num
 import jax.numpy as jnp
 import jax
 from jax import random
@@ -17,6 +20,7 @@ from nexus.simulator.spatial.layers.chemical import (
 from nexus.simulator.spatial.layers.force import calc_vel
 from nexus.simulator.spatial.utils.verify_data import check_cell_type_data
 from nexus.simulator.spatial.mesh.clustering_field import k_mean_clustering
+from beartype.typing import Dict, Tuple, Literal
 
 
 class Mesh:
@@ -24,7 +28,7 @@ class Mesh:
     Create a mesh of grid cells for 3D space. Performs flux and diffusion calculation, reaction, updates cells during simulation and other mesh and cell related functions.
     """
 
-    def __init__(self, cfg, mesh_type="lattice-free"):
+    def __init__(self, cfg, mesh_type: str = "lattice-free"):
         """
 
         :param self: Mesh
@@ -65,9 +69,6 @@ class Mesh:
                 -self.depth / 2.0, self.depth / 2.0, self.param_field_resolution
             ),
         )
-
-        self.field_positions = jnp.vstack([x.ravel(), y.ravel(), z.ravel()]).T
-        self.n_fields = self.field_positions.shape[0]
 
         self.cell_concentration = cfg.get("cell_concentration", 10)
 
@@ -127,13 +128,16 @@ class Mesh:
             self.cell_drift_vel_coeff,
             self.cell_random_vel_coeff,
             self.cell_death_decay_coeff,
+            self.cell_residual_vel,
+            self.cell_resource_limit,
+            self.cell_contact_limit,
         ) = check_cell_type_data(
             key=self.key, sub_key=self.sub_key, n_cells=self.n_cells, cfg=cfg
         )
 
         self.cell_vel = jnp.zeros(shape=(self.n_cells, 3))
         self.cell_states = jnp.zeros(shape=(self.n_cells, 1), dtype=jnp.int8)
-        ## 0- Transition, 1- Interphase, 2- mitosis, -1 - Killed,
+        ## 0- Transition, 1- Interphase, 2- mitosis, -1 - Killed, -2 Undergoing programmed cell death
 
         self.cell_time = jnp.zeros(shape=(self.n_cells, 1), dtype=jnp.int16)
 
@@ -210,21 +214,28 @@ class Mesh:
         self.n_neighbours = cfg.get("n_neighbours", 3)
 
         ## Diffusion
+        self.chem_generators: Dict[int, Tuple[float]] = {}
+
         self.diffusion_bool = cfg.diffusion_bool
-        # self.field_D = []
+        self.field_positions = jnp.vstack([x.ravel(), y.ravel(), z.ravel()]).T
+        self.n_fields = self.field_positions.shape[0]
         self.field_vol = []
         self.field_id = []
         self.field_keys = []
         self.field_neighbours = []
         self.field_flux = []
-        self.key, self.sub_key, self.field_chem = generate_uniform(
-            key=self.key,
-            sub_key=self.sub_key,
-            shape=(len(self.field_positions), self.n_chemicals, 1),
-        )
+        if cfg.chemical.get("non_zero_init", True):
+            self.key, self.sub_key, self.field_chem = generate_uniform(
+                key=self.key,
+                sub_key=self.sub_key,
+                shape=(len(self.field_positions), self.n_chemicals, 1),
+            )
+        else:
+            self.field_chem = jnp.zeros(
+                (len(self.field_positions), self.n_chemicals, 1)
+            )
 
         for [i, j, k] in self.field_positions:
-            # self.field_D.append(self.D)
             self.field_vol.append(self.field_vol_singular)
             self.field_keys.append(random.split(random.key(curr_id)))
             self.field_id.append(curr_id)
@@ -237,11 +248,21 @@ class Mesh:
         self.field_keys = jnp.array(self.field_keys)
         self.field_id = jnp.array(self.field_id)
 
-        ## Reaction
+        if isinstance(cfg.get("D"), float):
+            self.field_D = jnp.array(cfg.get("D")).repeat(self.field_id.shape[0])
+        else:
+            assert len(cfg.get("D")) == len(self.field_id), (
+                "Number of D values must be equal to the number of fields"
+            )
+            self.field_D = jnp.array(cfg.get("D")).reshape(self.field_id.shape)
 
+        ## Reaction
         self.chemicals = []
+        self.chem_name_map = {}
         if cfg.chemical is not None:
             self.chem_names = cfg["chemical"]["name"]
+            for idx in range(len(self.chem_names)):
+                self.chem_name_map[self.chem_names[idx]] = idx
             self.reactions = []
             self.mol_masses = cfg["chemical"]["mol_mass"]
 
@@ -288,24 +309,7 @@ class Mesh:
             self.reaction_order = jnp.array(self.reaction_order)
             self.reaction_matrix = jnp.array(self.reaction_matrix)
             self.reaction_prob = jnp.zeros((self.n_reactions,))
-            for i in range(len(self.reactions)):
-                if self.use_prob:
-                    if self.reaction_order_sum[self.reactions[i].order] > 0.0:
-                        prob_i = (
-                            self.reactions[i].k
-                            * (
-                                1
-                                - jnp.exp(
-                                    -self.delta
-                                    * self.reaction_order_sum[self.reactions[i].order]
-                                )
-                            )
-                        ) / self.reaction_order_sum[self.reactions[i].order]
-                    else:
-                        prob_i = 0.0
-                else:
-                    prob_i = 1.0
-                self.reaction_prob = self.reaction_prob.at[i].set(prob_i)
+            self.calc_reaction_prob()
 
             self.reaction_table = {
                 0: calc_zero_order,
@@ -333,6 +337,7 @@ class Mesh:
         field_mass = []
         field_vol = []
         flux = jnp.zeros((self.n_chemicals, 1))
+        field_D = []
         for field_i_id in self.field_neighbours[curr_field_id]:
             field_i = self.field_id[int(field_i_id)].item()
             if self.field_flux[curr_field_id].get(field_i) is not None:
@@ -342,6 +347,9 @@ class Mesh:
             field_mass.append(self.field_chem[field_i])
             field_vol.append(self.field_vol[field_i])
             neigh_pos.append(jnp.array(self.field_positions[field_i]))
+            field_D.append(
+                (self.field_D[field_id.item()] + self.field_D[field_i_id.item()]) / 2.0
+            )
 
         if len(neigh_pos) == 0:
             return flux
@@ -349,6 +357,7 @@ class Mesh:
         neigh_pos = jnp.vstack(neigh_pos)
         field_mass = jnp.array(field_mass)
         field_vol = jnp.array(field_vol)
+        field_D = jnp.array(field_D)
         distances = jnp.linalg.norm(
             neigh_pos - jnp.array(self.field_positions[curr_field_id]), axis=1
         )
@@ -358,10 +367,10 @@ class Mesh:
             flux_i = -D * (field2_mass / field2_vol - field1_mass / field1_vol) / dist_i
             return flux_i
 
-        auto_vec_flux = jax.vmap(calc_flux_i, in_axes=(None, 0, 0, None, None, 0))
+        auto_vec_flux = jax.vmap(calc_flux_i, in_axes=(0, 0, 0, None, None, 0))
 
         flux_list = auto_vec_flux(
-            self.D,
+            field_D,
             field_mass,
             field_vol,
             self.field_chem[curr_field_id],
@@ -430,12 +439,140 @@ class Mesh:
         for i in self.field_id:
             chem_mass_i = self.field_chem[i]
             prev_mass += jnp.sum(chem_mass_i)
-            chem_mass_i += delta_m_l[i]
+            if self.diffusion_bool:
+                chem_mass_i += delta_m_l[i]
+
+            if i.item() in self.chem_generators:
+                for chem_i in self.chem_generators[i.item()]:
+                    chem_mass_i = chem_mass_i.at[chem_i[0]].set(
+                        chem_mass_i[chem_i[0]] + chem_mass_i[chem_i[0]] * chem_i[1]
+                    )
+
             self.field_chem = self.field_chem.at[i].set(chem_mass_i)
             new_mass += jnp.sum(chem_mass_i)
             self.field_flux[i] = {}
 
         self.delta_m = prev_mass - new_mass
+
+    def control_chem_generator(
+        self, pos: Float[Array, "1 axes"], compound_id: int, rate: float = 0.0
+    ):
+        field_assigned = self.get_closest_field(pos=pos).item()
+        if self.chem_generators.get(field_assigned) is None:
+            self.chem_generators[field_assigned] = [(compound_id, rate)]
+        else:
+            self.chem_generators[field_assigned].append((compound_id, rate))
+
+    def modify_chem_generator(
+        self,
+        pos: Float[Array, "1 axes"],
+        compound_id: int,
+        new_rate: float | None = 0.0,
+        delete_generator: bool = False,
+    ):
+        field_assigned = self.get_closest_field(pos=pos).item()
+        if self.chem_generators.get(field_assigned) is None:
+            return
+
+        for i in range(len(self.chem_generators[field_assigned])):
+            if self.chem_generators[field_assigned][i][0] == compound_id:
+                self.chem_generators[field_assigned].pop(i)
+                if not delete_generator:
+                    self.chem_generators[field_assigned].append((compound_id, new_rate))
+
+    def calc_reaction_prob(self):
+        for i in range(len(self.reactions)):
+            if self.use_prob:
+                if self.reaction_order_sum[self.reactions[i].order] > 0.0:
+                    prob_i = (
+                        self.reactions[i].k
+                        * (
+                            1
+                            - jnp.exp(
+                                -self.delta
+                                * self.reaction_order_sum[self.reactions[i].order]
+                            )
+                        )
+                    ) / self.reaction_order_sum[self.reactions[i].order]
+                else:
+                    prob_i = 0.0
+            else:
+                prob_i = 1.0
+            self.reaction_prob = self.reaction_prob.at[i].set(prob_i)
+
+    def add_reaction(self, reaction_names, reaction_obj) -> None:
+        for reaction_idx in range(len(reaction_names)):
+            cur_reaction_name = reaction_names[reaction_idx]
+            reaction_i = reaction_obj[cur_reaction_name]
+
+            reaction_i_obj = Reaction(
+                name=cur_reaction_name,
+                id=reaction_idx,
+                k=reaction_i.rate_coeff,
+                order=reaction_i.order,
+                products=[x for x in reaction_i.products]
+                if reaction_i.products is not None
+                else [],
+                products_exp=reaction_i.products_exponent
+                if reaction_i.products is not None
+                else [],
+                reactants=[x for x in reaction_i.reactants]
+                if reaction_i.reactants is not None
+                else [],
+                reactants_exp=reaction_i.reactants_exponent
+                if reaction_i.reactants is not None
+                else [],
+                chemicals=self.chem_names,
+            )
+
+            self.reaction_order = jnp.append(self.reaction_order, reaction_i_obj.order)
+            self.reactions.append(reaction_i_obj)
+            self.reaction_matrix = jnp.append(
+                self.reaction_matrix,
+                jnp.array([reaction_i_obj._generate_reaction_matrix()]),
+                axis=0,
+            )
+            self.reaction_order_sum = self.reaction_order_sum.at[reaction_i.order].set(
+                self.reaction_order_sum[reaction_i.order] + reaction_i.rate_coeff
+            )
+        self.calc_reaction_prob()
+
+    def modify_reaction(self, reaction_names, reaction_obj) -> None:
+        for reaction_idx in range(len(self.reactions)):
+            if self.reactions[reaction_idx].name in reaction_names:
+                cur_reaction_name = self.reactions[reaction_idx].name
+                reaction_i = reaction_obj[cur_reaction_name]
+
+                reaction_i_obj = Reaction(
+                    name=cur_reaction_name,
+                    id=reaction_idx,
+                    k=reaction_i.rate_coeff,
+                    order=reaction_i.order,
+                    products=[x for x in reaction_i.products]
+                    if reaction_i.products is not None
+                    else [],
+                    products_exp=reaction_i.products_exponent
+                    if reaction_i.products is not None
+                    else [],
+                    reactants=[x for x in reaction_i.reactants]
+                    if reaction_i.reactants is not None
+                    else [],
+                    reactants_exp=reaction_i.reactants_exponent
+                    if reaction_i.reactants is not None
+                    else [],
+                    chemicals=self.chem_names,
+                )
+                self.reaction_order = self.reaction_order.at[reaction_idx].set(
+                    reaction_i_obj.order
+                )
+                self.reactions[reaction_idx] = reaction_i_obj
+                self.reaction_matrix = self.reaction_matrix.at[reaction_idx].set(
+                    reaction_i_obj._generate_reaction_matrix()
+                )
+                self.reaction_order_sum = self.reaction_order_sum.at[
+                    reaction_i.order
+                ].set(self.reaction_order_sum[reaction_i.order] + reaction_i.rate_coeff)
+        self.calc_reaction_prob()
 
     def calc_movement(self):
         """
@@ -476,8 +613,9 @@ class Mesh:
                 key=self.key, sub_key=self.sub_key, shape=(3)
             )
             random_vel = self.cell_random_vel_coeff[cell_id] * random_vel
-            ret_vel = ret_vel + random_vel
-
+            ret_vel = (
+                ret_vel + random_vel + self.cell_residual_vel[cell_id]
+            )  ## Adding the residual vel which can be controlled by the intervention API
             self.cell_vel = self.cell_vel.at[cell_id].set(ret_vel)
 
         # Compute cell movement
@@ -486,12 +624,91 @@ class Mesh:
                 self.cell_positions[cell_id] + self.cell_vel[cell_id] * self.delta
             )
 
+    def calc_hill_func(
+        self,
+        concs: Float[Array, " chems"],
+        half_rate_concs: Float[Array, " chems"],
+        n: float = 1,
+        combine_type: Literal["mult", "min"] = "mult",
+    ) -> Float[Array, "1"]:
+        coeffs = jnp.pow(concs, n) / (jnp.pow(concs, n) + jnp.pow(half_rate_concs, n))
+        if combine_type == "mult":
+            return jnp.prod(coeffs).reshape(-1)
+        elif combine_type == "min":
+            return jnp.min(coeffs).reshape(-1)
+
+    def check_cell_constraints(self, cell_id, cell_fields) -> bool:
+        cell_field_i = cell_fields[cell_id]
+        cell_type_i = self.cell_type_mask[cell_id].item()
+        prob_split = 1.0  ## TODO - Change to a parameter for max probability of split
+
+        ## Check resource limits
+        if self.cell_resource_limit.get(cell_type_i):
+            chem_resources_i, resource_limit_type_params = self.cell_resource_limit[
+                cell_type_i
+            ]
+            if resource_limit_type_params[0] == "hill":
+                curr_concs = []
+                half_rate_concs = []
+                for chem_i, limit_i in chem_resources_i:
+                    curr_concs.append(
+                        self.field_chem[cell_field_i][self.chem_name_map[chem_i]]
+                    )
+                    half_rate_concs.append(limit_i)
+                curr_concs = jnp.array(curr_concs).reshape(-1)
+                half_rate_concs = jnp.array(half_rate_concs)
+                resource_hill_coeff = self.calc_hill_func(
+                    curr_concs,
+                    half_rate_concs,
+                    n=float(resource_limit_type_params[1]),
+                    combine_type=resource_limit_type_params[2],
+                )
+                prob_split = prob_split * resource_hill_coeff
+            elif resource_limit_type_params[0] == "hard":
+                for chem_i, limit_i in chem_resources_i:
+                    if (
+                        self.field_chem[cell_field_i][self.chem_name_map[chem_i]]
+                        < limit_i
+                    ):
+                        logging.info(
+                            f"Cannot split cell_idx {cell_id} - Resource limit - Current conc - {self.field_chem[cell_field_i][self.chem_name_map[chem_i]]}, Limit - {limit_i}"
+                        )
+                        return False
+        ## Check contact limits
+        if self.cell_contact_limit.get(cell_type_i):
+            cell_contact_limit_i, contact_limit_params = self.cell_contact_limit[
+                cell_type_i
+            ]
+            neigh_cells, _ = self.get_radial_limits(
+                pos=self.cell_positions[cell_id], radius=cell_contact_limit_i[1]
+            )
+            if contact_limit_params[0] == "hill":
+                curr_dens = jnp.array([float(neigh_cells.shape[0])])
+                contact_limit_hill_coeff = 1.0 - self.calc_hill_func(
+                    concs=curr_dens,
+                    half_rate_concs=jnp.array([float(cell_contact_limit_i[0])]),
+                    n=float(contact_limit_params[1]),
+                    combine_type="mult",
+                )
+                prob_split = prob_split * contact_limit_hill_coeff
+            elif contact_limit_params[0] == "hard":
+                if neigh_cells.shape[0] >= cell_contact_limit_i[0]:
+                    logging.info(f"Cannot split cell_idx {cell_id} - Contact limit")
+                    return False
+        self.key, self.sub_key, rand_val = generate_uniform(
+            key=self.key, sub_key=self.sub_key, shape=(1,)
+        )
+        if rand_val[0] <= prob_split:
+            return True
+        else:
+            return False
+
     def add_cell(
         self,
-        pos,
-        cell_state,
-        new_radius,
-        parent_cell_id,
+        pos: Num[Array, "1 3"],
+        cell_state: Int[Array, "1 1"],
+        new_radius: Float[Array, "1 1"],
+        parent_cell_id: int,
     ):
         """
         Add a cell with the given parameters to the simulation. Derive growth rate, interphase and mitosis lengths and target volume
@@ -540,6 +757,9 @@ class Mesh:
             jnp.array([self.cell_random_vel_coeff[parent_cell_id]]),
             axis=0,
         )
+        self.cell_residual_vel = jnp.append(
+            self.cell_residual_vel, jnp.zeros((1, 3)), axis=0
+        )
         self.cell_death_decay_coeff = jnp.append(
             self.cell_death_decay_coeff,
             jnp.array([self.cell_death_decay_coeff[parent_cell_id]]),
@@ -574,7 +794,7 @@ class Mesh:
         )
         new_interphase_chkpt = jnp.round(new_interphase_chkpt).astype(jnp.int16)
         if new_interphase_chkpt < 1:
-            new_interphase_chkpt = 1
+            new_interphase_chkpt = jnp.ones_like(new_interphase_chkpt)
         self.key, self.sub_key, new_mitosis_chkpt = generate_normal(
             key=self.key,
             sub_key=self.sub_key,
@@ -603,11 +823,10 @@ class Mesh:
         )
         self.cell_vel = jnp.concatenate([self.cell_vel, init_vel], axis=0)
         if new_mitosis_chkpt < 0:
-            new_mitosis_chkpt = 1
+            new_mitosis_chkpt = jnp.ones_like(new_mitosis_chkpt)
         new_mitosis_chkpt = new_interphase_chkpt + jnp.round(new_mitosis_chkpt).astype(
             jnp.int16
         )
-
         self.interphase_chkpt = jnp.append(
             self.interphase_chkpt, new_interphase_chkpt, axis=0
         )
@@ -627,9 +846,12 @@ class Mesh:
             jnp.array([self.cell_type_mask[parent_cell_id]]),
             axis=0,
         )
+        self.prg_cells_mask = self.cell_states == -2
+        self.live_cells_mask = (self.cell_states != -1) & ~self.prg_cells_mask
+
         self.n_cells += 1
 
-    def kill_cells(self, killed_cells_mask):
+    def kill_cells(self, killed_cells_mask: Bool[Array, "..."]):
         """
         Modify parameters of the cells to be killed - Collapses values to 0 - Sudden death(Necrosis)
 
@@ -641,7 +863,7 @@ class Mesh:
         self.cell_radius = self.cell_radius.at[killed_cells_mask].set(0)
         self.cell_vol = self.cell_vol.at[killed_cells_mask].set(0)
 
-    def prg_death_cell(self, selected_cell_mask):
+    def prg_death_cell(self, selected_cell_mask: Bool[Array, "..."]):
         """
         Modify parameters of the cell to perform programmed cell death. Slowly collapse values to 0, (Apoptosis).
 
@@ -661,9 +883,14 @@ class Mesh:
         split_cells_mask = jnp.array(list(range(len(self.cell_states)))).reshape(-1)[
             (self.cell_states == 2).reshape(-1)
         ]
+        cell_fields = self.get_assigned_fields()
+
         for cell_id in split_cells_mask:
             cell_pos_i = self.cell_positions[cell_id]
-
+            if not self.check_cell_constraints(
+                cell_id=cell_id, cell_fields=cell_fields
+            ):
+                continue
             self.key, self.sub_key, rand_point = generate_uniform(
                 key=self.key, sub_key=self.sub_key, shape=(3)
             )
@@ -783,7 +1010,7 @@ class Mesh:
             * self.cell_density[self.live_cells_mask | self.prg_cells_mask].reshape(-1)
         )
 
-    def step(self, step_i, logger: FieldLogger):
+    def step(self, step_i: int, logger: FieldLogger | None):
         """
         Perform simulation step for the mesh and the cells within.
 
@@ -792,13 +1019,9 @@ class Mesh:
         :param delta: Simulation delta
         :param logger: mesh_logger object
         """
-
         # Perform diffusion
-        if self.diffusion_bool:
-            self.calc_conc_change()
-            logger is not None and print(
-                f"Step - {step_i}, Delta M = {self.delta_m:.4e}"
-            )
+        self.calc_conc_change()
+        logger is not None and print(f"Step - {step_i}, Delta M = {self.delta_m:.4e}")
 
         # Perform reactions
         if self.reaction_bool:
@@ -833,7 +1056,7 @@ class Mesh:
             step=step_i, field_chem=self.field_chem
         )
 
-    def get_cell_id(self, pos):
+    def get_cell_id(self, pos: Float[Array, "2"]) -> int:
         """
         Returns an ID of a cell, useful for an order of cells to compute flux i->j and uniquely identify cells
 
@@ -841,7 +1064,9 @@ class Mesh:
         """
         return pos[0] + self.height * pos[1] + (self.height * self.depth) * pos[2]
 
-    def get_field_neighbours(self, pos, norm_ord=1):
+    def get_field_neighbours(
+        self, pos: Float[Array, " axes"], norm_ord: int = 1
+    ) -> Int[Array, "..."]:
         """
         Get neighbours of the field at pos[idx].
 
@@ -852,7 +1077,9 @@ class Mesh:
         neigh_idxs = jnp.argsort(l1_norm)[1 : self.n_neighbours + 1]
         return neigh_idxs
 
-    def get_radial_limits(self, pos, radius=1, norm_ord=1):
+    def get_radial_limits(
+        self, pos: Float[Array, " axes"], radius: float | int = 1, norm_ord: int = 1
+    ):
         """
         Get cells closest to _pos_ and within _radius_
 
@@ -867,7 +1094,9 @@ class Mesh:
         )[0]
         return radial_neighs, l1_norm[radial_neighs]
 
-    def get_closest_cells(self, pos, K=1, norm_ord=1):
+    def get_closest_cells(
+        self, pos: Float[Array, " axes"], K: int = 1, norm_ord: int = 1
+    ):
         """
         Get K closest cells to _pos_
         :param self: Mesh
@@ -879,12 +1108,28 @@ class Mesh:
         neigh_idxs = jnp.argsort(l1_norm)[1 : K + 1]
         return neigh_idxs, l1_norm[neigh_idxs]
 
-    def get_assigned_fields(self, norm_ord=1, clustering_type="norm"):
+    def get_closest_field(
+        self,
+        pos: Float[Array, "1 axes"],
+        norm_ord: int = 1,
+        clustering_type: str = "norm",
+    ):
+        if clustering_type == "norm":
+            new_field_assgn = jnp.argmin(
+                jnp.linalg.norm(pos - self.field_positions, ord=norm_ord, axis=0),
+            )
+            return new_field_assgn
+        elif clustering_type == "k_mean":
+            assigned_fields, cluster_means = k_mean_clustering(3, self.cell_positions)
+            return assigned_fields
+
+    def get_assigned_fields(self, norm_ord: int = 1, clustering_type: str = "norm"):
         """
-        Function to return field ID of the field closest to the cell position passed
+        Calculate field IDs of the field closest to the cell positions
 
         :param self: Mesh
-        :param cell_pos: Cell position to find the closest field
+        :param norm_ord: Order of the norm to be used
+        :param clustering_type: Type of clustering to use for assigning the fields - "norm" | "k_mean"
         """
         if clustering_type == "norm":
             rep_pos = jnp.repeat(

@@ -1,4 +1,4 @@
-import functools
+from utils import log_cleanup
 from pathlib import Path
 from nexus.simulator.grn.grnSim import GRNSim
 import jax.numpy as jnp
@@ -19,19 +19,6 @@ def read_pickle(file_name):
     with open(file_name, "rb") as file:
         var = pickle.load(file)
     return var
-
-
-def log_cleanup(test_func):
-    @functools.wraps(test_func)
-    def test_wrapper(self, *args, **kwargs):
-        try:
-            return test_func(self, *args, **kwargs)
-        finally:
-            if hasattr(self, "sim") and self.sim is not None:
-                self.sim.cleanup()
-                self.sim = None
-
-    return test_wrapper
 
 
 class TestGRN:
@@ -84,6 +71,7 @@ class TestGRN:
             reordered_output_1 = reordered_output_1.at[i].set(
                 gene_conc[node_mapping[i]]
             )
+        self.sim.cleanup()
         assert jnp.allclose(reordered_output_1, sergio_output, rtol=1e-6, atol=1e-32)
 
     @log_cleanup

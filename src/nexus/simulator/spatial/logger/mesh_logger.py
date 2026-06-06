@@ -3,7 +3,7 @@ import shutil
 import os
 import tiledb
 import numpy as np
-from typing import List
+from beartype.typing import List
 
 
 class FieldLogger:

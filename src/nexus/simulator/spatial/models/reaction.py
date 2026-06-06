@@ -46,7 +46,7 @@ class Reaction:
         self.react_matrix = self._generate_reaction_matrix()
 
     def __repr__(self):
-        return f"name={self.name}, ID = {self.id}, reactants = {self.reactants}, products = {self.products}\n"
+        return f"name={self.name}, ID = {self.id}, Order = {self.order}, Probability = {self.prob}, reactants = {list(zip(self.reactants, self.reactant_exp))}, products = {list(zip(self.products, self.products_exp))}\n"
 
     def _generate_reaction_matrix(self):
         """

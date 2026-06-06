@@ -219,3 +219,20 @@ Assigns a drift velocity to the cell that is a fraction of the previous step vel
 
 ## Random velocity
 Add a velocity in a random direction to the cell. Magnitude of the velocity is controlled using _random_vel_coeff_
+
+# Cell Cycling
+
+The cells in the spatial sim are capable of undergoing cell cycling. The simulator currently supports Transition (0), Interphase(1), Mitosis(2), Apoptosis(-2) and Necrosis(-1), with their corresponding cell state ID in the simulator.
+
+The cells are cycled by using an interphase checkpoint parameter and mitosis checkpoint parameter. When the cell time exceeds the interphase checkpoint, the cells are transitioned to interphase. Similarly, when the cell time exceeds the mitosis checkpoint, the cells are transitioned to mitosis phase and are split into cells.
+
+Additionally, two parameters, programmed cell death probability and cell death probability control the probability that a cell would undergo programmed or sudden cell death correspondingly.
+
+# Cell growth
+
+The simulator also simulates cell growth by modeling their volume at each step. The radius of the cell is computed as a function of the volume, assuming the cells are spheres. The mass of the cells is calculated using the cell density parameter of each cell type. The increase in the volume of each cell is calculated as a function of the target volume parameter for each cell.
+
+$$
+V_t = V_{t-1} + \gamma_v(V_{target} - V_{t-1})\Delta t
+$$
+where $\gamma_v$ is the volume growth rate parameter of the cell.
