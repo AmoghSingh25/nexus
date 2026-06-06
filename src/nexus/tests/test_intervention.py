@@ -1,4 +1,4 @@
-from utils import log_cleanup
+from nexus.tests.utils import log_cleanup
 import random
 import copy
 from tqdm import tqdm
