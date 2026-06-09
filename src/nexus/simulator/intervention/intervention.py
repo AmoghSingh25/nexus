@@ -292,6 +292,7 @@ class InterventionManager:
                         reaction_names=reaction_names, reaction_obj=intervention_i[1]
                     )
                 elif intervention_type == "add_reaction":
+                    print(intervention_i[1])
                     reaction_names = list(intervention_i[1].keys())
                     self.spatial_obj.mesh.add_reaction(
                         reaction_names=reaction_names, reaction_obj=intervention_i[1]

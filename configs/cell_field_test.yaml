@@ -72,8 +72,10 @@ spatial_sim:
       cell_density: 1.0
       cell_vol_growth_rate: 1.0
       cell_decay_rate: 0.5
-      resource_limit: [["chem3", 0.2]]
-      contact_limit: [1, 2]
+      resource_limit:
+        limits: [["chem3", 0.2]]
+      contact_limit:
+        limits: [1, 2]
 
   ## Chemicals
   chemical:

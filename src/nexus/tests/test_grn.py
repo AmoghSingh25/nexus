@@ -39,7 +39,6 @@ class TestGRN:
             self.sim = GRNSim(base_config.grn)
             self.sim.run_sim()
             gene_conc, prot_conc = self.sim.gene_conc, self.sim.prot_conc
-            self.sim.cleanup()
             assert gene_conc.shape == (4, self.cell_no[i], 1)
             assert prot_conc.shape == (4, self.cell_no[i], 1)
 
@@ -53,7 +52,6 @@ class TestGRN:
             self.sim = GRNSim(cfg=base_config.grn)
             self.sim.run_sim()
             gene_conc, prot_conc = self.sim.gene_conc, self.sim.prot_conc
-            self.sim.cleanup()
             assert gene_conc.shape == (4, self.cell_no[i], 1)
             assert prot_conc.shape == (4, self.cell_no[i], 1)
 
@@ -119,7 +117,6 @@ class TestGRN:
 
         _loss, _idx = _calc_mse(self.sim.target_gene_conc, self.sim.steady_states)
         _loss2, _idx = _calc_mse(self.sim.target_gene_conc, prev_gene_conc)
-        self.sim.cleanup()
 
         assert _loss2 > _loss
 

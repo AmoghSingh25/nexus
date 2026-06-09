@@ -307,7 +307,9 @@ class Mesh:
                 ].set(self.reaction_order_sum[reaction_i.order] + reaction_i.rate_coeff)
             self.n_reactions = len(self.reactions)
             self.reaction_order = jnp.array(self.reaction_order)
-            self.reaction_matrix = jnp.array(self.reaction_matrix)
+            self.reaction_matrix = jnp.array(self.reaction_matrix).reshape(
+                self.n_reactions, self.n_chemicals, 1
+            )
             self.reaction_prob = jnp.zeros((self.n_reactions,))
             self.calc_reaction_prob()
 
@@ -532,9 +534,13 @@ class Mesh:
                 jnp.array([reaction_i_obj._generate_reaction_matrix()]),
                 axis=0,
             )
+            self.reaction_prob = jnp.append(self.reaction_prob, 0)
             self.reaction_order_sum = self.reaction_order_sum.at[reaction_i.order].set(
                 self.reaction_order_sum[reaction_i.order] + reaction_i.rate_coeff
             )
+        print(
+            "New reaction matrix - ",
+        )
         self.calc_reaction_prob()
 
     def modify_reaction(self, reaction_names, reaction_obj) -> None:
@@ -660,7 +666,7 @@ class Mesh:
                 resource_hill_coeff = self.calc_hill_func(
                     curr_concs,
                     half_rate_concs,
-                    n=resource_limit_type_params[1],
+                    n=float(resource_limit_type_params[1]),
                     combine_type=resource_limit_type_params[2],
                 )
                 prob_split = prob_split * resource_hill_coeff
@@ -674,7 +680,6 @@ class Mesh:
                             f"Cannot split cell_idx {cell_id} - Resource limit - Current conc - {self.field_chem[cell_field_i][self.chem_name_map[chem_i]]}, Limit - {limit_i}"
                         )
                         return False
-
         ## Check contact limits
         if self.cell_contact_limit.get(cell_type_i):
             cell_contact_limit_i, contact_limit_params = self.cell_contact_limit[
@@ -684,22 +689,22 @@ class Mesh:
                 pos=self.cell_positions[cell_id], radius=cell_contact_limit_i[1]
             )
             if contact_limit_params[0] == "hill":
-                curr_dens = neigh_cells.shape[0]
-                contact_limit_hill_coeff = self.calc_hill_func(
+                curr_dens = jnp.array([float(neigh_cells.shape[0])])
+                contact_limit_hill_coeff = 1.0 - self.calc_hill_func(
                     concs=curr_dens,
-                    half_rate_concs=cell_contact_limit_i[0],
-                    n=contact_limit_params[1],
-                    combine_type=contact_limit_params[2],
+                    half_rate_concs=jnp.array([float(cell_contact_limit_i[0])]),
+                    n=float(contact_limit_params[1]),
+                    combine_type="mult",
                 )
                 prob_split = prob_split * contact_limit_hill_coeff
             elif contact_limit_params[0] == "hard":
-                if neigh_cells.shape[0] > cell_contact_limit_i[0]:
+                if neigh_cells.shape[0] >= cell_contact_limit_i[0]:
                     logging.info(f"Cannot split cell_idx {cell_id} - Contact limit")
                     return False
         self.key, self.sub_key, rand_val = generate_uniform(
             key=self.key, sub_key=self.sub_key, shape=(1,)
         )
-        if rand_val[0] > prob_split:
+        if rand_val[0] <= prob_split:
             return True
         else:
             return False
@@ -929,7 +934,7 @@ class Mesh:
                 pos=cell_boundary_pt_2,
                 cell_state=jnp.array([[0]]),
                 new_radius=(new_radius).reshape(1, 1),
-                parent_cell_id=cell_id,
+                parent_cell_id=cell_id.item(),
             )
 
         ## Check interphase
