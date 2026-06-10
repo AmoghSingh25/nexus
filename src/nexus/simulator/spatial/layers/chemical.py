@@ -29,14 +29,14 @@ def calc_reaction_change(
     :param logger: Logger object (Currently setup to use mesh_logger)
     """
 
-    key, sub_key, reaction_order = generate_permutation(
+    key, sub_key, shuffled_reaction_indices = generate_permutation(
         key=reaction_key[0], sub_key=reaction_key[1], x=n_reactions
     )
 
     conc_t_0 = chem_mass
     reaction_ids = []
 
-    for i in reaction_order:
+    for i in shuffled_reaction_indices:
         prob_i = reaction_prob[i]
 
         key, sub_key, random_prob = generate_uniform(key=key, sub_key=sub_key)
@@ -50,7 +50,9 @@ def calc_reaction_change(
             react_matrix_i = poisson_i * delta
 
             conc_t_1 = jax.lax.switch(
-                reaction_order[i], reaction_table, (conc_t_0, react_matrix_i)
+                reaction_order[i].astype(jnp.int32),
+                reaction_table,
+                (conc_t_0, react_matrix_i),
             )
 
             ## Skip reaction if resultant concentrations are negative - Assuming sufficient amount of reactant is not available

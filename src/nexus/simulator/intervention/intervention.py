@@ -177,8 +177,6 @@ class InterventionManager:
         setattr(sim_obj, param_name, curr_val)
 
     def check(self, t):
-        ## TODO: Fix getting values before intervention
-
         # Perform interventions on the spatial sim
         if t in self.spatial_checkpoints:
             for i in self.spatial_checkpoints[t]:
@@ -287,12 +285,12 @@ class InterventionManager:
                         ].set(False)
                     # if is_mr[target_gene] and weight == 0.0
                 elif intervention_type == "modify_reaction":
+                    print("Modify reaction - - ")
                     reaction_names = list(intervention_i[1].keys())
                     self.spatial_obj.mesh.modify_reaction(
                         reaction_names=reaction_names, reaction_obj=intervention_i[1]
                     )
                 elif intervention_type == "add_reaction":
-                    print(intervention_i[1])
                     reaction_names = list(intervention_i[1].keys())
                     self.spatial_obj.mesh.add_reaction(
                         reaction_names=reaction_names, reaction_obj=intervention_i[1]

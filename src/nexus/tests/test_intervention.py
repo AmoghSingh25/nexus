@@ -1,21 +1,12 @@
-from nexus.tests.utils import log_cleanup
+from nexus.tests.utils import log_cleanup, get_config
 import random
 import copy
 from tqdm import tqdm
 import jax.numpy as jnp
 from nexus.simulator.run_sim import check_config
-import os
-from hydra import initialize_config_dir, compose
 from nexus.simulator.grn.grnSim import GRNSim
 from nexus.simulator.spatial.spatialSim import SpatialSim
 from nexus.simulator.intervention.intervention import InterventionManager
-
-
-def get_config(config_name="test_config"):
-    conf_path = os.path.join(os.getcwd(), "configs")
-    with initialize_config_dir(version_base=None, config_dir=conf_path):
-        cfg = compose(config_name=config_name)
-    return cfg
 
 
 class TestInterventions:
@@ -33,7 +24,6 @@ class TestInterventions:
         "cell_random_vel_coeff",
         "cell_death_decay_coeff",
         "cell_vel",
-        # "cell_states", ## TODO: Create seperate test
         # "cell_time",  ## Should not be modified
         "cell_radius",
         "cell_mass",
@@ -266,7 +256,6 @@ class TestInterventions:
 
         ## Running sim
         print("Running simulators...")
-        prev_num_cells = 0
         for i in tqdm(range(add_cell_step + 1)):
             intervention_flag and interven_manager.check(i)
             if i == add_cell_step:
@@ -441,8 +430,6 @@ class TestInterventions:
         product_conc = None
         for i in tqdm(range(base_config["grn"]["n_steps"])):
             intervention_flag and interven_manager.check(i)
-            print(self.spatial_sim.mesh.field_chem[:, product_id].reshape(-1))
-            print(self.spatial_sim.mesh.field_chem[:, reactant_id].reshape(-1))
             if i > modify_reaction_step + 1:
                 assert jnp.sum(
                     self.spatial_sim.mesh.field_chem[:, reactant_id]
@@ -455,5 +442,81 @@ class TestInterventions:
             elif i == modify_reaction_step:
                 reactant_conc = self.spatial_sim.mesh.field_chem[:, reactant_id]
                 product_conc = self.spatial_sim.mesh.field_chem[:, product_id]
+            self.grn_sim.run_sim(step=i)
+            self.spatial_sim.run_sim(step=i)
+
+    @log_cleanup
+    def test_modify_reaction(self):
+        base_config = copy.deepcopy(self.config)
+        base_config["grn"]["n_steps"] = 10
+        base_config["spatial_sim"]["n_steps"] = 10
+        base_config["spatial_sim"]["reaction"] = {}
+
+        add_reaction_step = 3
+        modify_reaction_step = 5
+        base_config["intervention"]["other"] = [
+            [
+                "add_reaction",
+                ["scheduled", add_reaction_step],
+                [
+                    {
+                        "reac_4": {
+                            "order": 2,
+                            "rate_coeff": 1,
+                            "reactants": ["chem2"],
+                            "reactants_exponent": [3],
+                            "products": ["chem1"],
+                            "products_exponent": [1],
+                        }
+                    }
+                ],
+            ],
+            [
+                "modify_reaction",
+                ["scheduled", modify_reaction_step],
+                [
+                    {
+                        "reac_4": {
+                            "order": 2,
+                            "rate_coeff": 2,
+                            "reactants": ["chem2"],
+                            "reactants_exponent": [2],
+                            "products": ["chem1"],
+                            "products_exponent": [2],
+                        }
+                    }
+                ],
+            ],
+        ]
+        self.grn_sim = GRNSim(base_config.grn)
+        self.spatial_sim = SpatialSim(base_config.spatial_sim)
+        intervention_flag = False
+        interven_manager = InterventionManager(
+            cfg=base_config,
+            spatial_obj=self.spatial_sim,
+            grn_obj=self.grn_sim,
+            key=base_config.intervention.get("random_key", 42),
+        )
+        intervention_flag = True
+        check_config(spatial_sim=self.spatial_sim, cfg=base_config)
+
+        ## Running sim
+        print("Running simulators...")
+        prev_reaction_matrix = None
+        for i in tqdm(range(base_config["grn"]["n_steps"])):
+            intervention_flag and interven_manager.check(i)
+            if i >= modify_reaction_step:
+                curr_reaction_matrix = self.spatial_sim.mesh.reaction_matrix
+                assert (
+                    curr_reaction_matrix[0][0][0] == 2
+                    and curr_reaction_matrix[0][1][0] == -2
+                )
+                break
+            elif i > add_reaction_step:
+                prev_reaction_matrix = self.spatial_sim.mesh.reaction_matrix
+                assert (
+                    prev_reaction_matrix[0][0][0] == 1
+                    and prev_reaction_matrix[0][1][0] == -1
+                )
             self.grn_sim.run_sim(step=i)
             self.spatial_sim.run_sim(step=i)

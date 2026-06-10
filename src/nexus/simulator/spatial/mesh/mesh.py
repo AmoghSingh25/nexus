@@ -538,9 +538,7 @@ class Mesh:
             self.reaction_order_sum = self.reaction_order_sum.at[reaction_i.order].set(
                 self.reaction_order_sum[reaction_i.order] + reaction_i.rate_coeff
             )
-        print(
-            "New reaction matrix - ",
-        )
+        self.n_reactions = len(self.reactions)
         self.calc_reaction_prob()
 
     def modify_reaction(self, reaction_names, reaction_obj) -> None:
@@ -548,7 +546,6 @@ class Mesh:
             if self.reactions[reaction_idx].name in reaction_names:
                 cur_reaction_name = self.reactions[reaction_idx].name
                 reaction_i = reaction_obj[cur_reaction_name]
-
                 reaction_i_obj = Reaction(
                     name=cur_reaction_name,
                     id=reaction_idx,
@@ -568,6 +565,7 @@ class Mesh:
                     else [],
                     chemicals=self.chem_names,
                 )
+                print("Reaction obj = ", reaction_i_obj)
                 self.reaction_order = self.reaction_order.at[reaction_idx].set(
                     reaction_i_obj.order
                 )

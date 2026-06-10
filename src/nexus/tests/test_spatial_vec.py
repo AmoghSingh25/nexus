@@ -1,18 +1,9 @@
-from nexus.tests.utils import log_cleanup
+from nexus.tests.utils import log_cleanup, get_config
 import jax.numpy as jnp
 import jax
 from nexus.simulator.spatial.spatialSim import SpatialSim
 import numpy as np
-import os
-from hydra import initialize_config_dir, compose
 import random
-
-
-def get_config(config_name="test_config"):
-    conf_path = os.path.join(os.getcwd(), "configs")
-    with initialize_config_dir(version_base=None, config_dir=conf_path):
-        cfg = compose(config_name=config_name)
-    return cfg
 
 
 class TestSpatial:

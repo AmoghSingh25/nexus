@@ -14,7 +14,7 @@ from nexus.simulator.utils.file_manager import _save_file
     config_path="../../../configs",
     config_name="cell_field_test.yaml",
 )
-def run_sim(cfg: DictConfig) -> None:
+def run_sim(cfg: DictConfig):
     ## Checking configs
     timestep = str(int(time.time()))
     print("Time step file - ", timestep)
@@ -97,6 +97,7 @@ def run_sim(cfg: DictConfig) -> None:
     _save_file("outputs/cell_concs.pkl", cell_concs)
     _save_file("outputs/field_concs.pkl", field_concs)
     _save_file("outputs/field_cell_assgn.pkl", field_cell_assgns)
+    return field_concs, cell_concs
 
 
 def check_config(spatial_sim, grn_sim, cfg):
