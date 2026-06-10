@@ -520,3 +520,43 @@ class TestInterventions:
                 )
             self.grn_sim.run_sim(step=i)
             self.spatial_sim.run_sim(step=i)
+
+    @log_cleanup
+    def test_soft_shift(self):
+        base_config = copy.deepcopy(self.config)
+        base_config["grn"]["n_steps"] = 10
+        base_config["spatial_sim"]["n_steps"] = 10
+        base_config["spatial_sim"]["reaction"] = {}
+
+        start_pulse = 1
+        end_pulse = 4
+        base_config["intervention"]["grn"] = [
+            [
+                "decay",
+                ["soft", "shift", -0.2],
+                ["pulse", start_pulse, end_pulse],
+                ["global"],
+            ]
+        ]
+        self.grn_sim = GRNSim(base_config.grn)
+        self.spatial_sim = SpatialSim(base_config.spatial_sim)
+        intervention_flag = False
+        interven_manager = InterventionManager(
+            cfg=base_config,
+            spatial_obj=self.spatial_sim,
+            grn_obj=self.grn_sim,
+            key=base_config.intervention.get("random_key", 42),
+        )
+        intervention_flag = True
+        check_config(spatial_sim=self.spatial_sim, cfg=base_config)
+
+        ## Running sim
+        print("Running simulators...")
+        prev_val = self.grn_sim.decay
+        for i in tqdm(range(base_config["grn"]["n_steps"])):
+            intervention_flag and interven_manager.check(i)
+            if i >= start_pulse and i < end_pulse:
+                assert jnp.all(jnp.equal(prev_val, self.grn_sim.decay + 0.2))
+                prev_val = self.grn_sim.decay
+            self.grn_sim.run_sim(step=i)
+            self.spatial_sim.run_sim(step=i)

@@ -565,7 +565,6 @@ class Mesh:
                     else [],
                     chemicals=self.chem_names,
                 )
-                print("Reaction obj = ", reaction_i_obj)
                 self.reaction_order = self.reaction_order.at[reaction_idx].set(
                     reaction_i_obj.order
                 )
