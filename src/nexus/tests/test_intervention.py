@@ -560,3 +560,101 @@ class TestInterventions:
                 prev_val = self.grn_sim.decay
             self.grn_sim.run_sim(step=i)
             self.spatial_sim.run_sim(step=i)
+
+    @log_cleanup
+    def test_soft_shift_cell_vel(self):
+        base_config = copy.deepcopy(self.config)
+        base_config["grn"]["n_steps"] = 10
+        base_config["spatial_sim"]["n_steps"] = 10
+        base_config["spatial_sim"]["reaction"] = {}
+
+        interven_step = 2
+        interven_config = copy.deepcopy(base_config)
+        interven_config["intervention"]["spatial_sim"] = [
+            [
+                "cell_vel",
+                ["soft", "shift", -0.2],
+                ["scheduled", interven_step],
+                ["global"],
+            ]
+        ]
+
+        self.grn_sim = GRNSim(base_config.grn)
+        self.spatial_sim = SpatialSim(base_config.spatial_sim)
+        self.spatial_sim_interven = SpatialSim(interven_config.spatial_sim)
+        intervention_flag = False
+        interven_manager = InterventionManager(
+            cfg=interven_config,
+            spatial_obj=self.spatial_sim_interven,
+            grn_obj=self.grn_sim,
+            key=base_config.intervention.get("random_key", 42),
+        )
+        intervention_flag = True
+        check_config(spatial_sim=self.spatial_sim, cfg=base_config)
+
+        ## Running sim
+        print("Running simulators...")
+
+        for i in tqdm(range(base_config["spatial_sim"]["n_steps"])):
+            intervention_flag and interven_manager.check(i)
+            curr_vel = self.spatial_sim.mesh.cell_vel
+            interven_vel = self.spatial_sim_interven.mesh.cell_vel
+            if i < interven_step:
+                assert jnp.all(curr_vel == interven_vel)
+            elif i == interven_step:
+                assert jnp.all(
+                    jnp.round(jnp.abs(curr_vel - interven_vel), decimals=1) == 0.2
+                )
+            self.spatial_sim_interven.run_sim(step=i)
+            self.spatial_sim.run_sim(step=i)
+
+    @log_cleanup
+    def test_random_event(self):
+        base_config = copy.deepcopy(self.config)
+        base_config["grn"]["n_steps"] = 10
+        base_config["spatial_sim"]["n_steps"] = 10
+        base_config["spatial_sim"]["reaction"] = {}
+
+        interven_step = 2
+        interven_config = copy.deepcopy(base_config)
+        interven_config["intervention"]["spatial_sim"] = [
+            [
+                "random",
+                0.1,
+                [
+                    "cell_vel",
+                    ["soft", "shift", -0.2],
+                    ["scheduled", interven_step],
+                    ["global"],
+                ],
+            ]
+        ]
+
+        self.grn_sim = GRNSim(base_config.grn)
+        self.spatial_sim = SpatialSim(base_config.spatial_sim)
+        self.spatial_sim_interven = SpatialSim(interven_config.spatial_sim)
+        intervention_flag = False
+        interven_manager = InterventionManager(
+            cfg=interven_config,
+            spatial_obj=self.spatial_sim_interven,
+            grn_obj=self.grn_sim,
+            key=base_config.intervention.get("random_key", 42),
+        )
+        intervention_flag = True
+        check_config(spatial_sim=self.spatial_sim, cfg=base_config)
+
+        ## Running sim
+        print("Running simulators...")
+
+        # for i in tqdm(range(base_config["spatial_sim"]["n_steps"])):
+        #     intervention_flag and interven_manager.check(i)
+        #     curr_vel = self.spatial_sim.mesh.cell_vel
+        #     interven_vel = self.spatial_sim_interven.mesh.cell_vel
+        #     if i < interven_step:
+        #         assert jnp.all(curr_vel == interven_vel)
+        #     elif i == interven_step:
+        #         assert jnp.all(
+        #             jnp.round(jnp.abs(curr_vel - interven_vel), decimals=1) == 0.2
+        #         )
+        #     self.spatial_sim_interven.run_sim(step=i)
+        #     self.spatial_sim.run_sim(step=i)

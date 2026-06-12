@@ -47,7 +47,6 @@ class InterventionManager:
         self.process_sim_interventions(
             cfg.grn, self.grn_interventions, self.add_grn_checkpoint, sim=self.grn_obj
         )
-
         self.process_interventions(self.other_interventions, self.add_checkpoint)
 
     def add_spatial_checkpoint(self, t, data):
@@ -143,6 +142,22 @@ class InterventionManager:
         for interven_i_conf in intervention_dict:
             interven_i = list(interven_i_conf)
             interven_param = interven_i[0]
+            if interven_param == "random":
+                total_timesteps = self.spatial_obj.n_steps
+                prob = interven_i_conf[1]
+                num_random_steps = int(total_timesteps * prob)
+                self.key, self.sub_key, random_steps = generate_choices(
+                    key=self.key,
+                    sub_key=self.sub_key,
+                    shape=(num_random_steps,),
+                    a=num_random_steps,
+                    replace=False,
+                )
+                for t_i in random_steps:
+                    random_interven_conf = list(copy.deepcopy(interven_i_conf))[2]
+                    random_interven_conf[2] = tuple(["scheduled", int(t_i)])
+                    intervention_dict.append(random_interven_conf)
+                continue
             intervention_type = interven_i[1]
             temporal_params: TemporalIntervention = tuple(interven_i[2])
             spatial_params = interven_i[3]
