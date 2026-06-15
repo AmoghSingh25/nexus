@@ -37,7 +37,7 @@ uv sync
     - `spatial/` -  Code, model definitions and logs of the Spatial Sim
     - `spatial_vec/` -  Code, model definitions and logs of the vectorized version of Spatial Sim
     - `run_sim.py` - Run the GRN and Spatial Sim
-    - `run_linked_sim.py` - Run the GRN and Spatial Sim together, allowing diffusion between cells and fields
+    - `run_linked_sim.py` - Run the GRN and Spatial Sim together, allowing diffusion between cells and fields and uses K-Means for the field calculation to allow discontinuous fields.
   - `causal/` - Causal discovery and inference modules
     - `identification/` - Algorithms for structure/parameter learning
     - `evaluation/` - Evaluation scripts
@@ -83,6 +83,8 @@ spatial_sim.run_sim()
 ```
 
 Examples for running the simulator are given in a [Marimo notebook](examples/marimo_example.py) and a [IPYNB notebook](examples/ipynb_example.ipynb). The simulator uses Hydra configs for the simulation parameters and the description of the config files are given in [Config Description](docs/config_desc.md).
+
+The simulators can be run together by using the `run_sim.py` for without field-cell diffusion and `run_linked_sim.py` which performs field-cell diffusion.
 
 ## Intervention API
 

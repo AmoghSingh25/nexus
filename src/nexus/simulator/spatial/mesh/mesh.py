@@ -447,7 +447,7 @@ class Mesh:
             if i.item() in self.chem_generators:
                 for chem_i in self.chem_generators[i.item()]:
                     chem_mass_i = chem_mass_i.at[chem_i[0]].set(
-                        chem_mass_i[chem_i[0]] + chem_mass_i[chem_i[0]] * chem_i[1]
+                        chem_mass_i[chem_i[0]] + chem_i[1]
                     )
 
             self.field_chem = self.field_chem.at[i].set(chem_mass_i)

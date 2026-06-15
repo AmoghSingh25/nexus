@@ -44,7 +44,7 @@ spatial_sim:
   n_cell_type: 2 # Number of types of cell. Each type of cell is characterized by a different set of parameters.
   
   ## Diffusion related
-  D: 0.5 # Value of the diffusion constant to be used
+  D: 0.5 # Value of the diffusion constant to be used. Also supports using a array of shape (N_fields,). N_fields is calculated as height*width*depth*field_resolution
   diffusion_bool: true # Flag to enable diffusion
   n_neighbours: 1 # Number of fields to consider for computing field neighbours for diffusion. Selects the N closest fields.
   
@@ -58,13 +58,13 @@ spatial_sim:
   ## Movement related
   movement_bool: true # Flag to enable movement of cells in field
   movement: # Movement parameters for each type of cell
-    cell1:
+    cell1: # Cell names must be named as cell0, cell1 ...
       qty_ratio: 0.8 # Proportion of each type of cell
       attraction_coeff: 1 # Coefficient for the attractive force between the cells
       repulsion_coeff: 0.1 # Coefficient for repulsive force between cells for overlaps and at short distances
       drift_vel_coeff: 0.01 # Coefficient for the drift velocity, added to the velocity for t+1
       random_vel_coeff: 0.01 # Coefficient for additive random velocity
-    cell2:
+    cell2: # Cell names must be named as cell0, cell1 ...
       qty_ratio: 0.2
       attraction_coeff: 2
       repulsion_coeff: 0.2
@@ -74,7 +74,7 @@ spatial_sim:
   ## Cycle related
   cycle_bool: true # Flag for enabling cell cycling
   cycle: # Parameters for each cell type for cell cycling
-    cell1:
+    cell1: # Cell names must be named as cell0, cell1 ...
       cycle_len: 10 # Length of the cell cycle
       interphase_len: 0.9 # Length of the cell's interphase
       necrosis_death_prob: 0.0001 # Probability of sudden death of the cell at each timestep
@@ -83,7 +83,16 @@ spatial_sim:
       cell_density: 1.0 # Density of the cell. Used to compute mass of the cell from the volume
       cell_vol_growth_rate: 1.0 # Growth rate of the cell volume
       cell_decay_rate: 0.5 # Decay rate of the cell for programmed cell death
-    cell2:
+      resource_limit: # Set resource limits for the division of the cell.
+        limits: [["chem1", 0.1], ["chem2", 0.2]] # Chemical name and minimum value of the chemical for cell division
+        type: "hill" # Other option is hard cutoff
+        hill_coeff: 1
+        combine_func: "min" # Or "mult"
+      contact_limit: # Set contact limits for the division of the cell
+        limits: [3, 0.5] # Number of neighbours in the surrounding to (perform cell division)(for half rate cell division). Higher number of neighbours prevent cell division, radial limit
+        type: "hill" # Other option is hard cutoff
+        hill_coeff: 1
+    cell2: # Cell names must be named as cell0, cell1 ...
       cycle_len: 20
       interphase_len: 0.8
       necrosis_death_prob: 0.0001
@@ -119,14 +128,22 @@ spatial_sim:
       products_exponent: # Exponent of product concentrations for reaction computation. In the same order as the product names.
   
 intervention: # Config for intervention. Leave empty if there is no intervention to perform. Look at intervention_api.md for more information
-    spatial_sim: # Simulator to target
-      - - "D"
-        - 2
-        - ["loop", 1, 2, 4]  # Type(Loop), Loop start time, loop length, gap between loops
-        - ["global", [1,2,3]]
-    grn:
-      - - "decay"
-        - 0.8
-        - ["scheduled", 1]  # Type(Loop), Loop start time, loop length, gap between loops
+  random_key: 42 # Key to use for the intervention API
+  spatial_sim: # Simulator to target
+    - - "D"
+      - ["hard", 0.2]
+      - ["loop", 1, 2, 4]  # Type(Loop), Loop start time, loop length, gap between loops
+      - ["global", [1,2,3]]
+    - - "random" ## Random event
+      - 0.2 ## Probability of event (computed over n_steps of the simulator)
+      - - "cell_vel" # Definition of the intervention to perform.
+        - ["soft", "shift", -0.2]
+        - ["scheduled", null] # Timestep is null as the timestep of the event is decided randomly.
         - ["global"]
+  grn:
+    - - "decay"
+      - ["hard", 0.8]
+      - ["scheduled", 1] # Type(Scheduled), timestep
+      - ["global"]
+  
 ```
