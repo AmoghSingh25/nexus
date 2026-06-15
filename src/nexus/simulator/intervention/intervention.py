@@ -24,10 +24,11 @@ TemporalIntervention = Union[
 
 @jaxtyped(typechecker=beartype)
 class InterventionManager:
-    def __init__(self, cfg, spatial_obj: SpatialSim, grn_obj: GRNSim, key: int = 42):
+    def __init__(self, cfg, spatial_obj: SpatialSim, grn_obj: GRNSim, key: int):
         self.spatial_interventions = cfg.intervention.get("spatial_sim", [])
         self.grn_interventions = cfg.intervention.get("grn", [])
         self.other_interventions = cfg.intervention.get("other", [])
+        self.total_steps = cfg.spatial_sim.n_steps
 
         self.key, self.sub_key = jax.random.split(jax.random.key(key))
 
@@ -47,7 +48,7 @@ class InterventionManager:
         self.process_sim_interventions(
             cfg.grn, self.grn_interventions, self.add_grn_checkpoint, sim=self.grn_obj
         )
-        self.process_interventions(self.other_interventions, self.add_checkpoint)
+        self.process_other_interventions(self.other_interventions, self.add_checkpoint)
 
     def add_spatial_checkpoint(self, t, data):
         if self.spatial_checkpoints.get(t) is None:
@@ -108,7 +109,7 @@ class InterventionManager:
                 case _:
                     raise ValueError("Invalid intervention type")
 
-    def process_interventions(self, intervention_dict, add_checkpoint_func):
+    def process_other_interventions(self, intervention_dict, add_checkpoint_func):
         for intervention_i in intervention_dict:
             intervention_type_i = intervention_i[0]
             temporal_params = intervention_i[1]
@@ -136,6 +137,21 @@ class InterventionManager:
                     interven_i=params,
                 )
 
+    def generate_random_events(self, interven_i_conf, intervention_dict):
+        prob = interven_i_conf[1]
+        num_random_steps = int(self.total_steps * prob)
+        self.key, self.sub_key, random_steps = generate_choices(
+            key=self.key,
+            sub_key=self.sub_key,
+            shape=(num_random_steps,),
+            a=num_random_steps,
+            replace=False,
+        )
+        for t_i in random_steps:
+            random_interven_conf = list(copy.deepcopy(interven_i_conf))[2]
+            random_interven_conf[2] = tuple(["scheduled", int(t_i)])
+            intervention_dict.append(random_interven_conf)
+
     def process_sim_interventions(
         self, cfg, intervention_dict, add_checkpoint_func, sim
     ):
@@ -143,20 +159,10 @@ class InterventionManager:
             interven_i = list(interven_i_conf)
             interven_param = interven_i[0]
             if interven_param == "random":
-                total_timesteps = self.spatial_obj.n_steps
-                prob = interven_i_conf[1]
-                num_random_steps = int(total_timesteps * prob)
-                self.key, self.sub_key, random_steps = generate_choices(
-                    key=self.key,
-                    sub_key=self.sub_key,
-                    shape=(num_random_steps,),
-                    a=num_random_steps,
-                    replace=False,
+                self.generate_random_events(
+                    interven_i_conf=interven_i_conf,
+                    intervention_dict=intervention_dict,
                 )
-                for t_i in random_steps:
-                    random_interven_conf = list(copy.deepcopy(interven_i_conf))[2]
-                    random_interven_conf[2] = tuple(["scheduled", int(t_i)])
-                    intervention_dict.append(random_interven_conf)
                 continue
             intervention_type = interven_i[1]
             temporal_params: TemporalIntervention = tuple(interven_i[2])
@@ -226,7 +232,6 @@ class InterventionManager:
                 interven_type = i[1]
                 # temporal_scope = i[2]
                 spatial_scope = i[3]
-
                 self.perform_intervention(
                     self.spatial_obj.mesh,
                     interven_type=interven_type,
