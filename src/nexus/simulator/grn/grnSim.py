@@ -283,7 +283,7 @@ class GRNSim:
 
     def calc_steady_states(self, learn_params: bool = True) -> Tuple:
         """Calculates the steady state concentrations for the MR and Gene nodes.
-        The steady state concentrations are calculated using the method mentioned in Equation 8 and Equation 10 in
+        The steady state concentration is calculated using a form of fixed point iteration for resolving loops. It uses formulas as mentioned in
         Dibaeinia, P., & Sinha, S. (2020). SERGIO: A Single-Cell Expression Simulator Guided by Gene Regulatory Networks.
 
         A similar method is used for estimating the steady state concentration of the proteins and is mentioned in `docs/simulator.md`
@@ -333,18 +333,6 @@ class GRNSim:
                     ),
                     operand=None,
                 )
-                # return jit_calc_steady_state(
-                #     is_mr=is_mr,
-                #     idx=gene_idx,
-                #     basal_rates=basal_rate,
-                #     decay=decay,
-                #     gene_conc=gene_conc[:, cell_idx],
-                #     gene_cell_mean=all_cell_conc,
-                #     k_i=ki_matrix,
-                #     hill_coeff=hill_coeff,
-                #     p_kt=prot_trans,
-                #     p_kd=prot_decay,
-                # )
 
             vmap_single_cell = jit(
                 vmap(
@@ -366,44 +354,75 @@ class GRNSim:
                 prot_decay,
             )
 
-            # return steady_vals[0], steady_vals[1]
-
         gene_conc, prot_conc = self.gene_conc, self.prot_conc
-        ## TODO: VMAP over genes does not work as genes depend on the concentration of the regulator genes
 
-        # vmap_gene_conc, vmap_prot_conc = _all_genes_steady_state(
-        #     self.n_cells,
-        #     self.is_mr,
-        #     self.basal_rates,
-        #     self.decay,
-        #     self.ki_matrix,
-        #     gene_conc,
-        #     self.hill_coeffs,
-        #     self.prot_tran_rates,
-        #     self.prot_decay,
-        #     self.prot_conc,
-        #     self.prot_steady_state
-        # )
-        calc_steady_state_jit = jit(_single_gene_steady_state)
-
-        for i in tqdm(range(self.n_genes)):
-            g_conc, p_conc = calc_steady_state_jit(
-                n_cells_range=jnp.arange(self.n_cells),
-                idx=i,
-                is_mr=self.is_mr[:, i],
-                basal_rate=self.basal_rates[i],
-                decay=self.decay[:, i],
-                ki_matrix=self.ki_matrix[:, i, :],
-                gene_conc=gene_conc,
-                all_cell_conc=jnp.mean(
-                    gene_conc, axis=1
-                ),  # To calculate half response as mean conc across all cells
-                hill_coeff=self.hill_coeffs[:, i],
-                prot_trans=self.prot_tran_rates[:, i],
-                prot_decay=self.prot_decay[:, i],
+        def _all_genes_steady_state(
+            n_cells_range,
+            n_genes_range,
+            is_mr,
+            basal_rates,
+            decay,
+            ki_matrix,
+            gene_conc,
+            hill_coeffs,
+            prot_tran_rates,
+            prot_decay,
+        ):
+            vmap_all_genes = vmap(
+                _single_gene_steady_state,
+                in_axes=(None, 0, 1, 0, 1, 1, None, None, 1, 1, 1),
             )
-            gene_conc = gene_conc.at[i].set(g_conc)
-            prot_conc = prot_conc.at[i].set(p_conc)
+
+            ret_ = vmap_all_genes(
+                n_cells_range,
+                n_genes_range,
+                is_mr,
+                basal_rates,
+                decay,
+                ki_matrix,
+                gene_conc,
+                jnp.mean(gene_conc, axis=1),
+                hill_coeffs,
+                prot_tran_rates,
+                prot_decay,
+            )
+            return ret_
+
+        all_genes_steady_state_jit = jit(_all_genes_steady_state)
+        max_iters = 1000
+        tolerance = 1e-5
+
+        n_cells_range = jnp.arange(self.n_cells)
+        n_genes_range = jnp.arange(self.n_genes)
+
+        logging.info("Iterating for convergence")
+        for iteration in range(max_iters):
+            old_gene_conc = gene_conc
+            g_conc_new, p_conc_new = all_genes_steady_state_jit(
+                n_cells_range,
+                n_genes_range,
+                self.is_mr,
+                self.basal_rates,
+                self.decay,
+                self.ki_matrix,
+                gene_conc,
+                self.hill_coeffs,
+                self.prot_tran_rates,
+                self.prot_decay,
+            )
+            gene_conc = g_conc_new.reshape(self.n_genes, self.n_cells, 1)
+            prot_conc = p_conc_new.reshape(self.n_genes, self.n_cells, 1)
+
+            diff = jnp.max(jnp.abs(gene_conc - old_gene_conc))
+            if diff < tolerance:
+                logging.info(
+                    f"Converged after {iteration + 1} iterations (max diff: {diff:.6f})."
+                )
+                break
+        else:
+            logging.warning(
+                f"No convergence within {max_iters} iterations (final diff: {diff:.6f})."
+            )
 
         ## Copy params to shift values
 
