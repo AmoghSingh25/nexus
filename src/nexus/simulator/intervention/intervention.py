@@ -24,10 +24,11 @@ TemporalIntervention = Union[
 
 @jaxtyped(typechecker=beartype)
 class InterventionManager:
-    def __init__(self, cfg, spatial_obj: SpatialSim, grn_obj: GRNSim, key: int = 42):
+    def __init__(self, cfg, spatial_obj: SpatialSim, grn_obj: GRNSim, key: int):
         self.spatial_interventions = cfg.intervention.get("spatial_sim", [])
         self.grn_interventions = cfg.intervention.get("grn", [])
         self.other_interventions = cfg.intervention.get("other", [])
+        self.total_steps = cfg.spatial_sim.n_steps
 
         self.key, self.sub_key = jax.random.split(jax.random.key(key))
 
@@ -47,8 +48,7 @@ class InterventionManager:
         self.process_sim_interventions(
             cfg.grn, self.grn_interventions, self.add_grn_checkpoint, sim=self.grn_obj
         )
-
-        self.process_interventions(self.other_interventions, self.add_checkpoint)
+        self.process_other_interventions(self.other_interventions, self.add_checkpoint)
 
     def add_spatial_checkpoint(self, t, data):
         if self.spatial_checkpoints.get(t) is None:
@@ -109,7 +109,7 @@ class InterventionManager:
                 case _:
                     raise ValueError("Invalid intervention type")
 
-    def process_interventions(self, intervention_dict, add_checkpoint_func):
+    def process_other_interventions(self, intervention_dict, add_checkpoint_func):
         for intervention_i in intervention_dict:
             intervention_type_i = intervention_i[0]
             temporal_params = intervention_i[1]
@@ -122,12 +122,48 @@ class InterventionManager:
                 reverse_intervention=None,
             )
 
+    def generate_temporal_checkpoints_soft_intervn(
+        self, temporal_type: Literal["loop", "pulse"], params, add_checkpoint_func
+    ):
+        temporal_params: TemporalIntervention = tuple(params[2])
+
+        if temporal_type == "pulse":
+            for i in range(temporal_params[1], temporal_params[2]):
+                temp_param_i = ["scheduled", i]
+                params[2] = temp_param_i
+                self.generate_temporal_checkpoints(
+                    temporal_params=tuple(temp_param_i),
+                    add_checkpoint_func=add_checkpoint_func,
+                    interven_i=params,
+                )
+
+    def generate_random_events(self, interven_i_conf, intervention_dict):
+        prob = interven_i_conf[1]
+        num_random_steps = int(self.total_steps * prob)
+        self.key, self.sub_key, random_steps = generate_choices(
+            key=self.key,
+            sub_key=self.sub_key,
+            shape=(num_random_steps,),
+            a=num_random_steps,
+            replace=False,
+        )
+        for t_i in random_steps:
+            random_interven_conf = list(copy.deepcopy(interven_i_conf))[2]
+            random_interven_conf[2] = tuple(["scheduled", int(t_i)])
+            intervention_dict.append(random_interven_conf)
+
     def process_sim_interventions(
         self, cfg, intervention_dict, add_checkpoint_func, sim
     ):
         for interven_i_conf in intervention_dict:
             interven_i = list(interven_i_conf)
             interven_param = interven_i[0]
+            if interven_param == "random":
+                self.generate_random_events(
+                    interven_i_conf=interven_i_conf,
+                    intervention_dict=intervention_dict,
+                )
+                continue
             intervention_type = interven_i[1]
             temporal_params: TemporalIntervention = tuple(interven_i[2])
             spatial_params = interven_i[3]
@@ -135,21 +171,33 @@ class InterventionManager:
             if spatial_params[0] == "index":
                 curr_val = curr_val[jnp.array(spatial_params[1])].tolist()
 
-            ## Only reverse the intervention if it is a hard intervention and is a looped or pulsed intervention
-            reverse_intervention = None
-            if intervention_type[0] == "hard" and (
+            if intervention_type[0] == "soft" and (
                 temporal_params[0] == "loop" or temporal_params[0] == "pulse"
             ):
-                reverse_intervention = copy.deepcopy(interven_i)
-                reverse_intervention[1][1] = curr_val
+                self.generate_temporal_checkpoints_soft_intervn(
+                    temporal_type=temporal_params[0],
+                    params=interven_i,
+                    add_checkpoint_func=add_checkpoint_func,
+                )
+            else:
+                ## Only reverse the intervention if it is a hard intervention and is a looped or pulsed intervention
+                reverse_intervention = None
+                if intervention_type[0] == "hard" and (
+                    temporal_params[0] == "loop" or temporal_params[0] == "pulse"
+                ):
+                    val_idx = 1
+                    reverse_intervention = copy.deepcopy(interven_i)
+                    reverse_intervention[1] = list(reverse_intervention[1])
+                    reverse_intervention[1] = ["hard", 0]
+                    reverse_intervention[1][val_idx] = curr_val
 
-            self.generate_temporal_checkpoints(
-                temporal_params=tuple(temporal_params),
-                add_checkpoint_func=add_checkpoint_func,
-                interven_i=interven_i,
-                reverse_intervention=reverse_intervention,
-                n_steps=cfg.get("n_steps"),
-            )
+                self.generate_temporal_checkpoints(
+                    temporal_params=tuple(temporal_params),
+                    add_checkpoint_func=add_checkpoint_func,
+                    interven_i=interven_i,
+                    reverse_intervention=reverse_intervention,
+                    n_steps=cfg.get("n_steps"),
+                )
 
     def perform_intervention(self, sim_obj, interven_type, spatial_scope, param_name):
         curr_val = getattr(sim_obj, param_name)
@@ -184,7 +232,6 @@ class InterventionManager:
                 interven_type = i[1]
                 # temporal_scope = i[2]
                 spatial_scope = i[3]
-
                 self.perform_intervention(
                     self.spatial_obj.mesh,
                     interven_type=interven_type,
@@ -285,7 +332,6 @@ class InterventionManager:
                         ].set(False)
                     # if is_mr[target_gene] and weight == 0.0
                 elif intervention_type == "modify_reaction":
-                    print("Modify reaction - - ")
                     reaction_names = list(intervention_i[1].keys())
                     self.spatial_obj.mesh.modify_reaction(
                         reaction_names=reaction_names, reaction_obj=intervention_i[1]

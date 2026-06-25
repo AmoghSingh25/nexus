@@ -86,7 +86,7 @@ spatial_sim:
       contact_limit:
         limits: [3, 0.5] # Number of neighbours in the surrounding to (perform cell division)(for half rate cell division). Higher number of neighbours prevent cell division, radial limit
         type: "hill" # Other option is hard cutoff
-        hill_coeff: 1 # Other option is hard cutoff
+        hill_coeff: 1
     cell2:
       cycle_len: 20
       interphase_len: 0.8
@@ -139,6 +139,12 @@ intervention:
       - ["hard", [[0.1, 0.2, 0.3]]]
       - ["scheduled", 2]
       - ["index", [1, 2, 3]]
+    - - random
+      - 0.2
+      - - cell_vel
+        - ["soft", "shift", -0.2]
+        - ["scheduled", null]
+        - ["global"]
   grn:
     - - "decay"
       - ["hard", 0.8]
@@ -168,7 +174,7 @@ intervention:
       - [0, 10, 0.3] # Target gene, Regulator gene, Probability (k) of selecting each cell
     - - "add_reaction"
       - ["scheduled", 1]
-      - - reac_4:
+      - - reac_4: # Reaction name, all details in a dict again
             order: 2
             rate_coeff: 1
             reactants:
@@ -179,4 +185,3 @@ intervention:
               - "chem1"
             products_exponent:
               - 1
-          # Reaction name, all details in a dict again

@@ -25,7 +25,10 @@ def run_sim(cfg: DictConfig) -> None:
     intervention_flag = False
     if cfg.get("intervention") is not None:
         interven_manager = InterventionManager(
-            cfg=cfg, spatial_obj=spatial_sim, grn_obj=grn_sim
+            cfg=cfg,
+            spatial_obj=spatial_sim,
+            grn_obj=grn_sim,
+            key=cfg.intervention.get("random_key", 42),
         )
         intervention_flag = True
     check_config(spatial_sim=spatial_sim, cfg=cfg)

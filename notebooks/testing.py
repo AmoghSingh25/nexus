@@ -47,6 +47,12 @@ def _(get_config):
 
 @app.cell
 def _(cfg):
+    cfg.intervention.other[-1]
+    return
+
+
+@app.cell
+def _(cfg):
     cfg.intervention.other[-1][2]
     return
 
