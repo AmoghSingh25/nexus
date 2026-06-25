@@ -173,20 +173,24 @@ class GRNSim:
                     )
                 self.ki_values.append(jnp.array([0]))
             else:
-                regulators = list(sorted(self.g.predecessors(i)))
+                if self.g.has_node(i):
+                    regulators = list(sorted(self.g.predecessors(i)))
+                    ki_vals = jnp.array(node["ki"])
+                    if ki_vals.ndim == 2:
+                        self.ki_matrix[:, i, regulators] = ki_vals
+                    elif len(regulators) > 0:
+                        self.ki_matrix[:, i, regulators] = ki_vals[0][:, 0].reshape(
+                            1, -1
+                        )
+
                 basal_rate_i = jnp.zeros((self.n_cells, 1))  # 0 basal rate for non-MRs
                 self.g.add_node(i)
-                ki_vals = jnp.array(node["ki"])
                 if self.non_mr_basal:  # Optional non-zero basal rate for non-MRs
                     self.basal_rates.append(
                         jnp.array(node["basal_rate"]).reshape((self.n_cells, 1))
                     )
                 else:
                     self.basal_rates.append(basal_rate_i)
-                if ki_vals.ndim == 2:
-                    self.ki_matrix[:, i, regulators] = ki_vals
-                else:
-                    self.ki_matrix[:, i, regulators] = ki_vals[0][:, 0].reshape(1, -1)
 
                 if self.protein_sim:
                     self.prot_half_lives = self.prot_half_lives.at[i].set(

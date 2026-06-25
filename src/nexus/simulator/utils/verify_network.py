@@ -128,7 +128,7 @@ def _verify_network(node_set, edges_set, n_cells, protein_sim, copy_data=False):
                 raise IncorrectDimensions(
                     "Likely incorrect dimensions. Recheck the dimensions. \n" + str(e)
                 )
-        else:
+        elif g.has_node(idx) and len(node["ki"]) > 0:
             n_regs = len(list(g.predecessors(idx)))
             try:
                 ki = jnp.array(node["ki"]).reshape(-1, n_regs, 1)
