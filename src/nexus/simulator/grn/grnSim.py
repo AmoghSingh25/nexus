@@ -584,6 +584,7 @@ class GRNSim:
                         print(
                             f"Epoch - {e_i} Loss = {loss_i} Learing rate = {opt_state.hyperparams['learning_rate']}"
                         )
+                        losses.append(loss_i)
                     if self.learn_prot:
                         loss_i_prot = calc_loss(
                             params_gene,
@@ -597,7 +598,6 @@ class GRNSim:
                             target_gene=False,
                         )
                         print(f"Prot loss = {loss_i_prot}")
-                    losses.append(loss_i)
 
                 if self.learn_prot:
                     grad_prot = grad_loss_prot(
