@@ -1,0 +1,18 @@
+defaults:
+  - _self_
+grn:
+  n_cells: 3
+  delta: 0.05
+  n_steps: 400
+  config_file: "configs/sample_data/repressilator_network.yaml"
+  random_key: 42
+  logging: false
+  learn_params: false
+  non_mr_basal: false
+  noise: false
+  noise_amplitude: 0.1
+  decay:
+    - 0.5
+  hill_coeffs:
+    - 5.0
+  protein_sim: false
