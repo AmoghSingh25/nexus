@@ -46,7 +46,7 @@ $\Delta W_\alpha$ and $\Delta W_\beta $ are independent Wiener processes sampled
 
 ### Calculation of concentration of Protein
 
-The protein calculation equations are taken from the paper [Kuchta et al](https://doi.org/10.1016/j.cels.2020.08.003).[2]
+The protein calculation equations are taken from the paper [Kuchta et al](https://doi.org/10.1038/s41598-018-31752-4).[2]
 
 #### Parameters
 
@@ -70,7 +70,7 @@ $\frac{d[Pr_i(t)]}{dt} = k_{trans,i} [G_i(t)] - k_{d,i}[Pr_i(t)]$
 The Euler-Maruyama method is used in the current simulator to solve this differential and for computing the concentrations.
 Protein concentration at time $t$ is computed using the gene concentration at time $t-1$.
 
-$(Pr_i)_{t+1} = (Pr_i)_t + (P_i(t)- \lambda_ix_t(t))\Delta t$
+$(Pr_i)_{t+1} = (Pr_i)_t + (\frac{d[Pr_i(t)]}{dt})\Delta t$
 
 ## References
 
