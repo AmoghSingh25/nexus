@@ -661,7 +661,7 @@ class GRNSim:
 
         return lax.cond(
             is_mr,
-            lambda x: jnp.zeros_like(basal_rates),
+            lambda x: basal_rates,
             lambda x: (
                 _calc_pij_g(
                     gene_conc=gene_conc,

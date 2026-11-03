@@ -4,9 +4,9 @@ __generated_with = "0.22.4"
 app = marimo.App(width="medium")
 
 
-@app.cell
-def _():
-    import marimo as mo
+app._unparsable_cell(
+    r"""
+    dimport marimo as mo
     import os
     from nexus.simulator.run_linked_sim import run_sim
     from nexus.simulator.grn.grnSim import GRNSim
@@ -18,21 +18,9 @@ def _():
     import yaml
     import matplotlib.pyplot as plt
     import jax.numpy as jnp
-
-    return (
-        GRNSim,
-        OmegaConf,
-        SpatialSim,
-        compose,
-        initialize_config_dir,
-        jnp,
-        mo,
-        os,
-        plt,
-        pprint,
-        run_sim,
-        yaml,
-    )
+    """,
+    name="_"
+)
 
 
 @app.cell
