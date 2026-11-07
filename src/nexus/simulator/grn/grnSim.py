@@ -988,7 +988,6 @@ class GRNSim:
                         gene_conc=self.gene_conc,
                         prot_conc=self.prot_conc,
                     )
-                clear_caches()
                 gene_conc_history.append(self.gene_conc)
                 prot_conc_history.append(self.prot_conc)
             logging.info("Simulation ended...")
