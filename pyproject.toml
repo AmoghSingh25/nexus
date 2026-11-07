@@ -48,6 +48,7 @@ dev = [
     "dash-bootstrap-components>=2.0.4",
     "flask-cors>=6.0.2",
     "diffrax>=0.7.0",
+    "pytest-xdist[psutil]>=3.8.0",
 ]
 
 [build-system]

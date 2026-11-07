@@ -4,7 +4,6 @@
 
 import jax
 import os
-import time
 import networkx as nx
 import jax.numpy as jnp
 from jax import vmap, lax, jit, clear_caches, grad, config, nn
@@ -21,6 +20,7 @@ from dataclasses import dataclass
 from jaxtyping import Float, Array, jaxtyped, Bool
 from beartype import beartype
 from beartype.typing import Tuple, List
+import secrets
 
 
 @dataclass
@@ -85,10 +85,10 @@ class GRNSim:
         self.is_logging = cfg.get("logging", False)
         self.log_dir = os.path.join(cfg.get("log_dir", "logs"))
         if self.is_logging:
-            self.timestamp = cfg.get("log_file_name", str(int(time.time())))
+            self.log_file_name = cfg.get("log_file_name", secrets.token_urlsafe(16))
             self.logger = GRNLogger(
                 log_dir=self.log_dir,
-                file_name=self.timestamp,
+                file_name=self.log_file_name,
                 n_steps=self.n_steps,
                 n_cells=self.n_cells,
                 n_genes=self.n_genes,

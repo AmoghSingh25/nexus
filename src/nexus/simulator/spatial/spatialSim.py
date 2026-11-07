@@ -3,8 +3,8 @@ from omegaconf import DictConfig
 from tqdm import tqdm
 from nexus.simulator.spatial.logger.mesh_logger import FieldLogger
 from nexus.simulator.spatial.logger.spatial_logger import SpatialLogger
-import time
 import os
+import secrets
 
 
 class SpatialSim:
@@ -27,7 +27,7 @@ class SpatialSim:
         self.D = cfg.D
         self.base_log_dir = os.path.join(cfg.get("log_dir", "logs"))
 
-        self.timestamp = cfg.get("log_file_name", str(int(time.time())))
+        self.log_file_name = cfg.get("log_file_name", secrets.token_urlsafe(16))
 
         if not (self.mesh_type == "grid" or self.mesh_type == "lattice-free"):
             raise ValueError("Incorrect mesh type")
@@ -38,7 +38,7 @@ class SpatialSim:
         if self.logging:
             self.logger = FieldLogger(
                 log_dir=self.base_log_dir,
-                file_name=self.timestamp,
+                file_name=self.log_file_name,
                 n_steps=cfg.n_steps + 1,
                 n_cells=self.mesh.n_fields,
                 n_chems=len(cfg["chemical"].name),
@@ -49,7 +49,7 @@ class SpatialSim:
             )
             self.pos_logger = SpatialLogger(
                 log_dir=self.base_log_dir,
-                file_name=self.timestamp,
+                file_name=self.log_file_name,
                 n_steps=cfg.n_steps,
                 n_cells=self.mesh.n_cells,
             )
