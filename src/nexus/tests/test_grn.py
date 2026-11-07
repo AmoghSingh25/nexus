@@ -1,18 +1,10 @@
-from utils import log_cleanup
+from nexus.tests.utils import log_cleanup, get_config
 from pathlib import Path
 from nexus.simulator.grn.grnSim import GRNSim
 import jax.numpy as jnp
-import os
-from hydra import initialize_config_dir, compose
 import pickle
 from jax import nn
-
-
-def get_config(config_name="test_config"):
-    conf_path = os.path.join(os.getcwd(), "configs")
-    with initialize_config_dir(version_base=None, config_dir=conf_path):
-        cfg = compose(config_name=config_name)
-    return cfg
+import jax
 
 
 def read_pickle(file_name):
@@ -64,15 +56,18 @@ class TestGRN:
 
         node_mapping = read_pickle(DATA_DIR / "saved_outputs/node_mapping.pkl")
         sergio_output = read_pickle(DATA_DIR / "saved_outputs/saved_output.pkl")
-        self.sim = GRNSim(base_config.grn)
-        gene_conc = self.sim.gene_conc.reshape((100, 2700))
-        reordered_output_1 = jnp.zeros_like(gene_conc)
-        for i in node_mapping:
-            reordered_output_1 = reordered_output_1.at[i].set(
-                gene_conc[node_mapping[i]]
+        with jax.enable_x64():
+            self.sim = GRNSim(base_config.grn)
+            gene_conc = self.sim.gene_conc.reshape((100, 2700))
+            reordered_output_1 = jnp.zeros_like(gene_conc)
+            for i in node_mapping:
+                reordered_output_1 = reordered_output_1.at[i].set(
+                    gene_conc[node_mapping[i]]
+                )
+            self.sim.cleanup()
+            assert jnp.allclose(
+                reordered_output_1, sergio_output, rtol=1e-6, atol=1e-32
             )
-        self.sim.cleanup()
-        assert jnp.allclose(reordered_output_1, sergio_output, rtol=1e-6, atol=1e-32)
 
     @log_cleanup
     def test_rna_backprop(self):

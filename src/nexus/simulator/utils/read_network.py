@@ -111,17 +111,21 @@ def _read_data(gene_data, mr_data, config_file, n_cells, protein_sim=False):
         raise Exception(
             "Only config file or gene data and mr data can be used in a single simulation"
         )
-
-    if config_file != "" and os.path.exists(config_file):
-        logging.info(f"Using the configuration file - {config_file}")
-        node_data, edge_data = _read_config(config_file)
-    else:
+    if config_file != "":
+        if os.path.exists(config_file):
+            logging.info(f"Using the configuration file - {config_file}")
+            node_data, edge_data = _read_config(config_file)
+        else:
+            raise Exception("Config file path invalid")
+    elif gene_data is not None and mr_data is not None:
         if not (os.path.exists(gene_data) and os.path.exists(mr_data)):
             raise Exception("One of the data paths does not exist")
         logging.info("Using gene and mr data files")
         node_data, edge_data = _read_txt(
             mr_file=mr_data, gene_file=gene_data, n_cells=n_cells
         )
+    else:
+        raise Exception("Check file paths for gene_data,mr_data/config_file")
 
     node_data, edge_data, copy_cells = _verify_network(
         node_data, edge_data, n_cells, protein_sim

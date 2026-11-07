@@ -307,7 +307,9 @@ class Mesh:
                 ].set(self.reaction_order_sum[reaction_i.order] + reaction_i.rate_coeff)
             self.n_reactions = len(self.reactions)
             self.reaction_order = jnp.array(self.reaction_order)
-            self.reaction_matrix = jnp.array(self.reaction_matrix)
+            self.reaction_matrix = jnp.array(self.reaction_matrix).reshape(
+                self.n_reactions, self.n_chemicals, 1
+            )
             self.reaction_prob = jnp.zeros((self.n_reactions,))
             self.calc_reaction_prob()
 
@@ -445,7 +447,7 @@ class Mesh:
             if i.item() in self.chem_generators:
                 for chem_i in self.chem_generators[i.item()]:
                     chem_mass_i = chem_mass_i.at[chem_i[0]].set(
-                        chem_mass_i[chem_i[0]] + chem_mass_i[chem_i[0]] * chem_i[1]
+                        chem_mass_i[chem_i[0]] + chem_i[1]
                     )
 
             self.field_chem = self.field_chem.at[i].set(chem_mass_i)
@@ -532,9 +534,11 @@ class Mesh:
                 jnp.array([reaction_i_obj._generate_reaction_matrix()]),
                 axis=0,
             )
+            self.reaction_prob = jnp.append(self.reaction_prob, 0)
             self.reaction_order_sum = self.reaction_order_sum.at[reaction_i.order].set(
                 self.reaction_order_sum[reaction_i.order] + reaction_i.rate_coeff
             )
+        self.n_reactions = len(self.reactions)
         self.calc_reaction_prob()
 
     def modify_reaction(self, reaction_names, reaction_obj) -> None:
@@ -542,7 +546,6 @@ class Mesh:
             if self.reactions[reaction_idx].name in reaction_names:
                 cur_reaction_name = self.reactions[reaction_idx].name
                 reaction_i = reaction_obj[cur_reaction_name]
-
                 reaction_i_obj = Reaction(
                     name=cur_reaction_name,
                     id=reaction_idx,
@@ -928,7 +931,7 @@ class Mesh:
                 pos=cell_boundary_pt_2,
                 cell_state=jnp.array([[0]]),
                 new_radius=(new_radius).reshape(1, 1),
-                parent_cell_id=cell_id,
+                parent_cell_id=cell_id.item(),
             )
 
         ## Check interphase

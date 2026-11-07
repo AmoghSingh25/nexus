@@ -64,6 +64,8 @@ $\eta$ - Dynamic viscosity
 $r$ - Stokes radius
 $T$ - Temperature
 
+The simulator also supports passing a different value of the diffusion constant $D$ for each field, and the diffusion constant between the two fields is averaged for computing the diffusion. This allows for different levels of diffusion between the fields.
+
 # Rate equations
 
 ## Zeroth Order

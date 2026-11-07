@@ -1,4 +1,6 @@
 import functools
+import os
+from hydra import initialize_config_dir, compose
 
 
 def log_cleanup(test_func):
@@ -21,3 +23,10 @@ def log_cleanup(test_func):
                 self.sim2 = None
 
     return test_wrapper
+
+
+def get_config(config_name="test_config"):
+    conf_path = os.path.join(os.getcwd(), "configs")
+    with initialize_config_dir(version_base=None, config_dir=conf_path):
+        cfg = compose(config_name=config_name)
+    return cfg

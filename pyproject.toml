@@ -1,6 +1,6 @@
 [project]
 name = "nexusim"
-version = "0.2.0"
+version = "0.2.1"
 description = "JAX-accelerated multi-scale simulator for biological control and causal discovery"
 keywords = [
     "biology",
@@ -34,6 +34,9 @@ dependencies = [
     "tiledb>=0.35.2",
     "tqdm>=4.67.1",
 ]
+
+[project.urls]
+Homepage = "https://github.com/AmoghSingh25/nexus"
 
 [dependency-groups]
 dev = [
