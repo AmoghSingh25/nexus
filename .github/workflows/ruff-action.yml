@@ -19,16 +19,14 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: 3.12
-
-      - name: Install Python dependencies
-        run: pip install ruff
+          python-version: "3.12"
+          enable-cache: true
 
       - name: Run Ruff checks
-        run: ruff check --exclude "*.ipynb" --exclude "notebooks/" --exclude "examples/"
+        run: uv run ruff check --exclude "*.ipynb" --exclude "notebooks/" --exclude "examples/"
 
       - name: Run Ruff format
-        run: ruff format --exclude "*.ipynb" --exclude "notebooks/" --exclude "examples/"
+        run: uv run ruff format --exclude "*.ipynb" --exclude "notebooks/" --exclude "examples/"
