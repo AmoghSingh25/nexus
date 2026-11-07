@@ -1,6 +1,6 @@
 [project]
 name = "nexusim"
-version = "0.2.0"
+version = "0.2.1"
 description = "JAX-accelerated multi-scale simulator for biological control and causal discovery"
 keywords = [
     "biology",
