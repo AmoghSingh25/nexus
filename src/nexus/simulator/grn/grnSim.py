@@ -275,7 +275,7 @@ class GRNSim:
         p_c = lax.cond(
             self.protein_sim,
             lambda _: (p_kt * e_x) / p_kd,
-            lambda _: jnp.zeros_like(e_x, dtype=jnp.float32),
+            lambda _: jnp.zeros_like(e_x),
             operand=None,
         )
 
