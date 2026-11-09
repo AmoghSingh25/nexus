@@ -88,7 +88,8 @@ class TestGRN:
                 self.sim.learnt_gene_params["basal_rates"]
             )
             self.sim.decay = nn.softplus(self.sim.learnt_gene_params["decay"])
-            self.sim.ki_matrix = self.sim.learnt_gene_params["ki_matrix"]
+            # self.sim.ki_matrix = self.sim.learnt_gene_params["ki_matrix"]
+            self.sim.ki_sparse = self.sim.learnt_gene_params["ki_sparse"]
             self.sim.hill_coeffs = self.sim.learnt_gene_params["hill_coeffs"]
             self.sim.prot_tran_rates = nn.softplus(
                 self.sim.learnt_prot_params["prot_tran_rates"]

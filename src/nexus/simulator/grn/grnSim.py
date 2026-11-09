@@ -17,7 +17,7 @@ from omegaconf import DictConfig
 from nexus.simulator.grn.logger.grnLogger import GRNLogger
 import optax
 from dataclasses import dataclass
-from jaxtyping import Float, Array, jaxtyped, Bool
+from jaxtyping import Float, Array, jaxtyped, Bool, Int
 from beartype import beartype
 from beartype.typing import Tuple, List
 import secrets
@@ -149,10 +149,11 @@ class GRNSim:
         self.prot_tran_rates = jnp.zeros_like(self.gene_conc)
         self.prot_decay = jnp.zeros_like(self.gene_conc)
         self.prot_half_lives = jnp.zeros_like(self.gene_conc)
-        self.ki_matrix = np.zeros((self.n_cells, self.n_genes, self.n_genes))
+        # self.ki_matrix = np.zeros((self.n_cells, self.n_genes, self.n_genes))
 
         self.g = nx.DiGraph()
         self.g.add_edges_from(edges_set)
+        gene_regs = []
 
         for i in range(len(node_set)):
             node = node_set[i]
@@ -172,16 +173,18 @@ class GRNSim:
                         jnp.array(node["basal_rate"]).reshape((self.n_cells, 1))
                     )
                 self.ki_values.append(jnp.array([0]))
+                gene_regs.append([])
             else:
+                regulators = []
                 if self.g.has_node(i):
                     regulators = list(sorted(self.g.predecessors(i)))
                     ki_vals = jnp.array(node["ki"])
-                    if ki_vals.ndim == 2:
-                        self.ki_matrix[:, i, regulators] = ki_vals
-                    elif len(regulators) > 0:
-                        self.ki_matrix[:, i, regulators] = ki_vals[0][:, 0].reshape(
-                            1, -1
-                        )
+                    # if ki_vals.ndim == 2:
+                    #     self.ki_matrix[:, i, regulators] = ki_vals
+                    # elif len(regulators) > 0:
+                    #     self.ki_matrix[:, i, regulators] = ki_vals[0][:, 0].reshape(
+                    #         1, -1
+                    #     )
 
                 basal_rate_i = jnp.zeros((self.n_cells, 1))  # 0 basal rate for non-MRs
                 self.g.add_node(i)
@@ -199,6 +202,10 @@ class GRNSim:
                     self.prot_tran_rates = self.prot_tran_rates.at[i].set(
                         jnp.array(node["prot_transcription_rate"]).reshape(-1, 1)
                     )
+                gene_regs.append(regulators)
+        k_max = max([len(regs) for regs in gene_regs])
+        k_max_padding = cfg.get("k_max_padding", 2)
+        k_max += k_max_padding
 
         if self.protein_sim:
             self.prot_half_lives = self.prot_half_lives.reshape(
@@ -215,8 +222,26 @@ class GRNSim:
             self.prot_tran_rates = jnp.zeros((self.n_cells, self.n_genes, 1))
             self.prot_decay = jnp.zeros_like(self.prot_half_lives)
 
+        reg_idx = np.zeros((self.n_genes, k_max), dtype=np.int32)
+        reg_mask = np.zeros((self.n_genes, k_max), dtype=bool)
+        ki_sparse = np.zeros((self.n_cells, self.n_genes, k_max), dtype=np.float32)
+
+        for i, regs in enumerate(gene_regs):
+            if len(regs) > 0:
+                reg_idx[i, : len(regs)] = regs
+                reg_mask[i, : len(regs)] = True
+                ki_vals = jnp.array(node_set[i]["ki"])
+                if ki_vals.ndim == 2:
+                    ki_sparse[:, i, : len(regs)] = ki_vals
+                else:
+                    ki_sparse[:, i, : len(regs)] = ki_vals[0][:, 0].reshape(1, -1)
+
+        self.reg_idx = jnp.array(reg_idx)
+        self.reg_mask = jnp.array(reg_mask)
+        self.ki_sparse = jnp.array(ki_sparse)
+
         logging.info("Setting KI Matrix")
-        self.ki_matrix = jnp.array(self.ki_matrix)
+        # self.ki_matrix = jnp.array(self.ki_matrix)
         del self.ki_values, self.g, node_set, edges_set
         clear_caches()
 
@@ -256,6 +281,8 @@ class GRNSim:
         gene_conc,
         gene_cell_mean,
         k_i,
+        reg_idx,
+        reg_m,
         hill_coeff,
         p_kt,
         p_kd,
@@ -269,6 +296,8 @@ class GRNSim:
             gene_conc=gene_conc,
             gene_cell_mean=gene_cell_mean,
             k_i=k_i,
+            reg_idx=reg_idx,
+            reg_m=reg_m,
             _hill=hill_coeff,
         ) / (decay + eps)
         p_kd = jnp.maximum(p_kd, 1e-4)
@@ -296,6 +325,8 @@ class GRNSim:
             basal_rate,
             decay,
             ki_matrix,
+            reg_idx,
+            reg_mask,
             gene_conc,
             all_cell_conc,
             hill_coeff,
@@ -309,6 +340,8 @@ class GRNSim:
                 basal_rate,
                 decay,
                 ki_matrix,
+                reg_idx,
+                reg_mask,
                 gene_conc,
                 all_cell_conc,
                 hill_coeff,
@@ -327,6 +360,8 @@ class GRNSim:
                         gene_conc=gene_conc[:, cell_idx],
                         gene_cell_mean=all_cell_conc,
                         k_i=ki_matrix,
+                        reg_idx=reg_idx,
+                        reg_m=reg_mask,
                         hill_coeff=hill_coeff,
                         p_kt=prot_trans,
                         p_kd=prot_decay,
@@ -337,7 +372,7 @@ class GRNSim:
             vmap_single_cell = jit(
                 vmap(
                     _single_cell_steady_state,
-                    in_axes=(None, 0, 0, 0, 0, 0, None, None, 0, 0, 0),
+                    in_axes=(None, 0, 0, 0, 0, 0, None, None, None, None, 0, 0, 0),
                 )
             )
             return vmap_single_cell(
@@ -347,6 +382,8 @@ class GRNSim:
                 basal_rate,
                 decay,
                 ki_matrix,
+                reg_idx,
+                reg_mask,
                 gene_conc,
                 all_cell_conc,
                 hill_coeff,
@@ -363,6 +400,8 @@ class GRNSim:
             basal_rates,
             decay,
             ki_matrix,
+            reg_idx,
+            reg_mask,
             gene_conc,
             hill_coeffs,
             prot_tran_rates,
@@ -370,7 +409,7 @@ class GRNSim:
         ):
             vmap_all_genes = vmap(
                 _single_gene_steady_state,
-                in_axes=(None, 0, 1, 0, 1, 1, None, None, 1, 1, 1),
+                in_axes=(None, 0, 1, 0, 1, 1, 0, 0, None, None, 1, 1, 1),
             )
 
             ret_ = vmap_all_genes(
@@ -380,6 +419,8 @@ class GRNSim:
                 basal_rates,
                 decay,
                 ki_matrix,
+                reg_idx,
+                reg_mask,
                 gene_conc,
                 jnp.mean(gene_conc, axis=1),
                 hill_coeffs,
@@ -404,7 +445,10 @@ class GRNSim:
                 self.is_mr,
                 self.basal_rates,
                 self.decay,
-                self.ki_matrix,
+                # self.ki_matrix,
+                self.ki_sparse,
+                self.reg_idx,
+                self.reg_mask,
                 gene_conc,
                 self.hill_coeffs,
                 self.prot_tran_rates,
@@ -447,6 +491,8 @@ class GRNSim:
                     basal_rates,
                     decay,
                     ki_matrix,
+                    reg_idx,
+                    reg_m,
                     gene_conc,
                     hill_coeffs,
                     prot_tran_rates,
@@ -454,7 +500,7 @@ class GRNSim:
                 ):
                     vmap_all_genes = vmap(
                         _single_gene_steady_state,
-                        in_axes=(None, 0, 1, 0, 1, 1, None, None, 1, 1, 1),
+                        in_axes=(None, 0, 1, 0, 1, 1, 0, 0, None, None, 1, 1, 1),
                     )
 
                     ret_ = vmap_all_genes(
@@ -463,7 +509,10 @@ class GRNSim:
                         is_mr,
                         basal_rates,
                         decay,
+                        # ki_matrix,
                         ki_matrix,
+                        reg_idx,
+                        reg_m,
                         gene_conc,
                         jnp.mean(gene_conc, axis=1),
                         hill_coeffs,
@@ -479,7 +528,9 @@ class GRNSim:
                     is_mr,
                     nn.softplus(params["basal_rates"]),
                     nn.softplus(params["decay"]),
-                    params["ki_matrix"],
+                    params["ki_sparse"],
+                    self.reg_idx,
+                    self.reg_mask,
                     gene_conc,
                     params["hill_coeffs"],
                     nn.softplus(params_prot["prot_tran_rates"]),
@@ -501,7 +552,7 @@ class GRNSim:
                                 dtype=jnp.float32,
                             )
                         ).astype(jnp.float32)
-                        + l2_gene_coeff * jnp.sum(params["ki_matrix"] ** 2)
+                        + l2_gene_coeff * jnp.sum(params["ki_sparse"] ** 2)
                     ),
                     lambda _: (
                         jnp.sqrt(
@@ -522,15 +573,16 @@ class GRNSim:
             calc_loss = jit(loss_target)
             basal_rates = self.basal_rates
             decay = self.decay
-            ki_matrix = self.ki_matrix
+            # ki_matrix = self.ki_matrix
             hill_coeffs = self.hill_coeffs
             prot_tran_rates = self.prot_tran_rates
             prot_decay = self.prot_decay
+            ki_sparse = self.ki_sparse
 
             params_gene = {
                 "basal_rates": basal_rates,
                 "decay": decay,
-                "ki_matrix": ki_matrix,
+                "ki_sparse": ki_sparse,
                 "hill_coeffs": hill_coeffs,
             }
             params_prot = {
@@ -615,6 +667,7 @@ class GRNSim:
                         grad_prot, opt_state_prot
                     )
                     params_prot = optax.apply_updates(params_prot, updates)
+            params_gene["ki_matrix"] = params_gene["ki_sparse"]
             return gene_conc, prot_conc, params_gene, params_prot
         else:
             return gene_conc, prot_conc, {}, {}
@@ -627,6 +680,8 @@ class GRNSim:
         gene_conc,
         gene_cell_mean,
         k_i,
+        reg_idx,
+        reg_m,
         _hill=1.0,
     ) -> jax.Array:
         """Calculates the production rate of each gene as a function of its regulator genes as given in Equation 5, Equation 6 and Equation 7 in
@@ -644,8 +699,11 @@ class GRNSim:
             _hill: Float[Array, "..."] = 1,
         ):
             eps = 1e-8
-            num = jnp.pow(gene_conc, _hill)
-            frac = num / (jnp.pow(gene_cell_mean, _hill) + num + eps)
+            reg_conc = gene_conc[reg_idx].reshape(-1)
+            reg_mean = gene_cell_mean[reg_idx].reshape(-1)
+
+            num = jnp.pow(reg_conc, _hill)
+            frac = num / (jnp.pow(reg_mean, _hill) + num + eps)
 
             def _calc_hill(f_i, k_ij):
                 return lax.cond(
@@ -655,7 +713,8 @@ class GRNSim:
             vmap_hill_func = vmap(_calc_hill, in_axes=(0, 0))
 
             frac = vmap_hill_func(frac, k_i)
-            frac = frac * jnp.abs(k_i).reshape(-1, 1)
+            frac = frac * jnp.abs(k_i)
+            frac = jnp.where(reg_m, frac, 0.0)
             frac = jnp.nan_to_num(frac, nan=0.0, neginf=0.0, posinf=0.0).reshape(-1)
             return frac.sum(axis=0)
 
@@ -681,7 +740,9 @@ class GRNSim:
         delta: Float[Array, ""],
         decay: Float[Array, "cells genes 1"],
         basal_rates: Float[Array, "genes cells"],
-        k_i: Float[Array, "cells genes genes"],
+        k_i: Float[Array, "cells genes k_max"],
+        reg_idx: Int[Array, "genes kmax"],
+        reg_m: Bool[Array, "genes kmax"],
         is_mr: Bool[Array, "cells genes"],
         noise_amp: Float[Array, "cells genes 1"],
         hill_coeff: Float[Array, "cells genes 1"],
@@ -708,6 +769,8 @@ class GRNSim:
             decay,
             basal_rates,
             k_i,
+            reg_idx,
+            reg_m,
             is_mr,
             gene_cell_mean,
             noise_amp,
@@ -726,6 +789,8 @@ class GRNSim:
                 gene_conc=gene_conc,
                 gene_cell_mean=gene_cell_mean,
                 k_i=k_i,
+                reg_idx=reg_idx,
+                reg_m=reg_m,
                 _hill=hill_coeff,
             )
             x_t_gene = gene_conc[idx] + (p_i - decay * gene_conc[idx]) * delta
@@ -745,13 +810,13 @@ class GRNSim:
         # Auto vectorization over all the genes
         auto_vec_genes = vmap(
             _single_gene_x_t,
-            in_axes=(0, None, None, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+            in_axes=(0, None, None, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
         )
 
         # Auto vectorization over auto_vec_genes for all cells
         auto_vec_cells = vmap(
             auto_vec_genes,
-            in_axes=(None, 1, None, 0, 1, 0, 0, None, 0, 0, 1, 0, 0, 0, 0),
+            in_axes=(None, 1, None, 0, 1, 0, None, None, 0, None, 0, 0, 1, 0, 0, 0, 0),
         )
 
         x_t, p_t = auto_vec_cells(
@@ -761,6 +826,8 @@ class GRNSim:
             decay,
             basal_rates,
             k_i,
+            reg_idx,
+            reg_m,
             is_mr,
             jnp.mean(gene_conc, axis=1),
             noise_amp,
@@ -809,7 +876,7 @@ class GRNSim:
                 self.delta,
                 nn.softplus(params["decay"]),
                 nn.softplus(params["basal_rates"]),
-                params["ki_matrix"],
+                params["ki_sparse"],
                 self.is_mr,
                 self.noise_amp,
                 hill_coeffs_clipped,
@@ -838,7 +905,7 @@ class GRNSim:
                             dtype=jnp.float32,
                         )
                     ).astype(jnp.float32)
-                    + l2_gene_coeff * jnp.sum(params["ki_matrix"] ** 2)
+                    + l2_gene_coeff * jnp.sum(params["ki_sparse"] ** 2)
                 ),
                 lambda _: (
                     jnp.sqrt(
@@ -864,7 +931,7 @@ class GRNSim:
         params_gene = {
             "basal_rates": self.basal_rates,
             "decay": self.decay,
-            "ki_matrix": self.ki_matrix,
+            "ki_sparse": self.ki_sparse,
             "hill_coeffs": self.hill_coeffs,
         }
         params_prot = {
@@ -969,7 +1036,10 @@ class GRNSim:
                     self.delta,
                     self.decay,
                     self.basal_rates,
-                    self.ki_matrix,
+                    # self.ki_matrix,
+                    self.ki_sparse,
+                    self.reg_idx,
+                    self.reg_mask,
                     self.is_mr,
                     self.noise_amp,
                     self.hill_coeffs,
@@ -1007,7 +1077,10 @@ class GRNSim:
                 self.delta,
                 self.decay,
                 self.basal_rates,
-                self.ki_matrix,
+                # self.ki_matrix,
+                self.ki_sparse,
+                self.reg_idx,
+                self.reg_mask,
                 self.is_mr,
                 self.noise_amp,
                 self.hill_coeffs,
@@ -1032,3 +1105,60 @@ class GRNSim:
     def cleanup(self):
         if self.is_logging and self.logger is not None:
             self.logger.cleanup()
+
+    @property
+    def ki_matrix(self):
+        dense = np.zeros((self.n_cells, self.n_genes, self.n_genes), dtype=np.float32)
+        for i in range(self.n_genes):
+            regs = self.reg_idx[i][self.reg_mask[i]]
+            dense[:, i, regs] = np.array(self.ki_sparse[:, i, : len(regs)])
+        return jnp.array(dense)
+
+    @ki_matrix.setter
+    def ki_matrix(self, val):
+        """Function for setting ki_matrix as ki_matrix is removed and ki_sparse is used in its place"""
+        val = jnp.array(val)
+        if (
+            val.ndim == 3
+            and val.shape[1] == self.n_genes
+            and val.shape[2] == self.n_genes
+        ):
+            val_np = np.array(val)
+            new_ki_sparse = np.array(self.ki_sparse)
+            new_reg_idx = np.array(self.reg_idx)
+            new_reg_mask = np.array(self.reg_mask)
+
+            for i in range(self.n_genes):
+                active_regs = np.where(np.any(val_np[:, i, :] != 0, axis=0))[0]
+                curr_regs = [
+                    int(new_reg_idx[i, s])
+                    for s in range(self.reg_idx.shape[1])
+                    if new_reg_mask[i, s]
+                ]
+                for slot in range(self.reg_idx.shape[1]):
+                    if new_reg_mask[i, slot]:
+                        r = int(new_reg_idx[i, slot])
+                        new_ki_sparse[:, i, slot] = val_np[:, i, r]
+
+                for r in active_regs:
+                    if r not in curr_regs:
+                        empty_slots = np.where(~new_reg_mask[i])[0]
+                        if len(empty_slots) > 0:
+                            slot = empty_slots[0]
+                            new_reg_idx[i, slot] = r
+                            new_reg_mask[i, slot] = True
+                            new_ki_sparse[:, i, slot] = val_np[:, i, r]
+                            curr_regs.append(r)
+                        else:
+                            raise ValueError(
+                                f"k_max exceeded for gene {i} when adding regulator {r}"
+                            )
+
+            self.ki_sparse = jnp.array(new_ki_sparse)
+            self.reg_idx = jnp.array(new_reg_idx)
+            self.reg_mask = jnp.array(new_reg_mask)
+
+        elif val.shape == self.ki_sparse.shape:
+            self.ki_sparse = val
+        else:
+            raise ValueError(f"Incompatible shape {val.shape} for ki_matrix")
