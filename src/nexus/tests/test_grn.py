@@ -1,3 +1,4 @@
+import platform
 from nexus.tests.utils import log_cleanup, get_config
 from pathlib import Path
 from nexus.simulator.grn.grnSim import GRNSim
@@ -5,6 +6,8 @@ import jax.numpy as jnp
 import pickle
 from jax import nn
 import jax
+import resource
+import pytest
 
 
 def read_pickle(file_name):
@@ -13,12 +16,26 @@ def read_pickle(file_name):
     return var
 
 
+def get_peak_memory_mb():
+    usage = resource.getrusage(resource.RUSAGE_SELF)
+    if platform.system() == "Darwin":
+        return usage.ru_maxrss / (1024**2)
+    else:
+        return usage.ru_maxrss / 1024
+
+
 class TestGRN:
     config_files = [
         "configs/sample_data/sample_network_2cell.yaml",
         "configs/sample_data/sample_network_1cell.yaml",
     ]
+    memory_test_config_files = {
+        100: "configs/sample_data/random_network_100.yaml",
+        1000: "configs/sample_data/random_network_1000.yaml",
+    }
     cell_no = [2, 1]
+    ABS_SELF_LOOP_TOL = 1e-3
+    REL_SELF_LOOP_TOL = 0.1  # %
 
     @log_cleanup
     def test_calc_steady_states(self):
@@ -88,7 +105,8 @@ class TestGRN:
                 self.sim.learnt_gene_params["basal_rates"]
             )
             self.sim.decay = nn.softplus(self.sim.learnt_gene_params["decay"])
-            self.sim.ki_matrix = self.sim.learnt_gene_params["ki_matrix"]
+            # self.sim.ki_matrix = self.sim.learnt_gene_params["ki_matrix"]
+            self.sim.ki_sparse = self.sim.learnt_gene_params["ki_sparse"]
             self.sim.hill_coeffs = self.sim.learnt_gene_params["hill_coeffs"]
             self.sim.prot_tran_rates = nn.softplus(
                 self.sim.learnt_prot_params["prot_tran_rates"]
@@ -165,3 +183,108 @@ class TestGRN:
         base_config.grn.random_key = 101
 
         _compare_runs(base_config)
+
+    @log_cleanup
+    @pytest.mark.memtest
+    def test_memory_pressure(self):
+        base_config = get_config()
+        base_config.grn.protein_sim = False
+        for k_i_val in self.memory_test_config_files:
+            base_config.grn.config_file = self.memory_test_config_files[k_i_val]
+            base_config.grn.n_cells = 1000  # Test for 1000 cells for memory pressure
+            self.sim = GRNSim(cfg=base_config.grn)
+            self.sim.run_sim()
+            assert (
+                self.sim.ki_sparse.shape[0] == 1000
+                and self.sim.ki_sparse.shape[1] == k_i_val
+            ), "Incorrect value for gene/cell count in ki matrix"
+            print(
+                f"Final memory for {self.memory_test_config_files[k_i_val]} = {get_peak_memory_mb()} MB"
+            )
+
+    @log_cleanup
+    def test_loop_steady_state(self):
+        base_config = get_config()
+        base_config.grn.config_file = (
+            "configs/sample_data/sample_network_self_loop.yaml"
+        )
+        sim = GRNSim(base_config.grn)
+
+        ss = sim.calc_steady_states()
+        assert not jnp.isnan(ss[0]).any(), "Gene values contain NaNs"
+        assert not jnp.isnan(ss[1]).any(), "Protein values contain NaNs"
+
+        sim.run_sim()
+        _diff_gene = jnp.abs(sim.gene_conc - ss[0])
+        _diff_prot = jnp.abs(sim.prot_conc - ss[1])
+        assert jnp.all(_diff_gene < self.ABS_SELF_LOOP_TOL), (
+            "Gene conc. diverge after steady state calculation in self-loop"
+        )
+        assert jnp.all(_diff_prot < self.ABS_SELF_LOOP_TOL), (
+            "Prot conc. diverge after steady state calculation in self-loop"
+        )
+
+    @log_cleanup
+    def test_loop_perturb(self):
+        ## Low delta and n_steps for abs gene conc verification
+        base_config = get_config()
+        base_config.grn.config_file = (
+            "configs/sample_data/sample_network_self_loop.yaml"
+        )
+        base_config.grn.n_steps = 1000
+        sim = GRNSim(base_config.grn)
+
+        ss = sim.calc_steady_states()
+        assert not jnp.isnan(ss[0]).any(), "Gene values contain NaNs"
+        assert not jnp.isnan(ss[1]).any(), "Protein values contain NaNs"
+
+        sim.run_sim()
+        _gene_diff = jnp.abs(sim.gene_conc - ss[0])
+        _rel_gene_diff = jnp.max(
+            (jnp.abs(sim.gene_conc - ss[0]) / jnp.max(ss[0])) * 100
+        )
+
+        assert jnp.all(_gene_diff < self.ABS_SELF_LOOP_TOL), (
+            "Absolute diff of gene concs do not re-stabilize"
+        )
+        assert jnp.all(_rel_gene_diff < self.REL_SELF_LOOP_TOL), (
+            "Relative diff of gene concs do not re-stabilize"
+        )
+
+        ## Higher delta and n_steps to allow protein convergence for verification
+        base_config = get_config()
+        base_config.grn.config_file = (
+            "configs/sample_data/sample_network_self_loop.yaml"
+        )
+        base_config.grn.n_steps = (
+            1500  ## Increasing steps and delta to allow convergence for protein concs
+        )
+        base_config.grn.delta = 0.05
+        sim = GRNSim(base_config.grn)
+
+        ss = sim.calc_steady_states()
+        assert not jnp.isnan(ss[0]).any(), "Gene values contain NaNs"
+        assert not jnp.isnan(ss[1]).any(), "Protein values contain NaNs"
+
+        sim.run_sim()
+        _gene_diff = jnp.abs(sim.gene_conc - ss[0])
+        _prot_diff = jnp.abs(sim.prot_conc - ss[1])
+        _rel_gene_diff = jnp.max(
+            (jnp.abs(sim.gene_conc - ss[0]) / jnp.max(ss[0])) * 100
+        )
+        _rel_prot_diff = jnp.max(
+            (jnp.abs(sim.prot_conc - ss[1]) / jnp.max(ss[1])) * 100
+        )
+
+        assert jnp.all(_gene_diff < self.ABS_SELF_LOOP_TOL), (
+            "Absolute diff of gene concs do not re-stabilize"
+        )
+        assert jnp.all(_rel_gene_diff < self.REL_SELF_LOOP_TOL), (
+            "Relative diff of gene concs do not re-stabilize"
+        )
+        assert jnp.all(_gene_diff < self.ABS_SELF_LOOP_TOL), (
+            "Absolute diff of protein concs do not re-stabilize"
+        )
+        assert jnp.all(_rel_prot_diff < self.REL_SELF_LOOP_TOL), (
+            "Relative diff of protein concs do not re-stabilize"
+        )

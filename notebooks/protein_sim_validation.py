@@ -437,7 +437,7 @@ def _(
             learn_params=False
         )
     # sim.run_sim()
-    return prev_params, sim
+    return prev_gene_conc, prev_params, prev_prot_conc, sim
 
 
 @app.cell
@@ -549,6 +549,71 @@ def _(jnp, nn, scipy, sim):
 
     _stats = scipy.stats.pearsonr(jnp.clip(sim.steady_states[:, _idx], min=min(sim.target_gene_conc)), sim.target_gene_conc)
     print("With jnp clip \t\t", _stats)
+    return
+
+
+@app.cell
+def _(
+    ids,
+    node_names_refined,
+    np,
+    prev_gene_conc,
+    prev_prot_conc,
+    prot_conc,
+    scipy,
+    shortlisted_prots,
+    sim,
+):
+    def evaluate_metrics(y_true, y_pred, name=""):
+        y_true = np.asarray(y_true).flatten()
+        y_pred = np.asarray(y_pred).flatten()
+        valid = np.isfinite(y_true) & np.isfinite(y_pred)
+        y_true, y_pred = y_true[valid], y_pred[valid]
+
+        r, p_pearson = scipy.stats.pearsonr(y_pred, y_true)
+        rho, p_spearman = scipy.stats.spearmanr(y_pred, y_true)
+
+        ss_res = np.sum((y_true - y_pred) ** 2)
+        ss_tot = np.sum((y_true - np.mean(y_true)) ** 2)
+        r2_cod = 1.0 - (ss_res / (ss_tot + 1e-12))
+        r2_corr = r**2
+        mse = np.mean((y_true - y_pred) ** 2)
+
+        print(f"================ {name} ================")
+        print(f"  N: {len(y_true)}")
+        print(f"  Pearson r         : {r:.4f} (p-value: {p_pearson:.4e})")
+        print(f"  Spearman rho      : {rho:.4f} (p-value: {p_spearman:.4e})")
+        print(f"  R^2 (COD)         : {r2_cod:.4f}")
+        print(f"  R^2 (Pearson r^2) : {r2_corr:.4f}")
+        print(f"  MSE               : {mse:.4f}")
+        return {
+            "r": r,
+            "p_pearson": p_pearson,
+            "rho": rho,
+            "p_spearman": p_spearman,
+            "r2_cod": r2_cod,
+            "r2_corr": r2_corr,
+            "mse": mse,
+        }
+
+    print("\n--- BEFORE PARAMETER LEARNING (INITIAL RANDOM KINETICS) ---")
+    eval_rna_before = evaluate_metrics(sim.target_gene_conc, prev_gene_conc[:, 0], "RNA Before Backprop (Cell 0)")
+    eval_prot_before = evaluate_metrics(sim.target_prot_conc, prev_prot_conc[:, 0], "Protein Before Backprop (Cell 0)")
+
+    print("\n--- AFTER PARAMETER LEARNING (OPTIMIZED STEADY STATES) ---")
+    eval_rna_cell0 = evaluate_metrics(sim.target_gene_conc, sim.steady_states[:, 0], "RNA After Backprop (Cell 0)")
+    eval_rna_mean = evaluate_metrics(sim.target_gene_conc, np.mean(sim.steady_states, axis=1), "RNA After Backprop (Cell Mean)")
+
+    eval_prot_cell0 = evaluate_metrics(sim.target_prot_conc, sim.prot_steady_state[:, 0], "All Proteins (Cell 0)")
+    eval_prot_mean = evaluate_metrics(sim.target_prot_conc, np.mean(sim.prot_steady_state, axis=1), "All Proteins (Cell Mean)")
+
+    sh_target, sh_pred = [], []
+    for _idx, _name in enumerate(node_names_refined):
+        if _name in shortlisted_prots:
+            sh_target.append(prot_conc[list(ids).index(_name)])
+            sh_pred.append(sim.prot_steady_state[_idx, 0, 0])
+
+    eval_prot_shortlisted = evaluate_metrics(sh_target, sh_pred, "Shortlisted Proteins (Known Half-Lives)")
     return
 
 
@@ -790,8 +855,13 @@ def _(
 
 @app.cell
 def _(sim):
+    sim.n_steps = 10
     sim.run_sim()
-    return
+    gene_conc_1 = sim.gene_conc
+    prot_conc_1 = sim.prot_conc
+    sim.n_steps = 90
+    sim.run_sim()
+    return gene_conc_1, prot_conc_1
 
 
 @app.cell
