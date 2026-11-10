@@ -1,0 +1,7599 @@
+- - ki:
+    - 4.80139
+    - 2.63524
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 10
+    type: g
+  - basal_rate:
+    - 0.11689
+    type: mr
+  - basal_rate:
+    - 0.46394
+    type: mr
+  - ki:
+    - 2.86184
+    - 2.94505
+    - 1.97688
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 20
+    type: g
+  - ki:
+    - 0.71346
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 8
+    type: g
+  - basal_rate:
+    - 0.08114
+    type: mr
+  - ki:
+    - 1.72211
+    - 4.01158
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 7
+    type: g
+  - basal_rate:
+    - 0.3802
+    type: mr
+  - basal_rate:
+    - 0.24102
+    type: mr
+  - ki:
+    - 4.35873
+    - 3.2996
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 20
+    type: g
+  - basal_rate:
+    - 0.16179
+    type: mr
+  - basal_rate:
+    - 0.11031
+    type: mr
+  - basal_rate:
+    - 0.3933
+    type: mr
+  - basal_rate:
+    - 0.34641
+    type: mr
+  - basal_rate:
+    - 0.3801
+    type: mr
+  - ki:
+    - 3.84208
+    - 2.03529
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 6
+    type: g
+  - basal_rate:
+    - 0.13222
+    type: mr
+  - basal_rate:
+    - 0.49446
+    type: mr
+  - ki:
+    - 2.18976
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 15
+    type: g
+  - ki:
+    - 1.40897
+    - 3.52873
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 8
+    type: g
+  - ki:
+    - 2.5736
+    - 2.61492
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 11
+    type: g
+  - basal_rate:
+    - 0.35992
+    type: mr
+  - ki:
+    - 2.70798
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 16
+    type: g
+  - ki:
+    - 4.33172
+    - 0.61422
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 10
+    type: g
+  - basal_rate:
+    - 0.23839
+    type: mr
+  - basal_rate:
+    - 0.24133
+    type: mr
+  - basal_rate:
+    - 0.23041
+    type: mr
+  - ki:
+    - 2.14045
+    - 3.50441
+    - 2.61487
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 13
+    type: g
+  - basal_rate:
+    - 0.37279
+    type: mr
+  - ki:
+    - 3.51586
+    - 3.27779
+    - 2.48993
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 16
+    type: g
+  - basal_rate:
+    - 0.40411
+    type: mr
+  - basal_rate:
+    - 0.24406
+    type: mr
+  - basal_rate:
+    - 0.47451
+    type: mr
+  - basal_rate:
+    - 0.26448
+    type: mr
+  - ki:
+    - 1.56563
+    - 2.94369
+    - 1.07191
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 11
+    type: g
+  - basal_rate:
+    - 0.06114
+    type: mr
+  - basal_rate:
+    - 0.27414
+    type: mr
+  - ki:
+    - 4.60564
+    - 3.80693
+    - 3.2509
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 18
+    type: g
+  - ki:
+    - 4.58469
+    - 4.91043
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 13
+    type: g
+  - basal_rate:
+    - 0.49581
+    type: mr
+  - basal_rate:
+    - 0.0761
+    type: mr
+  - basal_rate:
+    - 0.41376
+    type: mr
+  - ki:
+    - 2.77844
+    - 4.88003
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 12
+    type: g
+  - basal_rate:
+    - 0.28775
+    type: mr
+  - ki:
+    - 0.75758
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 15
+    type: g
+  - ki:
+    - 4.53493
+    - 3.02357
+    - 2.87024
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 6
+    type: g
+  - basal_rate:
+    - 0.18963
+    type: mr
+  - ki:
+    - 4.03348
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 19
+    type: g
+  - ki:
+    - 2.14978
+    - 2.52183
+    - 1.47761
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 6
+    type: g
+  - basal_rate:
+    - 0.09216
+    type: mr
+  - basal_rate:
+    - 0.33168
+    type: mr
+  - basal_rate:
+    - 0.14408
+    type: mr
+  - ki:
+    - 4.58947
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 9
+    type: g
+  - ki:
+    - 1.83838
+    - 4.09978
+    - 3.28681
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 15
+    type: g
+  - ki:
+    - 3.68489
+    - 4.11446
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 13
+    type: g
+  - basal_rate:
+    - 0.37447
+    type: mr
+  - ki:
+    - 2.64873
+    - 3.32701
+    - 2.57975
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 18
+    type: g
+  - ki:
+    - 4.11042
+    - 1.11412
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 14
+    type: g
+  - basal_rate:
+    - 0.14981
+    type: mr
+  - basal_rate:
+    - 0.17258
+    type: mr
+  - basal_rate:
+    - 0.49817
+    type: mr
+  - basal_rate:
+    - 0.47722
+    type: mr
+  - basal_rate:
+    - 0.16955
+    type: mr
+  - basal_rate:
+    - 0.20355
+    type: mr
+  - basal_rate:
+    - 0.41359
+    type: mr
+  - ki:
+    - 4.15487
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 6
+    type: g
+  - ki:
+    - 1.96497
+    - 3.77801
+    - 2.40018
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 14
+    type: g
+  - basal_rate:
+    - 0.18368
+    type: mr
+  - basal_rate:
+    - 0.22506
+    type: mr
+  - basal_rate:
+    - 0.33744
+    type: mr
+  - basal_rate:
+    - 0.0719
+    type: mr
+  - basal_rate:
+    - 0.46474
+    type: mr
+  - basal_rate:
+    - 0.41728
+    type: mr
+  - basal_rate:
+    - 0.24267
+    type: mr
+  - basal_rate:
+    - 0.34329
+    type: mr
+  - ki:
+    - 1.23833
+    - 4.65039
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 14
+    type: g
+  - basal_rate:
+    - 0.32933
+    type: mr
+  - basal_rate:
+    - 0.14005
+    type: mr
+  - ki:
+    - 3.23127
+    - 4.29549
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 16
+    type: g
+  - basal_rate:
+    - 0.47927
+    type: mr
+  - ki:
+    - 1.25017
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 12
+    type: g
+  - basal_rate:
+    - 0.373
+    type: mr
+  - ki:
+    - 3.20304
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 13
+    type: g
+  - basal_rate:
+    - 0.33624
+    type: mr
+  - ki:
+    - 1.82259
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 19
+    type: g
+  - basal_rate:
+    - 0.33123
+    type: mr
+  - basal_rate:
+    - 0.06077
+    type: mr
+  - basal_rate:
+    - 0.28303
+    type: mr
+  - basal_rate:
+    - 0.42244
+    type: mr
+  - ki:
+    - 1.56058
+    - 0.73757
+    - 3.87144
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 16
+    type: g
+  - basal_rate:
+    - 0.099
+    type: mr
+  - basal_rate:
+    - 0.4059
+    type: mr
+  - ki:
+    - 2.66203
+    - 1.08319
+    - 3.44176
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 5
+    type: g
+  - basal_rate:
+    - 0.05235
+    type: mr
+  - ki:
+    - 4.75492
+    - 0.86408
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 13
+    type: g
+  - basal_rate:
+    - 0.15675
+    type: mr
+  - basal_rate:
+    - 0.32143
+    type: mr
+  - ki:
+    - 3.3872
+    - 0.56125
+    - 1.68995
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 18
+    type: g
+  - basal_rate:
+    - 0.38109
+    type: mr
+  - basal_rate:
+    - 0.4124
+    type: mr
+  - ki:
+    - 2.06201
+    - 1.44583
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 5
+    type: g
+  - ki:
+    - 3.75898
+    - 2.65916
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 13
+    type: g
+  - ki:
+    - 3.32614
+    - 1.32362
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 16
+    type: g
+  - ki:
+    - 3.05886
+    - 2.99768
+    - 3.39529
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 5
+    type: g
+  - basal_rate:
+    - 0.27784
+    type: mr
+  - basal_rate:
+    - 0.31941
+    type: mr
+  - ki:
+    - 1.29738
+    - 4.73885
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 9
+    type: g
+  - ki:
+    - 3.25638
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 5
+    type: g
+  - basal_rate:
+    - 0.32425
+    type: mr
+  - basal_rate:
+    - 0.28688
+    type: mr
+  - basal_rate:
+    - 0.36303
+    type: mr
+  - ki:
+    - 4.84534
+    - 0.61105
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 14
+    type: g
+  - basal_rate:
+    - 0.19578
+    type: mr
+  - ki:
+    - 4.90833
+    - 3.4497
+    - 3.82002
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 9
+    type: g
+  - basal_rate:
+    - 0.49568
+    type: mr
+  - basal_rate:
+    - 0.49124
+    type: mr
+  - ki:
+    - 4.63142
+    - 3.10003
+    - 2.34482
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 14
+    type: g
+  - basal_rate:
+    - 0.46549
+    type: mr
+  - basal_rate:
+    - 0.34739
+    type: mr
+  - ki:
+    - 3.15759
+    - 2.03877
+    - 1.26294
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 18
+    type: g
+  - basal_rate:
+    - 0.21359
+    type: mr
+  - basal_rate:
+    - 0.39672
+    type: mr
+  - basal_rate:
+    - 0.24405
+    type: mr
+  - basal_rate:
+    - 0.10998
+    type: mr
+  - ki:
+    - 4.90648
+    - 3.00191
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 8
+    type: g
+  - basal_rate:
+    - 0.15723
+    type: mr
+  - ki:
+    - 3.11677
+    - 4.02188
+    - 1.2021
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 15
+    type: g
+  - ki:
+    - 4.42644
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 8
+    type: g
+  - basal_rate:
+    - 0.47261
+    type: mr
+  - ki:
+    - 4.08381
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 6
+    type: g
+  - ki:
+    - 0.53052
+    - 4.96776
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 5
+    type: g
+  - ki:
+    - 2.66776
+    - 2.12343
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 12
+    type: g
+  - basal_rate:
+    - 0.36488
+    type: mr
+  - ki:
+    - 1.74302
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 11
+    type: g
+  - ki:
+    - 3.10868
+    - 0.73841
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 16
+    type: g
+  - ki:
+    - 2.84862
+    - 1.15724
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 7
+    type: g
+  - ki:
+    - 2.32169
+    - 0.57094
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 15
+    type: g
+  - basal_rate:
+    - 0.34299
+    type: mr
+  - basal_rate:
+    - 0.18297
+    type: mr
+  - basal_rate:
+    - 0.14041
+    type: mr
+  - ki:
+    - 4.85707
+    - 3.95366
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 19
+    type: g
+  - ki:
+    - 4.43737
+    - 1.05042
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 5
+    type: g
+  - basal_rate:
+    - 0.29714
+    type: mr
+  - ki:
+    - 3.68892
+    - 1.29522
+    - 0.87584
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 18
+    type: g
+  - basal_rate:
+    - 0.29143
+    type: mr
+  - basal_rate:
+    - 0.24729
+    type: mr
+  - ki:
+    - 0.78168
+    - 3.16649
+    - 1.70581
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 12
+    type: g
+  - ki:
+    - 2.56542
+    - 4.22099
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 12
+    type: g
+  - ki:
+    - 1.16501
+    - 4.62516
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 8
+    type: g
+  - ki:
+    - 4.51398
+    - 4.84759
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 14
+    type: g
+  - basal_rate:
+    - 0.37271
+    type: mr
+  - ki:
+    - 4.1826
+    - 0.89922
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 8
+    type: g
+  - basal_rate:
+    - 0.29654
+    type: mr
+  - basal_rate:
+    - 0.15998
+    type: mr
+  - ki:
+    - 4.37339
+    - 1.68489
+    - 4.2304
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 9
+    type: g
+  - basal_rate:
+    - 0.44728
+    type: mr
+  - basal_rate:
+    - 0.41612
+    type: mr
+  - ki:
+    - 4.69283
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 20
+    type: g
+  - ki:
+    - 2.32101
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 13
+    type: g
+  - basal_rate:
+    - 0.34402
+    type: mr
+  - ki:
+    - 0.60623
+    - 1.78991
+    - 0.6387
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 18
+    type: g
+  - ki:
+    - 1.30079
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 5
+    type: g
+  - basal_rate:
+    - 0.0665
+    type: mr
+  - ki:
+    - 4.31565
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 7
+    type: g
+  - ki:
+    - 0.5469
+    - 2.10703
+    - 0.52159
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 17
+    type: g
+  - ki:
+    - 1.80669
+    - 4.28711
+    - 3.82945
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 10
+    type: g
+  - ki:
+    - 3.54496
+    - 0.75853
+    - 4.18419
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 20
+    type: g
+  - basal_rate:
+    - 0.40545
+    type: mr
+  - ki:
+    - 2.98836
+    - 1.15335
+    - 3.68293
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 16
+    type: g
+  - basal_rate:
+    - 0.47954
+    type: mr
+  - basal_rate:
+    - 0.24204
+    type: mr
+  - basal_rate:
+    - 0.05901
+    type: mr
+  - basal_rate:
+    - 0.23967
+    type: mr
+  - basal_rate:
+    - 0.36002
+    type: mr
+  - basal_rate:
+    - 0.38363
+    type: mr
+  - ki:
+    - 4.55491
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 20
+    type: g
+  - ki:
+    - 0.9837
+    - 1.79171
+    - 2.8304
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 16
+    type: g
+  - ki:
+    - 3.74526
+    - 4.85814
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 17
+    type: g
+  - ki:
+    - 4.31866
+    - 2.33194
+    - 1.75573
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 11
+    type: g
+  - basal_rate:
+    - 0.38942
+    type: mr
+  - ki:
+    - 4.59293
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 17
+    type: g
+  - basal_rate:
+    - 0.30412
+    type: mr
+  - basal_rate:
+    - 0.06818
+    type: mr
+  - ki:
+    - 3.10373
+    - 0.68041
+    - 4.58555
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 12
+    type: g
+  - ki:
+    - 4.77371
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 7
+    type: g
+  - basal_rate:
+    - 0.20484
+    type: mr
+  - basal_rate:
+    - 0.16486
+    type: mr
+  - ki:
+    - 4.3862
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 7
+    type: g
+  - basal_rate:
+    - 0.47661
+    type: mr
+  - basal_rate:
+    - 0.31695
+    type: mr
+  - ki:
+    - 0.81454
+    - 4.23851
+    - 1.58457
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 11
+    type: g
+  - ki:
+    - 1.55405
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 15
+    type: g
+  - ki:
+    - 3.98411
+    - 4.93071
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 6
+    type: g
+  - ki:
+    - 3.60609
+    - 3.77643
+    - 4.22649
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 6
+    type: g
+  - basal_rate:
+    - 0.4341
+    type: mr
+  - basal_rate:
+    - 0.18927
+    type: mr
+  - ki:
+    - 1.15575
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 14
+    type: g
+  - basal_rate:
+    - 0.15617
+    type: mr
+  - ki:
+    - 3.62143
+    - 3.269
+    - 2.49393
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 17
+    type: g
+  - basal_rate:
+    - 0.43523
+    type: mr
+  - basal_rate:
+    - 0.13173
+    type: mr
+  - ki:
+    - 0.50952
+    - 4.5996
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 19
+    type: g
+  - basal_rate:
+    - 0.15114
+    type: mr
+  - basal_rate:
+    - 0.09859
+    type: mr
+  - basal_rate:
+    - 0.31189
+    type: mr
+  - basal_rate:
+    - 0.42766
+    type: mr
+  - ki:
+    - 3.9193
+    - 4.78131
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 13
+    type: g
+  - basal_rate:
+    - 0.48031
+    type: mr
+  - basal_rate:
+    - 0.07856
+    type: mr
+  - ki:
+    - 4.14539
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 20
+    type: g
+  - ki:
+    - 2.46839
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 5
+    type: g
+  - ki:
+    - 4.24182
+    - 1.99057
+    - 3.76448
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 6
+    type: g
+  - ki:
+    - 1.05149
+    - 1.68066
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 7
+    type: g
+  - ki:
+    - 2.75479
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 13
+    type: g
+  - basal_rate:
+    - 0.09066
+    type: mr
+  - ki:
+    - 2.98805
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 20
+    type: g
+  - ki:
+    - 2.36406
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 5
+    type: g
+  - ki:
+    - 4.89141
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 17
+    type: g
+  - basal_rate:
+    - 0.20854
+    type: mr
+  - ki:
+    - 3.09927
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 14
+    type: g
+  - ki:
+    - 2.46466
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 15
+    type: g
+  - ki:
+    - 1.07745
+    - 3.62827
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 12
+    type: g
+  - basal_rate:
+    - 0.23531
+    type: mr
+  - ki:
+    - 1.1518
+    - 2.4896
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 16
+    type: g
+  - basal_rate:
+    - 0.18036
+    type: mr
+  - ki:
+    - 3.54944
+    - 1.7469
+    - 2.28475
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 18
+    type: g
+  - ki:
+    - 2.53049
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 12
+    type: g
+  - ki:
+    - 4.47464
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 12
+    type: g
+  - ki:
+    - 4.07183
+    - 4.86137
+    - 2.72318
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 14
+    type: g
+  - basal_rate:
+    - 0.23909
+    type: mr
+  - ki:
+    - 0.88781
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 11
+    type: g
+  - ki:
+    - 3.56914
+    - 2.41949
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 9
+    type: g
+  - ki:
+    - 3.39269
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 18
+    type: g
+  - ki:
+    - 3.36624
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 19
+    type: g
+  - ki:
+    - 2.45222
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 15
+    type: g
+  - basal_rate:
+    - 0.05778
+    type: mr
+  - basal_rate:
+    - 0.26451
+    type: mr
+  - basal_rate:
+    - 0.3411
+    type: mr
+  - ki:
+    - 2.6774
+    - 4.40336
+    - 2.7278
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 11
+    type: g
+  - ki:
+    - 0.94302
+    - 1.89638
+    - 0.78102
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 19
+    type: g
+  - ki:
+    - 2.8011
+    - 4.56445
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 6
+    type: g
+  - ki:
+    - 1.12436
+    - 0.81016
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 14
+    type: g
+  - basal_rate:
+    - 0.09253
+    type: mr
+  - basal_rate:
+    - 0.27498
+    type: mr
+  - ki:
+    - 1.04338
+    - 4.20824
+    - 3.13231
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 19
+    type: g
+  - basal_rate:
+    - 0.39012
+    type: mr
+  - ki:
+    - 3.92707
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 15
+    type: g
+  - ki:
+    - 4.73385
+    - 2.72259
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 6
+    type: g
+  - basal_rate:
+    - 0.33418
+    type: mr
+  - ki:
+    - 3.93676
+    - 1.79907
+    - 4.26307
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 7
+    type: g
+  - ki:
+    - 2.38388
+    - 0.91119
+    - 0.97593
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 12
+    type: g
+  - basal_rate:
+    - 0.23548
+    type: mr
+  - basal_rate:
+    - 0.06203
+    type: mr
+  - basal_rate:
+    - 0.06081
+    type: mr
+  - basal_rate:
+    - 0.39421
+    type: mr
+  - basal_rate:
+    - 0.44216
+    type: mr
+  - basal_rate:
+    - 0.39711
+    type: mr
+  - basal_rate:
+    - 0.16891
+    type: mr
+  - basal_rate:
+    - 0.32126
+    type: mr
+  - basal_rate:
+    - 0.48967
+    type: mr
+  - ki:
+    - 3.18172
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 14
+    type: g
+  - ki:
+    - 4.1612
+    - 4.08847
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 11
+    type: g
+  - ki:
+    - 3.29967
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 5
+    type: g
+  - basal_rate:
+    - 0.24095
+    type: mr
+  - basal_rate:
+    - 0.1823
+    type: mr
+  - basal_rate:
+    - 0.21386
+    type: mr
+  - ki:
+    - 4.42269
+    - 2.47755
+    - 2.82284
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 12
+    type: g
+  - ki:
+    - 0.96336
+    - 3.44757
+    - 2.02837
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 8
+    type: g
+  - ki:
+    - 4.07546
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 15
+    type: g
+  - basal_rate:
+    - 0.32212
+    type: mr
+  - ki:
+    - 3.74021
+    - 4.17807
+    - 4.10398
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 6
+    type: g
+  - basal_rate:
+    - 0.05198
+    type: mr
+  - ki:
+    - 3.2282
+    - 1.31345
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 19
+    type: g
+  - ki:
+    - 4.53943
+    - 3.46541
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 17
+    type: g
+  - ki:
+    - 0.58808
+    - 4.18123
+    - 1.7804
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 8
+    type: g
+  - ki:
+    - 3.2403
+    - 3.48677
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 15
+    type: g
+  - ki:
+    - 4.59013
+    - 3.80998
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 11
+    type: g
+  - basal_rate:
+    - 0.31044
+    type: mr
+  - basal_rate:
+    - 0.09989
+    type: mr
+  - ki:
+    - 2.61981
+    - 0.57842
+    - 1.33616
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 8
+    type: g
+  - ki:
+    - 1.43592
+    - 0.96936
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 7
+    type: g
+  - ki:
+    - 0.53457
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 16
+    type: g
+  - ki:
+    - 0.57975
+    - 1.44845
+    - 4.58033
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 7
+    type: g
+  - basal_rate:
+    - 0.13244
+    type: mr
+  - basal_rate:
+    - 0.08133
+    type: mr
+  - ki:
+    - 3.731
+    - 2.78686
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 11
+    type: g
+  - basal_rate:
+    - 0.12281
+    type: mr
+  - basal_rate:
+    - 0.20334
+    type: mr
+  - ki:
+    - 3.72365
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 6
+    type: g
+  - basal_rate:
+    - 0.45054
+    type: mr
+  - ki:
+    - 0.92277
+    - 1.35599
+    - 4.98045
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 10
+    type: g
+  - basal_rate:
+    - 0.09057
+    type: mr
+  - basal_rate:
+    - 0.08903
+    type: mr
+  - ki:
+    - 4.54392
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 19
+    type: g
+  - ki:
+    - 3.19566
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 7
+    type: g
+  - ki:
+    - 1.62107
+    - 2.26267
+    - 3.82023
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 9
+    type: g
+  - basal_rate:
+    - 0.45832
+    type: mr
+  - basal_rate:
+    - 0.25682
+    type: mr
+  - ki:
+    - 4.33699
+    - 4.06306
+    - 4.70046
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 15
+    type: g
+  - basal_rate:
+    - 0.45791
+    type: mr
+  - ki:
+    - 4.07295
+    - 1.82996
+    - 2.80401
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 7
+    type: g
+  - ki:
+    - 0.82982
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 9
+    type: g
+  - ki:
+    - 2.81271
+    - 4.57444
+    - 3.76101
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 13
+    type: g
+  - basal_rate:
+    - 0.38629
+    type: mr
+  - basal_rate:
+    - 0.30898
+    type: mr
+  - ki:
+    - 0.53665
+    - 1.94084
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 14
+    type: g
+  - ki:
+    - 0.6079
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 10
+    type: g
+  - ki:
+    - 0.77567
+    - 4.52628
+    - 0.55462
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 20
+    type: g
+  - ki:
+    - 3.41655
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 5
+    type: g
+  - basal_rate:
+    - 0.21841
+    type: mr
+  - basal_rate:
+    - 0.42038
+    type: mr
+  - ki:
+    - 1.51795
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 19
+    type: g
+  - ki:
+    - 3.48435
+    - 4.1422
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 19
+    type: g
+  - ki:
+    - 1.53079
+    - 2.49475
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 20
+    type: g
+  - ki:
+    - 3.78185
+    - 4.97328
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 18
+    type: g
+  - basal_rate:
+    - 0.46928
+    type: mr
+  - ki:
+    - 2.45333
+    - 2.76775
+    - 2.52376
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 6
+    type: g
+  - ki:
+    - 2.28049
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 12
+    type: g
+  - basal_rate:
+    - 0.24595
+    type: mr
+  - basal_rate:
+    - 0.22619
+    type: mr
+  - basal_rate:
+    - 0.23243
+    type: mr
+  - ki:
+    - 0.51094
+    - 0.70235
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 20
+    type: g
+  - ki:
+    - 1.76145
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 5
+    type: g
+  - basal_rate:
+    - 0.31561
+    type: mr
+  - basal_rate:
+    - 0.38886
+    type: mr
+  - ki:
+    - 3.57074
+    - 1.41499
+    - 2.43921
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 5
+    type: g
+  - ki:
+    - 4.11767
+    - 3.78541
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 20
+    type: g
+  - ki:
+    - 2.03746
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 9
+    type: g
+  - basal_rate:
+    - 0.32422
+    type: mr
+  - ki:
+    - 2.4655
+    - 3.4322
+    - 0.92511
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 11
+    type: g
+  - ki:
+    - 4.46983
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 17
+    type: g
+  - basal_rate:
+    - 0.07663
+    type: mr
+  - basal_rate:
+    - 0.05224
+    type: mr
+  - basal_rate:
+    - 0.19087
+    type: mr
+  - basal_rate:
+    - 0.39142
+    type: mr
+  - basal_rate:
+    - 0.17071
+    type: mr
+  - ki:
+    - 2.46108
+    - 2.01534
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 13
+    type: g
+  - ki:
+    - 0.83766
+    - 0.70956
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 8
+    type: g
+  - basal_rate:
+    - 0.3677
+    type: mr
+  - ki:
+    - 1.14414
+    - 2.17543
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 13
+    type: g
+  - ki:
+    - 1.11344
+    - 3.02732
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 19
+    type: g
+  - basal_rate:
+    - 0.12269
+    type: mr
+  - basal_rate:
+    - 0.26465
+    type: mr
+  - basal_rate:
+    - 0.42467
+    type: mr
+  - ki:
+    - 4.14415
+    - 3.0907
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 16
+    type: g
+  - basal_rate:
+    - 0.14474
+    type: mr
+  - basal_rate:
+    - 0.19736
+    type: mr
+  - ki:
+    - 4.57686
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 17
+    type: g
+  - ki:
+    - 0.56149
+    - 2.7189
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 20
+    type: g
+  - basal_rate:
+    - 0.49562
+    type: mr
+  - ki:
+    - 4.44172
+    - 3.38227
+    - 4.80796
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 5
+    type: g
+  - ki:
+    - 0.76652
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 9
+    type: g
+  - ki:
+    - 0.56351
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 6
+    type: g
+  - basal_rate:
+    - 0.2879
+    type: mr
+  - ki:
+    - 0.79025
+    - 2.5016
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 11
+    type: g
+  - ki:
+    - 4.75158
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 19
+    type: g
+  - basal_rate:
+    - 0.21934
+    type: mr
+  - basal_rate:
+    - 0.31923
+    type: mr
+  - basal_rate:
+    - 0.44989
+    type: mr
+  - ki:
+    - 2.28092
+    - 4.74368
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 8
+    type: g
+  - basal_rate:
+    - 0.4013
+    type: mr
+  - basal_rate:
+    - 0.09721
+    type: mr
+  - basal_rate:
+    - 0.43727
+    type: mr
+  - ki:
+    - 4.04965
+    - 3.51066
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 13
+    type: g
+  - ki:
+    - 2.44891
+    - 2.94937
+    - 4.14919
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 17
+    type: g
+  - basal_rate:
+    - 0.18581
+    type: mr
+  - basal_rate:
+    - 0.22464
+    type: mr
+  - ki:
+    - 3.11665
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 13
+    type: g
+  - basal_rate:
+    - 0.369
+    type: mr
+  - ki:
+    - 4.34466
+    - 4.31539
+    - 3.26084
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 11
+    type: g
+  - ki:
+    - 1.36941
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 17
+    type: g
+  - ki:
+    - 3.50203
+    - 1.77991
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 13
+    type: g
+  - basal_rate:
+    - 0.23276
+    type: mr
+  - basal_rate:
+    - 0.36035
+    type: mr
+  - ki:
+    - 2.42277
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 18
+    type: g
+  - ki:
+    - 2.21279
+    - 1.91352
+    - 4.92628
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 17
+    type: g
+  - basal_rate:
+    - 0.38868
+    type: mr
+  - basal_rate:
+    - 0.07601
+    type: mr
+  - ki:
+    - 3.43059
+    - 3.1841
+    - 1.42087
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 18
+    type: g
+  - basal_rate:
+    - 0.12026
+    type: mr
+  - ki:
+    - 3.56308
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 10
+    type: g
+  - basal_rate:
+    - 0.43186
+    type: mr
+  - ki:
+    - 4.89772
+    - 0.54776
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 5
+    type: g
+  - basal_rate:
+    - 0.18263
+    type: mr
+  - basal_rate:
+    - 0.39376
+    type: mr
+  - ki:
+    - 2.39967
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 8
+    type: g
+  - basal_rate:
+    - 0.0661
+    type: mr
+  - ki:
+    - 4.66428
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 20
+    type: g
+  - ki:
+    - 1.02449
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 17
+    type: g
+  - basal_rate:
+    - 0.40612
+    type: mr
+  - basal_rate:
+    - 0.30272
+    type: mr
+  - ki:
+    - 0.99735
+    - 3.85583
+    - 4.63322
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 10
+    type: g
+  - ki:
+    - 3.59644
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 16
+    type: g
+  - ki:
+    - 3.0883
+    - 3.76577
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 5
+    type: g
+  - basal_rate:
+    - 0.19699
+    type: mr
+  - ki:
+    - 0.66989
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 19
+    type: g
+  - ki:
+    - 0.57557
+    - 4.49092
+    - 1.77761
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 11
+    type: g
+  - basal_rate:
+    - 0.23204
+    type: mr
+  - ki:
+    - 1.83938
+    - 1.91918
+    - 4.33733
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 10
+    type: g
+  - ki:
+    - 4.33857
+    - 3.12523
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 6
+    type: g
+  - ki:
+    - 0.77019
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 8
+    type: g
+  - basal_rate:
+    - 0.08518
+    type: mr
+  - basal_rate:
+    - 0.07378
+    type: mr
+  - basal_rate:
+    - 0.21877
+    type: mr
+  - basal_rate:
+    - 0.20692
+    type: mr
+  - ki:
+    - 4.19275
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 9
+    type: g
+  - ki:
+    - 3.32601
+    - 3.84194
+    - 1.88063
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 15
+    type: g
+  - basal_rate:
+    - 0.11888
+    type: mr
+  - basal_rate:
+    - 0.44709
+    type: mr
+  - ki:
+    - 2.31028
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 19
+    type: g
+  - basal_rate:
+    - 0.09975
+    type: mr
+  - basal_rate:
+    - 0.24074
+    type: mr
+  - ki:
+    - 2.95564
+    - 0.75974
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 20
+    type: g
+  - basal_rate:
+    - 0.43191
+    type: mr
+  - basal_rate:
+    - 0.08119
+    type: mr
+  - basal_rate:
+    - 0.35272
+    type: mr
+  - basal_rate:
+    - 0.39786
+    type: mr
+  - basal_rate:
+    - 0.14117
+    type: mr
+  - basal_rate:
+    - 0.24193
+    type: mr
+  - basal_rate:
+    - 0.07183
+    type: mr
+  - ki:
+    - 3.87166
+    - 3.29034
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 18
+    type: g
+  - ki:
+    - 3.73805
+    - 4.18853
+    - 2.8094
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 12
+    type: g
+  - basal_rate:
+    - 0.08025
+    type: mr
+  - basal_rate:
+    - 0.41438
+    type: mr
+  - ki:
+    - 2.17615
+    - 4.90675
+    - 0.58009
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 18
+    type: g
+  - ki:
+    - 1.31517
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 13
+    type: g
+  - basal_rate:
+    - 0.18355
+    type: mr
+  - basal_rate:
+    - 0.45019
+    type: mr
+  - basal_rate:
+    - 0.05593
+    type: mr
+  - ki:
+    - 1.27086
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 18
+    type: g
+  - ki:
+    - 3.50326
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 17
+    type: g
+  - ki:
+    - 1.02971
+    - 1.52307
+    - 0.63769
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 16
+    type: g
+  - ki:
+    - 3.85004
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 12
+    type: g
+  - ki:
+    - 4.97024
+    - 3.71205
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 19
+    type: g
+  - ki:
+    - 3.12515
+    - 1.81966
+    - 1.75282
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 9
+    type: g
+  - basal_rate:
+    - 0.13055
+    type: mr
+  - ki:
+    - 0.91555
+    - 1.28273
+    - 4.68735
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 5
+    type: g
+  - ki:
+    - 2.7046
+    - 2.81216
+    - 4.12485
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 17
+    type: g
+  - ki:
+    - 2.65779
+    - 1.72176
+    - 2.32189
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 9
+    type: g
+  - basal_rate:
+    - 0.34095
+    type: mr
+  - ki:
+    - 3.12147
+    - 2.56894
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 12
+    type: g
+  - basal_rate:
+    - 0.39057
+    type: mr
+  - ki:
+    - 0.884
+    - 1.53623
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 8
+    type: g
+  - ki:
+    - 1.9545
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 14
+    type: g
+  - basal_rate:
+    - 0.06293
+    type: mr
+  - basal_rate:
+    - 0.36481
+    type: mr
+  - basal_rate:
+    - 0.2761
+    type: mr
+  - basal_rate:
+    - 0.15332
+    type: mr
+  - ki:
+    - 4.38612
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 10
+    type: g
+  - basal_rate:
+    - 0.05627
+    type: mr
+  - ki:
+    - 4.45548
+    - 4.4212
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 17
+    type: g
+  - basal_rate:
+    - 0.36866
+    type: mr
+  - basal_rate:
+    - 0.46532
+    type: mr
+  - basal_rate:
+    - 0.15048
+    type: mr
+  - ki:
+    - 2.08408
+    - 3.54822
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 12
+    type: g
+  - ki:
+    - 4.00403
+    - 3.69092
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 5
+    type: g
+  - ki:
+    - 4.81903
+    - 0.63396
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 11
+    type: g
+  - basal_rate:
+    - 0.19832
+    type: mr
+  - basal_rate:
+    - 0.44047
+    type: mr
+  - basal_rate:
+    - 0.42513
+    type: mr
+  - ki:
+    - 3.83095
+    - 2.50359
+    - 0.94734
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 17
+    type: g
+  - basal_rate:
+    - 0.16254
+    type: mr
+  - ki:
+    - 2.41408
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 13
+    type: g
+  - basal_rate:
+    - 0.26121
+    type: mr
+  - ki:
+    - 2.24558
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 9
+    type: g
+  - ki:
+    - 1.35672
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 5
+    type: g
+  - basal_rate:
+    - 0.17722
+    type: mr
+  - ki:
+    - 4.18341
+    - 4.30102
+    - 1.95161
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 19
+    type: g
+  - ki:
+    - 2.01058
+    - 2.52227
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 14
+    type: g
+  - ki:
+    - 4.29161
+    - 2.47932
+    - 2.2887
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 19
+    type: g
+  - ki:
+    - 3.00604
+    - 3.98957
+    - 3.70448
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 7
+    type: g
+  - basal_rate:
+    - 0.19986
+    type: mr
+  - basal_rate:
+    - 0.42705
+    type: mr
+  - basal_rate:
+    - 0.28403
+    type: mr
+  - ki:
+    - 2.97365
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 12
+    type: g
+  - ki:
+    - 3.03611
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 10
+    type: g
+  - basal_rate:
+    - 0.26236
+    type: mr
+  - ki:
+    - 2.90306
+    - 0.937
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 13
+    type: g
+  - basal_rate:
+    - 0.42463
+    type: mr
+  - basal_rate:
+    - 0.29554
+    type: mr
+  - ki:
+    - 2.94077
+    - 1.12129
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 7
+    type: g
+  - basal_rate:
+    - 0.30044
+    type: mr
+  - basal_rate:
+    - 0.28573
+    type: mr
+  - basal_rate:
+    - 0.1019
+    type: mr
+  - ki:
+    - 1.98177
+    - 4.18575
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 14
+    type: g
+  - basal_rate:
+    - 0.2857
+    type: mr
+  - ki:
+    - 2.98775
+    - 2.19695
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 14
+    type: g
+  - basal_rate:
+    - 0.1965
+    type: mr
+  - basal_rate:
+    - 0.29536
+    type: mr
+  - basal_rate:
+    - 0.26837
+    type: mr
+  - basal_rate:
+    - 0.09747
+    type: mr
+  - ki:
+    - 3.43927
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 7
+    type: g
+  - basal_rate:
+    - 0.12879
+    type: mr
+  - basal_rate:
+    - 0.44717
+    type: mr
+  - ki:
+    - 3.18038
+    - 4.69787
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 14
+    type: g
+  - ki:
+    - 1.52333
+    - 0.6764
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 14
+    type: g
+  - ki:
+    - 4.67885
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 9
+    type: g
+  - basal_rate:
+    - 0.35561
+    type: mr
+  - ki:
+    - 4.28667
+    - 2.61456
+    - 3.04144
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 14
+    type: g
+  - ki:
+    - 2.05135
+    - 2.76855
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 15
+    type: g
+  - basal_rate:
+    - 0.39541
+    type: mr
+  - basal_rate:
+    - 0.27672
+    type: mr
+  - ki:
+    - 0.81299
+    - 2.47171
+    - 2.62983
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 9
+    type: g
+  - basal_rate:
+    - 0.25001
+    type: mr
+  - basal_rate:
+    - 0.26486
+    type: mr
+  - ki:
+    - 1.61551
+    - 1.44018
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 13
+    type: g
+  - basal_rate:
+    - 0.44568
+    type: mr
+  - ki:
+    - 2.78618
+    - 3.39651
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 18
+    type: g
+  - ki:
+    - 2.34232
+    - 1.65051
+    - 4.7946
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 16
+    type: g
+  - ki:
+    - 4.53699
+    - 2.28231
+    - 4.2573
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 16
+    type: g
+  - ki:
+    - 1.01747
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 6
+    type: g
+  - ki:
+    - 2.71342
+    - 1.65246
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 11
+    type: g
+  - ki:
+    - 3.53834
+    - 3.12009
+    - 1.40252
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 12
+    type: g
+  - ki:
+    - 2.65487
+    - 0.73092
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 5
+    type: g
+  - ki:
+    - 2.47459
+    - 1.73454
+    - 0.58303
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 17
+    type: g
+  - basal_rate:
+    - 0.41434
+    type: mr
+  - ki:
+    - 1.03443
+    - 4.2034
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 5
+    type: g
+  - ki:
+    - 2.96945
+    - 4.50557
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 8
+    type: g
+  - ki:
+    - 3.34186
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 17
+    type: g
+  - ki:
+    - 4.34088
+    - 4.03886
+    - 3.45842
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 16
+    type: g
+  - ki:
+    - 2.6736
+    - 4.27807
+    - 2.27223
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 20
+    type: g
+  - basal_rate:
+    - 0.33005
+    type: mr
+  - basal_rate:
+    - 0.47403
+    type: mr
+  - ki:
+    - 3.50074
+    - 3.90851
+    - 2.52559
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 17
+    type: g
+  - ki:
+    - 2.67016
+    - 1.64168
+    - 2.1311
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 10
+    type: g
+  - ki:
+    - 0.8967
+    - 1.54371
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 13
+    type: g
+  - ki:
+    - 3.72899
+    - 3.2978
+    - 4.06961
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 19
+    type: g
+  - ki:
+    - 2.49908
+    - 0.99821
+    - 1.99902
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 18
+    type: g
+  - ki:
+    - 4.56189
+    - 1.38043
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 9
+    type: g
+  - basal_rate:
+    - 0.47803
+    type: mr
+  - basal_rate:
+    - 0.07272
+    type: mr
+  - basal_rate:
+    - 0.28276
+    type: mr
+  - basal_rate:
+    - 0.17402
+    type: mr
+  - ki:
+    - 0.98477
+    - 0.88163
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 9
+    type: g
+  - basal_rate:
+    - 0.13704
+    type: mr
+  - ki:
+    - 3.16481
+    - 1.45878
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 19
+    type: g
+  - basal_rate:
+    - 0.34239
+    type: mr
+  - basal_rate:
+    - 0.23168
+    type: mr
+  - basal_rate:
+    - 0.32757
+    type: mr
+  - basal_rate:
+    - 0.30291
+    type: mr
+  - ki:
+    - 3.1987
+    - 3.10049
+    - 4.14524
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 5
+    type: g
+  - ki:
+    - 1.2354
+    - 3.63897
+    - 4.41156
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 11
+    type: g
+  - basal_rate:
+    - 0.24911
+    type: mr
+  - ki:
+    - 3.95804
+    - 1.54343
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 19
+    type: g
+  - ki:
+    - 1.62814
+    - 0.75674
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 7
+    type: g
+  - basal_rate:
+    - 0.4814
+    type: mr
+  - ki:
+    - 2.17237
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 9
+    type: g
+  - basal_rate:
+    - 0.20777
+    type: mr
+  - basal_rate:
+    - 0.08497
+    type: mr
+  - ki:
+    - 4.91902
+    - 3.4403
+    - 2.50064
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 8
+    type: g
+  - basal_rate:
+    - 0.10471
+    type: mr
+  - ki:
+    - 0.70309
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 13
+    type: g
+  - basal_rate:
+    - 0.29512
+    type: mr
+  - basal_rate:
+    - 0.23955
+    type: mr
+  - basal_rate:
+    - 0.43364
+    type: mr
+  - ki:
+    - 4.40486
+    - 2.41012
+    - 1.00702
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 16
+    type: g
+  - ki:
+    - 4.15555
+    - 1.40883
+    - 4.43483
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 20
+    type: g
+  - basal_rate:
+    - 0.39102
+    type: mr
+  - ki:
+    - 2.88477
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 8
+    type: g
+  - basal_rate:
+    - 0.11941
+    type: mr
+  - basal_rate:
+    - 0.30726
+    type: mr
+  - basal_rate:
+    - 0.18923
+    type: mr
+  - ki:
+    - 0.873
+    - 2.16215
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 15
+    type: g
+  - ki:
+    - 4.17168
+    - 1.40839
+    - 2.55883
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 6
+    type: g
+  - ki:
+    - 2.41291
+    - 4.69296
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 9
+    type: g
+  - basal_rate:
+    - 0.44549
+    type: mr
+  - ki:
+    - 3.07957
+    - 2.80182
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 15
+    type: g
+  - basal_rate:
+    - 0.36946
+    type: mr
+  - basal_rate:
+    - 0.12816
+    type: mr
+  - ki:
+    - 2.40804
+    - 4.41098
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 20
+    type: g
+  - basal_rate:
+    - 0.37489
+    type: mr
+  - ki:
+    - 3.51132
+    - 3.52358
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 10
+    type: g
+  - basal_rate:
+    - 0.44561
+    type: mr
+  - basal_rate:
+    - 0.11496
+    type: mr
+  - basal_rate:
+    - 0.3742
+    type: mr
+  - ki:
+    - 2.01034
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 13
+    type: g
+  - basal_rate:
+    - 0.48505
+    type: mr
+  - basal_rate:
+    - 0.38872
+    type: mr
+  - basal_rate:
+    - 0.37619
+    type: mr
+  - basal_rate:
+    - 0.41059
+    type: mr
+  - ki:
+    - 3.22346
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 13
+    type: g
+  - ki:
+    - 4.45825
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 18
+    type: g
+  - basal_rate:
+    - 0.34338
+    type: mr
+  - ki:
+    - 4.74494
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 12
+    type: g
+  - basal_rate:
+    - 0.18891
+    type: mr
+  - ki:
+    - 4.65106
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 19
+    type: g
+  - ki:
+    - 1.86129
+    - 1.62349
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 7
+    type: g
+  - basal_rate:
+    - 0.29792
+    type: mr
+  - ki:
+    - 3.04122
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 5
+    type: g
+  - ki:
+    - 2.78164
+    - 0.62147
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 13
+    type: g
+  - ki:
+    - 2.21306
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 18
+    type: g
+  - ki:
+    - 4.34531
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 15
+    type: g
+  - ki:
+    - 1.25968
+    - 0.99475
+    - 3.29847
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 7
+    type: g
+  - ki:
+    - 3.49944
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 13
+    type: g
+  - ki:
+    - 4.30442
+    - 3.85265
+    - 2.45218
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 19
+    type: g
+  - ki:
+    - 4.46175
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 5
+    type: g
+  - basal_rate:
+    - 0.29614
+    type: mr
+  - basal_rate:
+    - 0.45043
+    type: mr
+  - ki:
+    - 0.52276
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 5
+    type: g
+  - ki:
+    - 1.37285
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 11
+    type: g
+  - basal_rate:
+    - 0.47947
+    type: mr
+  - basal_rate:
+    - 0.46042
+    type: mr
+  - ki:
+    - 4.17551
+    - 1.56431
+    - 2.28986
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 11
+    type: g
+  - ki:
+    - 1.73022
+    - 3.40982
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 13
+    type: g
+  - ki:
+    - 2.47973
+    - 2.64571
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 8
+    type: g
+  - ki:
+    - 3.12394
+    - 2.22708
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 12
+    type: g
+  - ki:
+    - 2.54626
+    - 4.84081
+    - 2.81842
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 13
+    type: g
+  - basal_rate:
+    - 0.35819
+    type: mr
+  - ki:
+    - 4.27054
+    - 0.77719
+    - 3.33514
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 7
+    type: g
+  - ki:
+    - 3.99129
+    - 2.11791
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 15
+    type: g
+  - basal_rate:
+    - 0.16685
+    type: mr
+  - basal_rate:
+    - 0.39963
+    type: mr
+  - ki:
+    - 0.79693
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 16
+    type: g
+  - ki:
+    - 2.81371
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 15
+    type: g
+  - ki:
+    - 4.64042
+    - 3.20372
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 20
+    type: g
+  - basal_rate:
+    - 0.33881
+    type: mr
+  - ki:
+    - 0.97114
+    - 2.95375
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 6
+    type: g
+  - basal_rate:
+    - 0.09979
+    type: mr
+  - basal_rate:
+    - 0.25307
+    type: mr
+  - ki:
+    - 1.2753
+    - 4.86768
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 18
+    type: g
+  - ki:
+    - 3.08564
+    - 0.63034
+    - 4.99424
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 17
+    type: g
+  - basal_rate:
+    - 0.24031
+    type: mr
+  - ki:
+    - 1.59957
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 20
+    type: g
+  - basal_rate:
+    - 0.1446
+    type: mr
+  - ki:
+    - 4.72835
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 11
+    type: g
+  - basal_rate:
+    - 0.10216
+    type: mr
+  - ki:
+    - 2.11518
+    - 1.92896
+    - 2.03248
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 17
+    type: g
+  - ki:
+    - 2.23601
+    - 3.65935
+    - 3.52924
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 13
+    type: g
+  - basal_rate:
+    - 0.16935
+    type: mr
+  - basal_rate:
+    - 0.1796
+    type: mr
+  - ki:
+    - 0.91418
+    - 4.4995
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 8
+    type: g
+  - ki:
+    - 0.51567
+    - 4.45516
+    - 3.60499
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 11
+    type: g
+  - ki:
+    - 2.59494
+    - 4.98866
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 13
+    type: g
+  - ki:
+    - 2.93595
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 6
+    type: g
+  - ki:
+    - 2.5292
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 15
+    type: g
+  - basal_rate:
+    - 0.22551
+    type: mr
+  - basal_rate:
+    - 0.3154
+    type: mr
+  - basal_rate:
+    - 0.43458
+    type: mr
+  - basal_rate:
+    - 0.13655
+    type: mr
+  - basal_rate:
+    - 0.12152
+    type: mr
+  - ki:
+    - 3.67186
+    - 0.92729
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 6
+    type: g
+  - ki:
+    - 3.72021
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 14
+    type: g
+  - basal_rate:
+    - 0.3455
+    type: mr
+  - ki:
+    - 2.78317
+    - 3.56273
+    - 4.42729
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 9
+    type: g
+  - ki:
+    - 4.49246
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 8
+    type: g
+  - ki:
+    - 4.98293
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 19
+    type: g
+  - basal_rate:
+    - 0.24511
+    type: mr
+  - basal_rate:
+    - 0.06423
+    type: mr
+  - basal_rate:
+    - 0.34644
+    type: mr
+  - ki:
+    - 1.95754
+    - 1.0388
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 12
+    type: g
+  - ki:
+    - 1.97245
+    - 3.74778
+    - 1.1851
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 6
+    type: g
+  - basal_rate:
+    - 0.37107
+    type: mr
+  - ki:
+    - 3.78005
+    - 4.03843
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 7
+    type: g
+  - basal_rate:
+    - 0.32927
+    type: mr
+  - ki:
+    - 4.64136
+    - 2.913
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 6
+    type: g
+  - ki:
+    - 3.03739
+    - 4.09375
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 16
+    type: g
+  - ki:
+    - 3.38899
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 10
+    type: g
+  - ki:
+    - 1.24737
+    - 2.42742
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 11
+    type: g
+  - basal_rate:
+    - 0.19814
+    type: mr
+  - ki:
+    - 1.98839
+    - 1.82512
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 9
+    type: g
+  - ki:
+    - 1.79386
+    - 0.95705
+    - 1.11348
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 8
+    type: g
+  - basal_rate:
+    - 0.09618
+    type: mr
+  - basal_rate:
+    - 0.35343
+    type: mr
+  - ki:
+    - 0.59286
+    - 2.44388
+    - 4.51834
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 19
+    type: g
+  - ki:
+    - 4.86538
+    - 0.74418
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 20
+    type: g
+  - basal_rate:
+    - 0.47727
+    type: mr
+  - basal_rate:
+    - 0.19133
+    type: mr
+  - basal_rate:
+    - 0.07997
+    type: mr
+  - basal_rate:
+    - 0.43749
+    type: mr
+  - basal_rate:
+    - 0.37437
+    type: mr
+  - basal_rate:
+    - 0.15342
+    type: mr
+  - ki:
+    - 1.73304
+    - 4.03641
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 17
+    type: g
+  - ki:
+    - 4.78512
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 15
+    type: g
+  - ki:
+    - 0.85594
+    - 3.9423
+    - 3.62577
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 12
+    type: g
+  - basal_rate:
+    - 0.28518
+    type: mr
+  - basal_rate:
+    - 0.07707
+    type: mr
+  - basal_rate:
+    - 0.41782
+    type: mr
+  - ki:
+    - 1.11691
+    - 4.15391
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 8
+    type: g
+  - ki:
+    - 3.14835
+    - 4.57797
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 12
+    type: g
+  - ki:
+    - 3.16807
+    - 0.89956
+    - 4.38726
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 13
+    type: g
+  - ki:
+    - 4.49383
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 19
+    type: g
+  - ki:
+    - 4.10162
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 6
+    type: g
+  - ki:
+    - 2.56434
+    - 2.28509
+    - 1.42051
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 12
+    type: g
+  - ki:
+    - 4.94964
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 12
+    type: g
+  - ki:
+    - 4.06858
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 11
+    type: g
+  - basal_rate:
+    - 0.14234
+    type: mr
+  - ki:
+    - 0.54804
+    - 3.95859
+    - 4.51934
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 5
+    type: g
+  - basal_rate:
+    - 0.06551
+    type: mr
+  - basal_rate:
+    - 0.48971
+    type: mr
+  - basal_rate:
+    - 0.28096
+    type: mr
+  - ki:
+    - 2.82533
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 12
+    type: g
+  - basal_rate:
+    - 0.21595
+    type: mr
+  - ki:
+    - 3.02023
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 17
+    type: g
+  - ki:
+    - 0.67687
+    - 2.9809
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 13
+    type: g
+  - ki:
+    - 1.14761
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 19
+    type: g
+  - ki:
+    - 2.49579
+    - 4.56779
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 11
+    type: g
+  - ki:
+    - 4.20968
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 14
+    type: g
+  - ki:
+    - 3.6141
+    - 1.98977
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 20
+    type: g
+  - ki:
+    - 1.1291
+    - 1.73521
+    - 1.30795
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 17
+    type: g
+  - basal_rate:
+    - 0.45478
+    type: mr
+  - basal_rate:
+    - 0.30796
+    type: mr
+  - basal_rate:
+    - 0.13826
+    type: mr
+  - ki:
+    - 2.13863
+    - 4.24873
+    - 3.42446
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 7
+    type: g
+  - ki:
+    - 3.2518
+    - 2.73738
+    - 2.58667
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 6
+    type: g
+  - ki:
+    - 2.19012
+    - 4.82806
+    - 4.06824
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 10
+    type: g
+  - ki:
+    - 4.85063
+    - 4.23578
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 12
+    type: g
+  - ki:
+    - 2.71684
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 17
+    type: g
+  - basal_rate:
+    - 0.26081
+    type: mr
+  - basal_rate:
+    - 0.11536
+    type: mr
+  - basal_rate:
+    - 0.26583
+    type: mr
+  - basal_rate:
+    - 0.28658
+    type: mr
+  - basal_rate:
+    - 0.14226
+    type: mr
+  - basal_rate:
+    - 0.06902
+    type: mr
+  - ki:
+    - 4.30574
+    - 1.11082
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 6
+    type: g
+  - ki:
+    - 2.36531
+    - 2.03759
+    - 3.85498
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 15
+    type: g
+  - ki:
+    - 1.54488
+    - 0.71064
+    - 2.88468
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 11
+    type: g
+  - ki:
+    - 3.40767
+    - 0.75427
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 15
+    type: g
+  - ki:
+    - 0.94687
+    - 0.67022
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 20
+    type: g
+  - ki:
+    - 3.67204
+    - 2.10105
+    - 3.92415
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 17
+    type: g
+  - ki:
+    - 3.32431
+    - 1.64816
+    - 2.94189
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 10
+    type: g
+  - ki:
+    - 2.3211
+    - 4.30105
+    - 3.1658
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 14
+    type: g
+  - basal_rate:
+    - 0.10024
+    type: mr
+  - ki:
+    - 1.29336
+    - 3.99807
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 13
+    type: g
+  - ki:
+    - 2.55986
+    - 1.35619
+    - 2.74333
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 10
+    type: g
+  - basal_rate:
+    - 0.12989
+    type: mr
+  - basal_rate:
+    - 0.39281
+    type: mr
+  - ki:
+    - 3.39163
+    - 3.08314
+    - 0.98454
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 19
+    type: g
+  - ki:
+    - 4.99653
+    - 2.42278
+    - 4.03752
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 12
+    type: g
+  - ki:
+    - 2.33964
+    - 1.89288
+    - 4.57745
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 5
+    type: g
+  - basal_rate:
+    - 0.34693
+    type: mr
+  - ki:
+    - 3.16233
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 15
+    type: g
+  - basal_rate:
+    - 0.3708
+    type: mr
+  - basal_rate:
+    - 0.10938
+    type: mr
+  - ki:
+    - 1.02689
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 7
+    type: g
+  - basal_rate:
+    - 0.29859
+    type: mr
+  - ki:
+    - 2.98311
+    - 2.55834
+    - 3.36331
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 9
+    type: g
+  - basal_rate:
+    - 0.18416
+    type: mr
+  - ki:
+    - 4.60394
+    - 3.73845
+    - 2.999
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 7
+    type: g
+  - basal_rate:
+    - 0.3552
+    type: mr
+  - ki:
+    - 3.37015
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 12
+    type: g
+  - ki:
+    - 0.58623
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 8
+    type: g
+  - basal_rate:
+    - 0.28988
+    type: mr
+  - ki:
+    - 2.93697
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 13
+    type: g
+  - basal_rate:
+    - 0.07475
+    type: mr
+  - basal_rate:
+    - 0.4362
+    type: mr
+  - basal_rate:
+    - 0.23913
+    type: mr
+  - ki:
+    - 1.49334
+    - 2.22548
+    - 4.73364
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 14
+    type: g
+  - basal_rate:
+    - 0.41973
+    type: mr
+  - ki:
+    - 3.80895
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 18
+    type: g
+  - basal_rate:
+    - 0.33538
+    type: mr
+  - basal_rate:
+    - 0.4242
+    type: mr
+  - basal_rate:
+    - 0.33039
+    type: mr
+  - ki:
+    - 2.72304
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 13
+    type: g
+  - ki:
+    - 4.99719
+    - 2.26878
+    - 4.95863
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 20
+    type: g
+  - ki:
+    - 1.26616
+    - 3.57703
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 13
+    type: g
+  - ki:
+    - 4.82097
+    - 4.65466
+    - 0.7731
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 6
+    type: g
+  - ki:
+    - 1.79317
+    - 3.79585
+    - 4.52799
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 18
+    type: g
+  - basal_rate:
+    - 0.38482
+    type: mr
+  - ki:
+    - 4.65994
+    - 3.63502
+    - 0.59576
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 7
+    type: g
+  - ki:
+    - 0.64149
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 17
+    type: g
+  - basal_rate:
+    - 0.46137
+    type: mr
+  - ki:
+    - 2.54924
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 9
+    type: g
+  - basal_rate:
+    - 0.48533
+    type: mr
+  - ki:
+    - 2.33395
+    - 2.43459
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 17
+    type: g
+  - basal_rate:
+    - 0.37869
+    type: mr
+  - ki:
+    - 2.50061
+    - 3.21331
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 13
+    type: g
+  - ki:
+    - 3.94819
+    - 2.06333
+    - 4.59896
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 18
+    type: g
+  - ki:
+    - 0.53969
+    - 4.54863
+    - 3.67362
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 13
+    type: g
+  - ki:
+    - 0.90417
+    - 1.58907
+    - 4.12873
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 8
+    type: g
+  - basal_rate:
+    - 0.43616
+    type: mr
+  - basal_rate:
+    - 0.11461
+    type: mr
+  - ki:
+    - 1.57493
+    - 2.00684
+    - 2.19201
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 16
+    type: g
+  - basal_rate:
+    - 0.10018
+    type: mr
+  - ki:
+    - 4.88545
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 8
+    type: g
+  - basal_rate:
+    - 0.3802
+    type: mr
+  - basal_rate:
+    - 0.47179
+    type: mr
+  - basal_rate:
+    - 0.05903
+    type: mr
+  - ki:
+    - 4.84189
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 18
+    type: g
+  - basal_rate:
+    - 0.14569
+    type: mr
+  - basal_rate:
+    - 0.14692
+    type: mr
+  - ki:
+    - 1.09943
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 19
+    type: g
+  - basal_rate:
+    - 0.36239
+    type: mr
+  - basal_rate:
+    - 0.44088
+    type: mr
+  - basal_rate:
+    - 0.4624
+    type: mr
+  - basal_rate:
+    - 0.24452
+    type: mr
+  - basal_rate:
+    - 0.2228
+    type: mr
+  - basal_rate:
+    - 0.28011
+    type: mr
+  - ki:
+    - 1.17568
+    - 1.06699
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 15
+    type: g
+  - ki:
+    - 0.64702
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 19
+    type: g
+  - basal_rate:
+    - 0.18282
+    type: mr
+  - ki:
+    - 2.19578
+    - 4.39726
+    - 3.27217
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 13
+    type: g
+  - ki:
+    - 4.19763
+    - 3.69476
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 6
+    type: g
+  - ki:
+    - 3.92059
+    - 1.62601
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 13
+    type: g
+  - ki:
+    - 2.00396
+    - 3.09622
+    - 3.59952
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 8
+    type: g
+  - basal_rate:
+    - 0.4909
+    type: mr
+  - basal_rate:
+    - 0.17346
+    type: mr
+  - ki:
+    - 3.86412
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 7
+    type: g
+  - basal_rate:
+    - 0.08263
+    type: mr
+  - ki:
+    - 2.36077
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 9
+    type: g
+  - ki:
+    - 0.86905
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 8
+    type: g
+  - ki:
+    - 3.92315
+    - 0.66175
+    - 3.92578
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 19
+    type: g
+  - basal_rate:
+    - 0.08258
+    type: mr
+  - basal_rate:
+    - 0.0642
+    type: mr
+  - basal_rate:
+    - 0.14173
+    type: mr
+  - ki:
+    - 3.36578
+    - 1.39067
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 7
+    type: g
+  - ki:
+    - 4.01404
+    - 4.60749
+    - 1.00162
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 12
+    type: g
+  - ki:
+    - 4.43809
+    - 1.38268
+    - 4.69288
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 12
+    type: g
+  - basal_rate:
+    - 0.41983
+    type: mr
+  - basal_rate:
+    - 0.27432
+    type: mr
+  - basal_rate:
+    - 0.2384
+    type: mr
+  - ki:
+    - 1.87573
+    - 2.8007
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 16
+    type: g
+  - ki:
+    - 4.91228
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 5
+    type: g
+  - ki:
+    - 2.63241
+    - 3.72096
+    - 3.45665
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 10
+    type: g
+  - ki:
+    - 4.47764
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 20
+    type: g
+  - ki:
+    - 3.82637
+    - 3.46776
+    - 1.03909
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 15
+    type: g
+  - ki:
+    - 0.94963
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 17
+    type: g
+  - basal_rate:
+    - 0.16454
+    type: mr
+  - basal_rate:
+    - 0.38858
+    type: mr
+  - ki:
+    - 4.46717
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 8
+    type: g
+  - ki:
+    - 2.70174
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 14
+    type: g
+  - basal_rate:
+    - 0.49634
+    type: mr
+  - basal_rate:
+    - 0.40457
+    type: mr
+  - ki:
+    - 2.83611
+    - 0.94802
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 9
+    type: g
+  - ki:
+    - 1.23628
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 16
+    type: g
+  - ki:
+    - 0.66651
+    - 1.52713
+    - 1.45494
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 5
+    type: g
+  - basal_rate:
+    - 0.41018
+    type: mr
+  - basal_rate:
+    - 0.16554
+    type: mr
+  - ki:
+    - 2.55576
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 18
+    type: g
+  - basal_rate:
+    - 0.15958
+    type: mr
+  - basal_rate:
+    - 0.29182
+    type: mr
+  - ki:
+    - 3.211
+    - 4.89725
+    - 1.88221
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 16
+    type: g
+  - basal_rate:
+    - 0.36614
+    type: mr
+  - ki:
+    - 2.57014
+    - 2.04494
+    - 1.73797
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 9
+    type: g
+  - basal_rate:
+    - 0.19122
+    type: mr
+  - ki:
+    - 2.30852
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 5
+    type: g
+  - basal_rate:
+    - 0.39617
+    type: mr
+  - basal_rate:
+    - 0.1264
+    type: mr
+  - basal_rate:
+    - 0.23393
+    type: mr
+  - ki:
+    - 3.32256
+    - 4.96148
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 14
+    type: g
+  - basal_rate:
+    - 0.36544
+    type: mr
+  - ki:
+    - 1.33556
+    - 0.67892
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 5
+    type: g
+  - ki:
+    - 1.74936
+    - 3.63135
+    - 3.02722
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 13
+    type: g
+  - ki:
+    - 2.637
+    - 2.22968
+    - 2.7897
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 13
+    type: g
+  - ki:
+    - 1.29824
+    - 2.94686
+    - 1.16322
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 12
+    type: g
+  - ki:
+    - 2.65154
+    - 4.19664
+    - 0.57931
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 9
+    type: g
+  - basal_rate:
+    - 0.30469
+    type: mr
+  - basal_rate:
+    - 0.33856
+    type: mr
+  - basal_rate:
+    - 0.44573
+    type: mr
+  - ki:
+    - 2.20005
+    - 1.03852
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 16
+    type: g
+  - ki:
+    - 3.55046
+    - 4.8389
+    - 0.70715
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 8
+    type: g
+  - ki:
+    - 2.94591
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 10
+    type: g
+  - ki:
+    - 1.19757
+    - 1.46484
+    - 2.54425
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 8
+    type: g
+  - basal_rate:
+    - 0.44504
+    type: mr
+  - basal_rate:
+    - 0.26994
+    type: mr
+  - basal_rate:
+    - 0.09439
+    type: mr
+  - basal_rate:
+    - 0.1864
+    type: mr
+  - ki:
+    - 1.98571
+    - 3.73932
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 10
+    type: g
+  - ki:
+    - 2.86784
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 12
+    type: g
+  - ki:
+    - 2.69556
+    - 4.6432
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 17
+    type: g
+  - ki:
+    - 1.43515
+    - 4.21395
+    - 4.615
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 17
+    type: g
+  - ki:
+    - 2.33234
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 5
+    type: g
+  - ki:
+    - 2.96605
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 20
+    type: g
+  - ki:
+    - 2.90936
+    - 3.73334
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 16
+    type: g
+  - ki:
+    - 3.25856
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 9
+    type: g
+  - basal_rate:
+    - 0.12337
+    type: mr
+  - basal_rate:
+    - 0.29925
+    type: mr
+  - ki:
+    - 2.89956
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 6
+    type: g
+  - ki:
+    - 4.8058
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 15
+    type: g
+  - basal_rate:
+    - 0.09866
+    type: mr
+  - ki:
+    - 4.87198
+    - 0.86436
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 9
+    type: g
+  - basal_rate:
+    - 0.45436
+    type: mr
+  - basal_rate:
+    - 0.20792
+    type: mr
+  - ki:
+    - 4.12938
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 18
+    type: g
+  - basal_rate:
+    - 0.26286
+    type: mr
+  - ki:
+    - 2.09549
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 8
+    type: g
+  - basal_rate:
+    - 0.1805
+    type: mr
+  - ki:
+    - 2.68144
+    - 2.88304
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 11
+    type: g
+  - basal_rate:
+    - 0.05959
+    type: mr
+  - ki:
+    - 1.17156
+    - 2.17988
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 13
+    type: g
+  - basal_rate:
+    - 0.16081
+    type: mr
+  - ki:
+    - 3.26252
+    - 0.70652
+    - 2.72069
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 9
+    type: g
+  - ki:
+    - 3.62298
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 5
+    type: g
+  - basal_rate:
+    - 0.30021
+    type: mr
+  - ki:
+    - 4.1626
+    - 2.63515
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 5
+    type: g
+  - basal_rate:
+    - 0.40134
+    type: mr
+  - basal_rate:
+    - 0.20301
+    type: mr
+  - basal_rate:
+    - 0.06705
+    type: mr
+  - basal_rate:
+    - 0.20617
+    type: mr
+  - ki:
+    - 3.29212
+    - 0.93705
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 16
+    type: g
+  - ki:
+    - 3.0511
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 20
+    type: g
+  - ki:
+    - 1.23499
+    - 3.4928
+    - 4.16071
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 20
+    type: g
+  - basal_rate:
+    - 0.19606
+    type: mr
+  - basal_rate:
+    - 0.35041
+    type: mr
+  - ki:
+    - 2.52597
+    - 2.08116
+    - 3.04867
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 9
+    type: g
+  - basal_rate:
+    - 0.30596
+    type: mr
+  - ki:
+    - 2.97972
+    - 4.62021
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 15
+    type: g
+  - ki:
+    - 1.17428
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 17
+    type: g
+  - ki:
+    - 1.61624
+    - 3.74261
+    - 3.03256
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 10
+    type: g
+  - ki:
+    - 2.03479
+    - 1.50819
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 5
+    type: g
+  - basal_rate:
+    - 0.44095
+    type: mr
+  - basal_rate:
+    - 0.24161
+    type: mr
+  - ki:
+    - 1.77837
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 10
+    type: g
+  - ki:
+    - 4.93925
+    - 2.10806
+    - 3.21647
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 7
+    type: g
+  - basal_rate:
+    - 0.38596
+    type: mr
+  - ki:
+    - 1.10803
+    - 4.05163
+    - 2.99807
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 11
+    type: g
+  - basal_rate:
+    - 0.31853
+    type: mr
+  - basal_rate:
+    - 0.13747
+    type: mr
+  - basal_rate:
+    - 0.13176
+    type: mr
+  - ki:
+    - 3.53601
+    - 2.15724
+    - 4.70561
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 11
+    type: g
+  - basal_rate:
+    - 0.3417
+    type: mr
+  - basal_rate:
+    - 0.28062
+    type: mr
+  - ki:
+    - 0.52064
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 19
+    type: g
+  - ki:
+    - 4.81839
+    - 3.9721
+    - 1.91832
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 12
+    type: g
+  - basal_rate:
+    - 0.25777
+    type: mr
+  - basal_rate:
+    - 0.26091
+    type: mr
+  - basal_rate:
+    - 0.47423
+    type: mr
+  - basal_rate:
+    - 0.22088
+    type: mr
+  - basal_rate:
+    - 0.49731
+    type: mr
+  - ki:
+    - 4.34914
+    - 3.38397
+    - 1.90759
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 16
+    type: g
+  - basal_rate:
+    - 0.07362
+    type: mr
+  - basal_rate:
+    - 0.18651
+    type: mr
+  - ki:
+    - 1.22629
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 6
+    type: g
+  - ki:
+    - 3.25484
+    - 4.52864
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 19
+    type: g
+  - basal_rate:
+    - 0.12442
+    type: mr
+  - ki:
+    - 3.97
+    - 3.1065
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 12
+    type: g
+  - basal_rate:
+    - 0.29388
+    type: mr
+  - ki:
+    - 2.5669
+    - 2.03397
+    - 3.20027
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 17
+    type: g
+  - ki:
+    - 3.84072
+    - 1.23215
+    - 4.97231
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 12
+    type: g
+  - basal_rate:
+    - 0.24133
+    type: mr
+  - basal_rate:
+    - 0.49131
+    type: mr
+  - ki:
+    - 0.80599
+    - 3.08206
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 12
+    type: g
+  - ki:
+    - 4.11957
+    - 2.76198
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 13
+    type: g
+  - basal_rate:
+    - 0.10246
+    type: mr
+  - basal_rate:
+    - 0.29109
+    type: mr
+  - ki:
+    - 0.92097
+    - 1.75223
+    - 4.55869
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 7
+    type: g
+  - ki:
+    - 0.78716
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 7
+    type: g
+  - ki:
+    - 3.15509
+    prot_half_life:
+    - 2
+    prot_transcription_rate:
+    - 5
+    type: g
+  - ki:
+    - 4.27958
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 14
+    type: g
+  - ki:
+    - 3.50585
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 11
+    type: g
+  - basal_rate:
+    - 0.07401
+    type: mr
+  - basal_rate:
+    - 0.09662
+    type: mr
+  - ki:
+    - 2.35386
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 11
+    type: g
+  - basal_rate:
+    - 0.49913
+    type: mr
+  - ki:
+    - 4.13395
+    - 2.90817
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 18
+    type: g
+  - basal_rate:
+    - 0.47643
+    type: mr
+  - basal_rate:
+    - 0.39149
+    type: mr
+  - ki:
+    - 2.58704
+    - 0.55144
+    - 2.49219
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 12
+    type: g
+  - ki:
+    - 4.36005
+    - 0.60998
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 17
+    type: g
+  - basal_rate:
+    - 0.47688
+    type: mr
+  - basal_rate:
+    - 0.06709
+    type: mr
+  - basal_rate:
+    - 0.41034
+    type: mr
+  - ki:
+    - 3.31005
+    - 4.24126
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 11
+    type: g
+  - basal_rate:
+    - 0.3468
+    type: mr
+  - ki:
+    - 2.80157
+    - 2.00291
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 12
+    type: g
+  - ki:
+    - 4.51813
+    - 1.50266
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 15
+    type: g
+  - basal_rate:
+    - 0.44673
+    type: mr
+  - basal_rate:
+    - 0.29796
+    type: mr
+  - ki:
+    - 2.5964
+    - 1.16425
+    prot_half_life:
+    - 4
+    prot_transcription_rate:
+    - 12
+    type: g
+  - basal_rate:
+    - 0.13671
+    type: mr
+  - ki:
+    - 1.25427
+    - 1.67101
+    - 0.68717
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 16
+    type: g
+  - ki:
+    - 4.86193
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 15
+    type: g
+  - ki:
+    - 3.86656
+    - 2.40083
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 14
+    type: g
+  - ki:
+    - 0.55449
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 16
+    type: g
+  - basal_rate:
+    - 0.20844
+    type: mr
+  - ki:
+    - 4.62751
+    - 2.8255
+    - 0.61991
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 18
+    type: g
+  - basal_rate:
+    - 0.26388
+    type: mr
+  - basal_rate:
+    - 0.43458
+    type: mr
+  - basal_rate:
+    - 0.10587
+    type: mr
+  - ki:
+    - 4.83899
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 9
+    type: g
+  - ki:
+    - 1.48578
+    - 4.07614
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 6
+    type: g
+  - ki:
+    - 3.99376
+    - 2.83431
+    - 1.93047
+    prot_half_life:
+    - 5
+    prot_transcription_rate:
+    - 18
+    type: g
+  - basal_rate:
+    - 0.44589
+    type: mr
+  - basal_rate:
+    - 0.38509
+    type: mr
+  - ki:
+    - 1.4627
+    - 0.93999
+    - 3.67855
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 9
+    type: g
+  - ki:
+    - 4.82048
+    - 3.48877
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 9
+    type: g
+  - basal_rate:
+    - 0.42825
+    type: mr
+  - ki:
+    - 1.28226
+    - 1.11394
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 20
+    type: g
+  - basal_rate:
+    - 0.27551
+    type: mr
+  - basal_rate:
+    - 0.31355
+    type: mr
+  - basal_rate:
+    - 0.46606
+    type: mr
+  - ki:
+    - 4.73227
+    prot_half_life:
+    - 1
+    prot_transcription_rate:
+    - 7
+    type: g
+  - basal_rate:
+    - 0.26142
+    type: mr
+  - basal_rate:
+    - 0.37984
+    type: mr
+  - ki:
+    - 4.21633
+    - 2.02637
+    - 3.49066
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 16
+    type: g
+  - ki:
+    - 2.81096
+    - 3.19915
+    prot_half_life:
+    - 10
+    prot_transcription_rate:
+    - 9
+    type: g
+  - basal_rate:
+    - 0.46711
+    type: mr
+  - ki:
+    - 1.34974
+    prot_half_life:
+    - 6
+    prot_transcription_rate:
+    - 13
+    type: g
+  - basal_rate:
+    - 0.47047
+    type: mr
+  - basal_rate:
+    - 0.43527
+    type: mr
+  - ki:
+    - 1.53274
+    - 4.72173
+    - 4.82861
+    prot_half_life:
+    - 3
+    prot_transcription_rate:
+    - 5
+    type: g
+  - basal_rate:
+    - 0.18943
+    type: mr
+  - basal_rate:
+    - 0.08633
+    type: mr
+  - basal_rate:
+    - 0.128
+    type: mr
+  - basal_rate:
+    - 0.06367
+    type: mr
+  - basal_rate:
+    - 0.18091
+    type: mr
+  - basal_rate:
+    - 0.30467
+    type: mr
+  - basal_rate:
+    - 0.0746
+    type: mr
+  - ki:
+    - 1.78435
+    prot_half_life:
+    - 7
+    prot_transcription_rate:
+    - 6
+    type: g
+  - ki:
+    - 1.7525
+    - 1.15824
+    prot_half_life:
+    - 9
+    prot_transcription_rate:
+    - 5
+    type: g
+  - ki:
+    - 1.71887
+    - 1.00566
+    prot_half_life:
+    - 8
+    prot_transcription_rate:
+    - 13
+    type: g
+- - - 1
+    - 591
+  - - 1
+    - 859
+  - - 1
+    - 867
+  - - 2
+    - 605
+  - - 4
+    - 755
+  - - 5
+    - 420
+  - - 6
+    - 643
+  - - 7
+    - 327
+  - - 7
+    - 608
+  - - 11
+    - 586
+  - - 12
+    - 475
+  - - 13
+    - 226
+  - - 13
+    - 566
+  - - 14
+    - 722
+  - - 15
+    - 275
+  - - 15
+    - 280
+  - - 15
+    - 694
+  - - 16
+    - 705
+  - - 16
+    - 934
+  - - 16
+    - 976
+  - - 18
+    - 680
+  - - 20
+    - 211
+  - - 21
+    - 851
+  - - 22
+    - 23
+  - - 26
+    - 233
+  - - 26
+    - 927
+  - - 27
+    - 178
+  - - 28
+    - 160
+  - - 28
+    - 713
+  - - 29
+    - 89
+  - - 29
+    - 758
+  - - 29
+    - 964
+  - - 32
+    - 375
+  - - 32
+    - 841
+  - - 33
+    - 678
+  - - 35
+    - 563
+  - - 36
+    - 922
+  - - 38
+    - 823
+  - - 38
+    - 924
+  - - 39
+    - 569
+  - - 39
+    - 714
+  - - 40
+    - 735
+  - - 40
+    - 858
+  - - 41
+    - 29
+  - - 41
+    - 380
+  - - 41
+    - 593
+  - - 42
+    - 311
+  - - 42
+    - 581
+  - - 45
+    - 541
+  - - 45
+    - 684
+  - - 46
+    - 321
+  - - 47
+    - 872
+  - - 49
+    - 279
+  - - 50
+    - 191
+  - - 50
+    - 421
+  - - 51
+    - 720
+  - - 51
+    - 773
+  - - 52
+    - 176
+  - - 55
+    - 663
+  - - 56
+    - 505
+  - - 57
+    - 382
+  - - 57
+    - 436
+  - - 57
+    - 562
+  - - 58
+    - 103
+  - - 58
+    - 450
+  - - 60
+    - 533
+  - - 62
+    - 190
+  - - 63
+    - 848
+  - - 63
+    - 961
+  - - 65
+    - 391
+  - - 65
+    - 679
+  - - 67
+    - 363
+  - - 67
+    - 396
+  - - 68
+    - 47
+  - - 68
+    - 325
+  - - 68
+    - 890
+  - - 69
+    - 52
+  - - 69
+    - 295
+  - - 70
+    - 843
+  - - 70
+    - 856
+  - - 74
+    - 771
+  - - 76
+    - 677
+  - - 76
+    - 998
+  - - 77
+    - 267
+  - - 77
+    - 272
+  - - 78
+    - 101
+  - - 78
+    - 262
+  - - 78
+    - 844
+  - - 79
+    - 100
+  - - 81
+    - 652
+  - - 82
+    - 339
+  - - 82
+    - 438
+  - - 82
+    - 698
+  - - 82
+    - 969
+  - - 82
+    - 998
+  - - 85
+    - 686
+  - - 86
+    - 650
+  - - 87
+    - 223
+  - - 92
+    - 225
+  - - 94
+    - 178
+  - - 96
+    - 352
+  - - 96
+    - 791
+  - - 97
+    - 89
+  - - 98
+    - 260
+  - - 99
+    - 113
+  - - 99
+    - 420
+  - - 99
+    - 717
+  - - 99
+    - 880
+  - - 101
+    - 165
+  - - 102
+    - 520
+  - - 103
+    - 499
+  - - 103
+    - 959
+  - - 104
+    - 66
+  - - 104
+    - 947
+  - - 105
+    - 325
+  - - 105
+    - 796
+  - - 106
+    - 649
+  - - 108
+    - 719
+  - - 108
+    - 908
+  - - 109
+    - 201
+  - - 109
+    - 495
+  - - 109
+    - 535
+  - - 111
+    - 592
+  - - 112
+    - 759
+  - - 112
+    - 970
+  - - 112
+    - 973
+  - - 113
+    - 728
+  - - 114
+    - 634
+  - - 115
+    - 158
+  - - 116
+    - 790
+  - - 116
+    - 841
+  - - 116
+    - 968
+  - - 117
+    - 250
+  - - 117
+    - 951
+  - - 121
+    - 9
+  - - 124
+    - 619
+  - - 126
+    - 436
+  - - 127
+    - 94
+  - - 127
+    - 106
+  - - 128
+    - 606
+  - - 131
+    - 187
+  - - 132
+    - 367
+  - - 132
+    - 434
+  - - 132
+    - 957
+  - - 133
+    - 727
+  - - 133
+    - 818
+  - - 135
+    - 111
+  - - 135
+    - 406
+  - - 137
+    - 329
+  - - 137
+    - 524
+  - - 140
+    - 412
+  - - 141
+    - 0
+  - - 141
+    - 989
+  - - 143
+    - 511
+  - - 145
+    - 540
+  - - 145
+    - 640
+  - - 145
+    - 895
+  - - 147
+    - 337
+  - - 148
+    - 989
+  - - 149
+    - 525
+  - - 149
+    - 986
+  - - 150
+    - 697
+  - - 150
+    - 962
+  - - 151
+    - 275
+  - - 151
+    - 737
+  - - 152
+    - 270
+  - - 152
+    - 325
+  - - 154
+    - 374
+  - - 155
+    - 702
+  - - 155
+    - 974
+  - - 156
+    - 126
+  - - 162
+    - 211
+  - - 162
+    - 922
+  - - 163
+    - 890
+  - - 163
+    - 893
+  - - 165
+    - 440
+  - - 166
+    - 134
+  - - 167
+    - 92
+  - - 170
+    - 620
+  - - 172
+    - 56
+  - - 172
+    - 267
+  - - 172
+    - 766
+  - - 173
+    - 34
+  - - 174
+    - 147
+  - - 175
+    - 220
+  - - 175
+    - 771
+  - - 176
+    - 302
+  - - 176
+    - 824
+  - - 179
+    - 974
+  - - 180
+    - 608
+  - - 182
+    - 116
+  - - 182
+    - 215
+  - - 182
+    - 523
+  - - 185
+    - 806
+  - - 186
+    - 595
+  - - 186
+    - 927
+  - - 189
+    - 908
+  - - 191
+    - 176
+  - - 191
+    - 274
+  - - 192
+    - 101
+  - - 193
+    - 136
+  - - 193
+    - 842
+  - - 195
+    - 589
+  - - 195
+    - 657
+  - - 198
+    - 307
+  - - 200
+    - 387
+  - - 201
+    - 810
+  - - 202
+    - 716
+  - - 204
+    - 149
+  - - 204
+    - 209
+  - - 204
+    - 431
+  - - 205
+    - 206
+  - - 206
+    - 753
+  - - 207
+    - 517
+  - - 207
+    - 526
+  - - 210
+    - 154
+  - - 210
+    - 378
+  - - 211
+    - 247
+  - - 212
+    - 274
+  - - 212
+    - 375
+  - - 212
+    - 424
+  - - 215
+    - 558
+  - - 216
+    - 19
+  - - 216
+    - 592
+  - - 216
+    - 649
+  - - 216
+    - 941
+  - - 217
+    - 543
+  - - 217
+    - 959
+  - - 218
+    - 859
+  - - 220
+    - 45
+  - - 220
+    - 857
+  - - 221
+    - 266
+  - - 221
+    - 524
+  - - 221
+    - 717
+  - - 222
+    - 135
+  - - 223
+    - 3
+  - - 227
+    - 175
+  - - 228
+    - 177
+  - - 228
+    - 540
+  - - 229
+    - 863
+  - - 230
+    - 460
+  - - 230
+    - 698
+  - - 232
+    - 369
+  - - 233
+    - 528
+  - - 233
+    - 660
+  - - 235
+    - 391
+  - - 235
+    - 440
+  - - 235
+    - 465
+  - - 235
+    - 480
+  - - 235
+    - 652
+  - - 236
+    - 37
+  - - 236
+    - 160
+  - - 238
+    - 143
+  - - 239
+    - 810
+  - - 240
+    - 589
+  - - 241
+    - 27
+  - - 243
+    - 15
+  - - 243
+    - 217
+  - - 243
+    - 438
+  - - 243
+    - 549
+  - - 244
+    - 514
+  - - 244
+    - 735
+  - - 244
+    - 842
+  - - 246
+    - 631
+  - - 247
+    - 594
+  - - 251
+    - 240
+  - - 251
+    - 543
+  - - 252
+    - 276
+  - - 252
+    - 609
+  - - 253
+    - 526
+  - - 255
+    - 827
+  - - 257
+    - 130
+  - - 258
+    - 720
+  - - 258
+    - 953
+  - - 259
+    - 241
+  - - 259
+    - 715
+  - - 259
+    - 748
+  - - 262
+    - 614
+  - - 263
+    - 364
+  - - 264
+    - 102
+  - - 264
+    - 494
+  - - 264
+    - 862
+  - - 264
+    - 983
+  - - 266
+    - 298
+  - - 266
+    - 464
+  - - 267
+    - 348
+  - - 269
+    - 491
+  - - 269
+    - 954
+  - - 270
+    - 279
+  - - 270
+    - 375
+  - - 270
+    - 812
+  - - 270
+    - 926
+  - - 271
+    - 240
+  - - 272
+    - 192
+  - - 274
+    - 223
+  - - 274
+    - 523
+  - - 275
+    - 395
+  - - 275
+    - 448
+  - - 277
+    - 396
+  - - 277
+    - 822
+  - - 278
+    - 266
+  - - 279
+    - 927
+  - - 280
+    - 946
+  - - 282
+    - 66
+  - - 282
+    - 409
+  - - 284
+    - 703
+  - - 284
+    - 766
+  - - 286
+    - 124
+  - - 286
+    - 549
+  - - 287
+    - 234
+  - - 287
+    - 564
+  - - 287
+    - 758
+  - - 288
+    - 513
+  - - 290
+    - 20
+  - - 290
+    - 282
+  - - 291
+    - 455
+  - - 291
+    - 930
+  - - 292
+    - 193
+  - - 293
+    - 66
+  - - 294
+    - 768
+  - - 295
+    - 604
+  - - 296
+    - 583
+  - - 299
+    - 231
+  - - 299
+    - 355
+  - - 302
+    - 340
+  - - 302
+    - 679
+  - - 303
+    - 437
+  - - 304
+    - 313
+  - - 307
+    - 878
+  - - 308
+    - 788
+  - - 308
+    - 841
+  - - 309
+    - 654
+  - - 313
+    - 518
+  - - 313
+    - 898
+  - - 314
+    - 244
+  - - 314
+    - 300
+  - - 315
+    - 249
+  - - 315
+    - 450
+  - - 316
+    - 443
+  - - 321
+    - 814
+  - - 322
+    - 848
+  - - 323
+    - 804
+  - - 324
+    - 301
+  - - 324
+    - 533
+  - - 324
+    - 752
+  - - 324
+    - 768
+  - - 325
+    - 429
+  - - 326
+    - 904
+  - - 328
+    - 926
+  - - 328
+    - 951
+  - - 329
+    - 183
+  - - 332
+    - 555
+  - - 333
+    - 290
+  - - 333
+    - 695
+  - - 337
+    - 392
+  - - 339
+    - 614
+  - - 343
+    - 723
+  - - 344
+    - 280
+  - - 344
+    - 961
+  - - 346
+    - 702
+  - - 347
+    - 454
+  - - 347
+    - 672
+  - - 347
+    - 771
+  - - 348
+    - 154
+  - - 348
+    - 934
+  - - 351
+    - 727
+  - - 352
+    - 730
+  - - 353
+    - 129
+  - - 353
+    - 166
+  - - 354
+    - 65
+  - - 354
+    - 603
+  - - 354
+    - 862
+  - - 355
+    - 746
+  - - 358
+    - 644
+  - - 358
+    - 824
+  - - 358
+    - 895
+  - - 360
+    - 896
+  - - 362
+    - 300
+  - - 362
+    - 326
+  - - 364
+    - 212
+  - - 364
+    - 799
+  - - 365
+    - 881
+  - - 366
+    - 180
+  - - 367
+    - 336
+  - - 367
+    - 806
+  - - 369
+    - 830
+  - - 369
+    - 893
+  - - 372
+    - 713
+  - - 373
+    - 430
+  - - 373
+    - 516
+  - - 374
+    - 486
+  - - 375
+    - 716
+  - - 379
+    - 720
+  - - 380
+    - 594
+  - - 380
+    - 780
+  - - 383
+    - 400
+  - - 383
+    - 728
+  - - 384
+    - 143
+  - - 384
+    - 800
+  - - 385
+    - 329
+  - - 385
+    - 606
+  - - 386
+    - 470
+  - - 389
+    - 219
+  - - 389
+    - 571
+  - - 389
+    - 918
+  - - 392
+    - 274
+  - - 393
+    - 45
+  - - 393
+    - 620
+  - - 394
+    - 249
+  - - 394
+    - 566
+  - - 394
+    - 880
+  - - 397
+    - 957
+  - - 398
+    - 131
+  - - 398
+    - 622
+  - - 399
+    - 964
+  - - 400
+    - 606
+  - - 403
+    - 698
+  - - 403
+    - 814
+  - - 405
+    - 706
+  - - 406
+    - 276
+  - - 406
+    - 763
+  - - 407
+    - 282
+  - - 407
+    - 510
+  - - 408
+    - 210
+  - - 408
+    - 228
+  - - 409
+    - 682
+  - - 410
+    - 314
+  - - 410
+    - 398
+  - - 411
+    - 549
+  - - 415
+    - 973
+  - - 416
+    - 470
+  - - 416
+    - 849
+  - - 420
+    - 29
+  - - 420
+    - 454
+  - - 421
+    - 683
+  - - 424
+    - 369
+  - - 424
+    - 627
+  - - 426
+    - 149
+  - - 426
+    - 396
+  - - 427
+    - 268
+  - - 427
+    - 632
+  - - 427
+    - 663
+  - - 429
+    - 192
+  - - 429
+    - 805
+  - - 433
+    - 511
+  - - 434
+    - 544
+  - - 434
+    - 726
+  - - 435
+    - 723
+  - - 435
+    - 844
+  - - 436
+    - 97
+  - - 436
+    - 161
+  - - 436
+    - 556
+  - - 436
+    - 650
+  - - 437
+    - 57
+  - - 437
+    - 151
+  - - 439
+    - 183
+  - - 440
+    - 834
+  - - 441
+    - 484
+  - - 443
+    - 308
+  - - 444
+    - 555
+  - - 449
+    - 322
+  - - 451
+    - 470
+  - - 452
+    - 524
+  - - 454
+    - 467
+  - - 454
+    - 663
+  - - 457
+    - 812
+  - - 458
+    - 344
+  - - 459
+    - 874
+  - - 460
+    - 391
+  - - 461
+    - 999
+  - - 462
+    - 206
+  - - 464
+    - 238
+  - - 466
+    - 78
+  - - 467
+    - 541
+  - - 467
+    - 602
+  - - 467
+    - 984
+  - - 468
+    - 54
+  - - 469
+    - 198
+  - - 469
+    - 645
+  - - 470
+    - 460
+  - - 470
+    - 571
+  - - 470
+    - 830
+  - - 473
+    - 455
+  - - 473
+    - 754
+  - - 474
+    - 45
+  - - 475
+    - 261
+  - - 477
+    - 526
+  - - 479
+    - 737
+  - - 483
+    - 183
+  - - 483
+    - 321
+  - - 483
+    - 790
+  - - 483
+    - 793
+  - - 484
+    - 650
+  - - 485
+    - 960
+  - - 486
+    - 527
+  - - 486
+    - 697
+  - - 487
+    - 562
+  - - 490
+    - 830
+  - - 491
+    - 119
+  - - 491
+    - 168
+  - - 491
+    - 221
+  - - 491
+    - 541
+  - - 493
+    - 249
+  - - 494
+    - 166
+  - - 495
+    - 659
+  - - 496
+    - 82
+  - - 496
+    - 302
+  - - 500
+    - 719
+  - - 500
+    - 793
+  - - 501
+    - 239
+  - - 502
+    - 406
+  - - 502
+    - 930
+  - - 503
+    - 843
+  - - 504
+    - 405
+  - - 505
+    - 984
+  - - 507
+    - 819
+  - - 508
+    - 767
+  - - 511
+    - 399
+  - - 511
+    - 953
+  - - 512
+    - 0
+  - - 512
+    - 627
+  - - 513
+    - 911
+  - - 514
+    - 354
+  - - 516
+    - 34
+  - - 517
+    - 270
+  - - 517
+    - 739
+  - - 518
+    - 119
+  - - 518
+    - 902
+  - - 519
+    - 38
+  - - 522
+    - 477
+  - - 522
+    - 686
+  - - 523
+    - 924
+  - - 527
+    - 350
+  - - 527
+    - 703
+  - - 527
+    - 756
+  - - 528
+    - 225
+  - - 530
+    - 282
+  - - 533
+    - 512
+  - - 534
+    - 954
+  - - 535
+    - 495
+  - - 535
+    - 812
+  - - 536
+    - 53
+  - - 537
+    - 4
+  - - 537
+    - 388
+  - - 537
+    - 512
+  - - 537
+    - 876
+  - - 538
+    - 113
+  - - 538
+    - 507
+  - - 539
+    - 718
+  - - 540
+    - 679
+  - - 541
+    - 790
+  - - 542
+    - 97
+  - - 542
+    - 681
+  - - 543
+    - 393
+  - - 546
+    - 755
+  - - 546
+    - 912
+  - - 547
+    - 211
+  - - 549
+    - 78
+  - - 549
+    - 230
+  - - 549
+    - 937
+  - - 552
+    - 116
+  - - 553
+    - 267
+  - - 553
+    - 300
+  - - 554
+    - 673
+  - - 555
+    - 758
+  - - 556
+    - 350
+  - - 556
+    - 630
+  - - 557
+    - 947
+  - - 559
+    - 285
+  - - 560
+    - 456
+  - - 560
+    - 851
+  - - 561
+    - 133
+  - - 561
+    - 660
+  - - 563
+    - 502
+  - - 564
+    - 298
+  - - 564
+    - 314
+  - - 565
+    - 165
+  - - 565
+    - 556
+  - - 566
+    - 92
+  - - 566
+    - 575
+  - - 566
+    - 980
+  - - 567
+    - 800
+  - - 568
+    - 9
+  - - 569
+    - 19
+  - - 569
+    - 136
+  - - 569
+    - 805
+  - - 570
+    - 520
+  - - 571
+    - 519
+  - - 573
+    - 168
+  - - 573
+    - 893
+  - - 574
+    - 767
+  - - 576
+    - 469
+  - - 577
+    - 498
+  - - 578
+    - 89
+  - - 578
+    - 468
+  - - 579
+    - 888
+  - - 580
+    - 15
+  - - 584
+    - 964
+  - - 586
+    - 602
+  - - 587
+    - 100
+  - - 588
+    - 241
+  - - 588
+    - 294
+  - - 588
+    - 421
+  - - 589
+    - 509
+  - - 590
+    - 113
+  - - 590
+    - 216
+  - - 590
+    - 849
+  - - 591
+    - 166
+  - - 591
+    - 969
+  - - 592
+    - 57
+  - - 592
+    - 507
+  - - 592
+    - 609
+  - - 595
+    - 232
+  - - 596
+    - 469
+  - - 596
+    - 838
+  - - 596
+    - 943
+  - - 598
+    - 616
+  - - 599
+    - 643
+  - - 602
+    - 250
+  - - 602
+    - 904
+  - - 603
+    - 633
+  - - 603
+    - 657
+  - - 603
+    - 806
+  - - 604
+    - 378
+  - - 607
+    - 281
+  - - 608
+    - 363
+  - - 609
+    - 527
+  - - 610
+    - 80
+  - - 610
+    - 462
+  - - 611
+    - 351
+  - - 611
+    - 620
+  - - 613
+    - 763
+  - - 615
+    - 431
+  - - 615
+    - 883
+  - - 616
+    - 424
+  - - 618
+    - 212
+  - - 620
+    - 305
+  - - 620
+    - 626
+  - - 621
+    - 38
+  - - 621
+    - 54
+  - - 622
+    - 103
+  - - 622
+    - 193
+  - - 622
+    - 693
+  - - 623
+    - 563
+  - - 626
+    - 850
+  - - 627
+    - 3
+  - - 627
+    - 176
+  - - 627
+    - 442
+  - - 628
+    - 513
+  - - 629
+    - 494
+  - - 631
+    - 148
+  - - 633
+    - 997
+  - - 635
+    - 655
+  - - 635
+    - 755
+  - - 637
+    - 876
+  - - 639
+    - 516
+  - - 639
+    - 888
+  - - 640
+    - 131
+  - - 640
+    - 293
+  - - 641
+    - 273
+  - - 643
+    - 703
+  - - 645
+    - 34
+  - - 646
+    - 551
+  - - 648
+    - 228
+  - - 648
+    - 590
+  - - 649
+    - 437
+  - - 650
+    - 29
+  - - 650
+    - 860
+  - - 651
+    - 655
+  - - 651
+    - 842
+  - - 652
+    - 777
+  - - 652
+    - 824
+  - - 653
+    - 48
+  - - 654
+    - 641
+  - - 657
+    - 643
+  - - 660
+    - 107
+  - - 662
+    - 116
+  - - 662
+    - 508
+  - - 662
+    - 989
+  - - 663
+    - 540
+  - - 664
+    - 616
+  - - 664
+    - 686
+  - - 665
+    - 272
+  - - 669
+    - 350
+  - - 672
+    - 664
+  - - 672
+    - 714
+  - - 675
+    - 347
+  - - 677
+    - 753
+  - - 678
+    - 198
+  - - 678
+    - 382
+  - - 678
+    - 898
+  - - 678
+    - 912
+  - - 679
+    - 613
+  - - 684
+    - 791
+  - - 685
+    - 168
+  - - 685
+    - 693
+  - - 686
+    - 154
+  - - 687
+    - 433
+  - - 687
+    - 498
+  - - 688
+    - 261
+  - - 688
+    - 843
+  - - 691
+    - 436
+  - - 691
+    - 502
+  - - 692
+    - 626
+  - - 693
+    - 756
+  - - 694
+    - 178
+  - - 694
+    - 285
+  - - 696
+    - 902
+  - - 697
+    - 147
+  - - 698
+    - 768
+  - - 698
+    - 946
+  - - 700
+    - 897
+  - - 703
+    - 438
+  - - 703
+    - 726
+  - - 704
+    - 164
+  - - 704
+    - 602
+  - - 705
+    - 902
+  - - 706
+    - 244
+  - - 706
+    - 434
+  - - 709
+    - 119
+  - - 709
+    - 546
+  - - 710
+    - 467
+  - - 711
+    - 316
+  - - 711
+    - 619
+  - - 712
+    - 201
+  - - 713
+    - 84
+  - - 714
+    - 502
+  - - 715
+    - 508
+  - - 716
+    - 398
+  - - 716
+    - 692
+  - - 718
+    - 563
+  - - 720
+    - 733
+  - - 721
+    - 279
+  - - 722
+    - 856
+  - - 724
+    - 288
+  - - 725
+    - 682
+  - - 726
+    - 756
+  - - 727
+    - 499
+  - - 727
+    - 926
+  - - 728
+    - 193
+  - - 730
+    - 238
+  - - 731
+    - 746
+  - - 734
+    - 813
+  - - 735
+    - 431
+  - - 736
+    - 897
+  - - 739
+    - 266
+  - - 739
+    - 370
+  - - 739
+    - 569
+  - - 742
+    - 44
+  - - 742
+    - 901
+  - - 743
+    - 316
+  - - 744
+    - 231
+  - - 744
+    - 592
+  - - 746
+    - 682
+  - - 746
+    - 983
+  - - 748
+    - 866
+  - - 749
+    - 307
+  - - 750
+    - 792
+  - - 750
+    - 935
+  - - 752
+    - 630
+  - - 752
+    - 787
+  - - 755
+    - 480
+  - - 755
+    - 631
+  - - 756
+    - 111
+  - - 756
+    - 580
+  - - 757
+    - 295
+  - - 760
+    - 53
+  - - 761
+    - 718
+  - - 762
+    - 509
+  - - 762
+    - 805
+  - - 763
+    - 326
+  - - 767
+    - 814
+  - - 767
+    - 904
+  - - 768
+    - 75
+  - - 768
+    - 624
+  - - 769
+    - 726
+  - - 775
+    - 177
+  - - 776
+    - 22
+  - - 776
+    - 840
+  - - 779
+    - 250
+  - - 779
+    - 486
+  - - 780
+    - 398
+  - - 780
+    - 946
+  - - 781
+    - 56
+  - - 781
+    - 75
+  - - 781
+    - 727
+  - - 782
+    - 56
+  - - 782
+    - 157
+  - - 783
+    - 765
+  - - 784
+    - 442
+  - - 785
+    - 290
+  - - 786
+    - 198
+  - - 786
+    - 918
+  - - 788
+    - 433
+  - - 789
+    - 921
+  - - 792
+    - 165
+  - - 792
+    - 973
+  - - 793
+    - 767
+  - - 794
+    - 164
+  - - 795
+    - 832
+  - - 797
+    - 124
+  - - 797
+    - 535
+  - - 798
+    - 735
+  - - 800
+    - 527
+  - - 800
+    - 654
+  - - 800
+    - 718
+  - - 801
+    - 890
+  - - 802
+    - 221
+  - - 802
+    - 306
+  - - 802
+    - 746
+  - - 802
+    - 804
+  - - 803
+    - 519
+  - - 808
+    - 6
+  - - 808
+    - 27
+  - - 808
+    - 140
+  - - 810
+    - 509
+  - - 811
+    - 213
+  - - 811
+    - 313
+  - - 812
+    - 290
+  - - 813
+    - 484
+  - - 814
+    - 23
+  - - 816
+    - 432
+  - - 818
+    - 934
+  - - 820
+    - 719
+  - - 820
+    - 970
+  - - 821
+    - 766
+  - - 821
+    - 889
+  - - 822
+    - 412
+  - - 823
+    - 983
+  - - 824
+    - 364
+  - - 825
+    - 660
+  - - 827
+    - 626
+  - - 828
+    - 190
+  - - 828
+    - 228
+  - - 828
+    - 599
+  - - 829
+    - 302
+  - - 829
+    - 421
+  - - 832
+    - 631
+  - - 833
+    - 97
+  - - 833
+    - 316
+  - - 836
+    - 512
+  - - 837
+    - 520
+  - - 837
+    - 815
+  - - 838
+    - 588
+  - - 839
+    - 307
+  - - 841
+    - 371
+  - - 841
+    - 656
+  - - 842
+    - 146
+  - - 845
+    - 135
+  - - 845
+    - 664
+  - - 845
+    - 704
+  - - 845
+    - 851
+  - - 848
+    - 151
+  - - 849
+    - 141
+  - - 849
+    - 544
+  - - 849
+    - 976
+  - - 851
+    - 305
+  - - 851
+    - 931
+  - - 852
+    - 102
+  - - 852
+    - 134
+  - - 852
+    - 469
+  - - 854
+    - 337
+  - - 857
+    - 931
+  - - 858
+    - 339
+  - - 858
+    - 608
+  - - 859
+    - 832
+  - - 860
+    - 48
+  - - 860
+    - 586
+  - - 861
+    - 605
+  - - 861
+    - 793
+  - - 863
+    - 671
+  - - 865
+    - 704
+  - - 866
+    - 94
+  - - 866
+    - 238
+  - - 866
+    - 317
+  - - 866
+    - 761
+  - - 867
+    - 912
+  - - 869
+    - 525
+  - - 869
+    - 585
+  - - 869
+    - 632
+  - - 871
+    - 184
+  - - 871
+    - 312
+  - - 871
+    - 737
+  - - 872
+    - 336
+  - - 878
+    - 6
+  - - 880
+    - 519
+  - - 880
+    - 849
+  - - 880
+    - 908
+  - - 882
+    - 753
+  - - 885
+    - 437
+  - - 886
+    - 295
+  - - 887
+    - 496
+  - - 888
+    - 27
+  - - 888
+    - 714
+  - - 889
+    - 126
+  - - 889
+    - 141
+  - - 889
+    - 425
+  - - 890
+    - 671
+  - - 894
+    - 754
+  - - 895
+    - 970
+  - - 896
+    - 371
+  - - 896
+    - 715
+  - - 896
+    - 938
+  - - 897
+    - 37
+  - - 898
+    - 48
+  - - 898
+    - 399
+  - - 899
+    - 378
+  - - 899
+    - 640
+  - - 901
+    - 20
+  - - 904
+    - 239
+  - - 905
+    - 143
+  - - 905
+    - 514
+  - - 907
+    - 880
+  - - 908
+    - 477
+  - - 908
+    - 498
+  - - 911
+    - 160
+  - - 911
+    - 340
+  - - 911
+    - 354
+  - - 912
+    - 858
+  - - 913
+    - 673
+  - - 914
+    - 270
+  - - 914
+    - 555
+  - - 915
+    - 690
+  - - 915
+    - 723
+  - - 915
+    - 792
+  - - 916
+    - 528
+  - - 917
+    - 3
+  - - 917
+    - 467
+  - - 918
+    - 359
+  - - 919
+    - 239
+  - - 920
+    - 678
+  - - 924
+    - 344
+  - - 924
+    - 505
+  - - 924
+    - 840
+  - - 924
+    - 918
+  - - 925
+    - 103
+  - - 925
+    - 146
+  - - 925
+    - 247
+  - - 925
+    - 811
+  - - 927
+    - 364
+  - - 927
+    - 385
+  - - 927
+    - 564
+  - - 927
+    - 598
+  - - 927
+    - 728
+  - - 927
+    - 765
+  - - 928
+    - 800
+  - - 929
+    - 406
+  - - 929
+    - 677
+  - - 931
+    - 330
+  - - 932
+    - 126
+  - - 932
+    - 348
+  - - 934
+    - 460
+  - - 935
+    - 612
+  - - 936
+    - 146
+  - - 937
+    - 37
+  - - 938
+    - 517
+  - - 939
+    - 127
+  - - 943
+    - 227
+  - - 943
+    - 508
+  - - 943
+    - 715
+  - - 944
+    - 468
+  - - 945
+    - 140
+  - - 945
+    - 514
+  - - 946
+    - 298
+  - - 946
+    - 434
+  - - 947
+    - 878
+  - - 948
+    - 959
+  - - 949
+    - 673
+  - - 949
+    - 787
+  - - 949
+    - 844
+  - - 951
+    - 722
+  - - 952
+    - 18
+  - - 952
+    - 869
+  - - 953
+    - 936
+  - - 954
+    - 246
+  - - 956
+    - 359
+  - - 956
+    - 798
+  - - 959
+    - 42
+  - - 959
+    - 424
+  - - 960
+    - 859
+  - - 962
+    - 704
+  - - 962
+    - 822
+  - - 962
+    - 897
+  - - 963
+    - 42
+  - - 964
+    - 244
+  - - 965
+    - 603
+  - - 966
+    - 130
+  - - 968
+    - 474
+  - - 969
+    - 148
+  - - 969
+    - 556
+  - - 970
+    - 369
+  - - 971
+    - 53
+  - - 971
+    - 196
+  - - 971
+    - 604
+  - - 972
+    - 943
+  - - 976
+    - 627
+  - - 976
+    - 705
+  - - 978
+    - 106
+  - - 979
+    - 740
+  - - 980
+    - 273
+  - - 980
+    - 393
+  - - 981
+    - 163
+  - - 982
+    - 594
+  - - 984
+    - 190
+  - - 984
+    - 312
+  - - 984
+    - 456
+  - - 984
+    - 838
+  - - 985
+    - 523
+  - - 985
+    - 659
+  - - 985
+    - 832
+  - - 985
+    - 869
+  - - 986
+    - 164
+  - - 988
+    - 225
+  - - 988
+    - 329
+  - - 988
+    - 695
+  - - 988
+    - 702
+  - - 988
+    - 861
+  - - 988
+    - 883
+  - - 989
+    - 999
+  - - 993
+    - 696
+  - - 996
+    - 742
+  - - 998
+    - 92

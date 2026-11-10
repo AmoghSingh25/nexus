@@ -810,7 +810,7 @@ class GRNSim:
         # Auto vectorization over all the genes
         auto_vec_genes = vmap(
             _single_gene_x_t,
-            in_axes=(0, None, None, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+            in_axes=(0, None, None, 0, 0, 0, 0, 0, 0, None, 0, 0, 0, 0, 0, 0, 0),
         )
 
         # Auto vectorization over auto_vec_genes for all cells
