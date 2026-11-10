@@ -89,6 +89,12 @@ def _():
 
 
 @app.cell
+def _(cfg):
+    cfg.grn['n_cells'] = 1
+    return
+
+
+@app.cell
 def _(GRNSim, cfg):
     sim_= GRNSim(cfg.grn)
     return (sim_,)
@@ -97,11 +103,6 @@ def _(GRNSim, cfg):
 @app.cell
 def _(sim_):
     sim_.is_mr
-    return
-
-
-@app.cell
-def _():
     return
 
 
@@ -126,6 +127,31 @@ def _(sim_):
 @app.cell
 def _(sim_):
     sim_.ki_matrix.shape
+    return
+
+
+@app.cell
+def _(sim_):
+    ret = sim_.run_sim()
+    return (ret,)
+
+
+@app.cell
+def _(ret):
+    ret.gene_traj
+    return
+
+
+@app.cell
+def _(sim_):
+    sim_.basal_rates
+    return
+
+
+@app.cell
+def _(plt, ret):
+    ret.gene_traj.shape
+    plt.plot(ret.gene_traj[:, 0, 0, 0])
     return
 
 

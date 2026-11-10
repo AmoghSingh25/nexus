@@ -71,6 +71,7 @@ class GRNSim:
         self.learn_params = cfg.get("learn_params", False)
         self.epochs = cfg.get("epochs", 0)
         self.lr = cfg.get("lr", 0.01)
+        self.stable_state_init = cfg.get("stable_state_init", True)
         if node_set is None and edges_set is None:
             node_set, edges_set, self.copy_cells = _read_data(
                 gene_data=cfg.get("gene_data", None),
@@ -231,17 +232,17 @@ class GRNSim:
         self.jit_pij = jit(self.calc_pij)
         self.jit_x_t = jit(self.calc_x_t)
 
-        logging.info("Calculating steady states...")
-        (
-            self.gene_conc,
-            self.prot_conc,
-            self.learnt_gene_params,
-            self.learnt_prot_params,
-        ) = self.calc_steady_states()
-        self.steady_states = self.gene_conc
-        self.prot_steady_state = self.prot_conc
-
-        logging.info("Steady state concentrations calculated.")
+        if self.stable_state_init:
+            logging.info("Calculating steady states...")
+            (
+                self.gene_conc,
+                self.prot_conc,
+                self.learnt_gene_params,
+                self.learnt_prot_params,
+            ) = self.calc_steady_states()
+            self.steady_states = self.gene_conc
+            self.prot_steady_state = self.prot_conc
+            logging.info("Steady state concentrations calculated.")
 
     def calc_steady_state_mr(self, b, decay):
         """Steady state calculation for MRs"""

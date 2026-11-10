@@ -18,6 +18,7 @@ grn:
   learn_params: false # Flag to perform backpropagation on a target_gene and target_prot values to learn the parameters.
   epochs: 0 # Number of epochs for backpropagation
   lr: 1 # Learning rate for backpropagation
+  stable_state_init: True # Flag to indicate if the simulation should start from calculated stable state or random values
   
   ## Gene related
   non_mr_basal: false # Flag to indicate if non Master Regulators have a basal rate
