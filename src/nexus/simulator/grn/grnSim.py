@@ -1,5 +1,5 @@
 # Assumptions
-# - Simulation starts from steady state calculation
+# - Simulation starts from steady state calculation - Added option to *NOT* start from steady state
 # - Basal rates of non-MR is 0 (from SERGIO) - Can also be configured for non zero basal rates
 
 import jax
